@@ -1,5 +1,7 @@
 {
-  "winnerFID": "fid_123456",
+  "winnerFID": "fid_123",
   "tournament": "Midnight Madness – $33",
-  "timestamp": "2025-07-15T10:42:56.008Z"
+  "recasted": false,
+  "prizePercent": 0.05,
+  "timestamp": "2025-07-16T11:32:50.323Z"
 }

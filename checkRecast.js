@@ -1,5 +1,6 @@
-// checkRecast.ts
-export async function checkIfRecasted(fid: number, castHash: string): Promise<boolean> {
+const fetch = require('node-fetch');
+
+async function checkIfRecasted(fid, castHash) {
   const res = await fetch(`https://api.neynar.com/v2/farcaster/cast/${castHash}/recasts`, {
     headers: {
       'accept': 'application/json',
@@ -8,11 +9,13 @@ export async function checkIfRecasted(fid: number, castHash: string): Promise<bo
   });
 
   if (!res.ok) {
-    console.error("Failed to fetch recasters from Neynar:", res.status);
+    console.error("Failed to fetch recasters:", res.status);
     return false;
   }
 
   const data = await res.json();
-  const recasterFids = data.recasters.map((r: any) => r.fid);
+  const recasterFids = data.recasters.map(r => r.fid);
   return recasterFids.includes(fid);
 }
+
+module.exports = { checkIfRecasted };
