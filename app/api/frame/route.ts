@@ -11,7 +11,7 @@ export async function GET() {
     version: "vNext"
   };
 
-  return new NextResponse(JSON.stringify(frameData), {
+  return new NextResponse(JSON.stringify({ metadata: frameData }), {
     status: 200,
     headers: {
       "Content-Type": "application/json",
@@ -20,3 +20,4 @@ export async function GET() {
     }
   });
 }
+
