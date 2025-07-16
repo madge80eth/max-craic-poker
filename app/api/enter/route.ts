@@ -1,34 +1,22 @@
-import { NextResponse } from 'next/server';
-import { promises as fs } from 'fs';
-import path from 'path';
+import { NextResponse } from "next/server";
 
-export async function POST(req: Request) {
-  const body = await req.json();
-  const { fid, tournament } = body;
+// Hardcoded tournament list for demo purposes
+const tournaments = [
+  "Battle of Malta – €109",
+  "Big $55 PKO – 100K GTD",
+  "Daily Legends $22",
+  "The Bounty Hunter – $44",
+  "The Craic Classic – $5.50",
+  "Midnight Madness – $33",
+];
 
-  const filePath = path.join(process.cwd(), 'entries.json');
-  const fileData = await fs.readFile(filePath, 'utf-8');
-  const entries = JSON.parse(fileData);
+export async function POST() {
+  // Randomly assign a tournament
+  const assignedTournament =
+    tournaments[Math.floor(Math.random() * tournaments.length)];
 
-  // 🔒 Check if FID already entered
-  const existingEntry = entries.find((entry: any) => entry.fid === fid);
-
-  if (existingEntry) {
-    return NextResponse.json({
-      status: 'exists',
-      assigned: existingEntry.tournament,
-    });
-  }
-
-  // ✅ Save new entry
-  const newEntry = {
-    fid,
-    tournament,
-    timestamp: new Date().toISOString(),
-  };
-
-  entries.push(newEntry);
-  await fs.writeFile(filePath, JSON.stringify(entries, null, 2));
-
-  return NextResponse.json({ status: 'ok', assigned: tournament });
+  // ✅ Stubbed success response without file writes
+  return NextResponse.json({
+    assignedTournament,
+  });
 }
