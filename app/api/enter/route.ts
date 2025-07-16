@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-// Hardcoded tournament list for demo purposes
+// Hardcoded tournament list
 const tournaments = [
   "Battle of Malta – €109",
   "Big $55 PKO – 100K GTD",
@@ -11,12 +11,11 @@ const tournaments = [
 ];
 
 export async function POST() {
-  // Randomly assign a tournament
   const assignedTournament =
     tournaments[Math.floor(Math.random() * tournaments.length)];
 
-  // ✅ Stubbed success response without file writes
   return NextResponse.json({
-    assignedTournament,
+    status: "ok", // ✅ Add this line
+    assigned: assignedTournament, // ✅ Rename key to match frontend expectation
   });
 }
