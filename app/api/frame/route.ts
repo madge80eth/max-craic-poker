@@ -8,15 +8,14 @@ export async function GET() {
       image: "https://max-craic-poker.vercel.app/frame.png",
       post_url: "https://max-craic-poker.vercel.app/api/enter",
       buttons: ["Enter Now"],
-      input_text: "",
-      version: "vNext"
+      version: "vNext",
     },
     {
       status: 200,
       headers: {
+        "Content-Type": "application/json",
         "Cache-Control": "no-store",
-        "Access-Control-Allow-Origin": "*"
-      }
+      },
     }
   );
 }
