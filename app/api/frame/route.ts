@@ -10,11 +10,11 @@ export async function GET() {
     version: 'vNext',
   };
 
-  return NextResponse.json(frameMetadata, {
+  return new NextResponse(JSON.stringify(frameMetadata), {
     status: 200,
     headers: {
       'Cache-Control': 'no-store',
-      'Content-Type': 'application/json', // 👈 force it here
+      'Content-Type': 'application/json', // 👈 THIS IS KEY
     },
   });
 }
