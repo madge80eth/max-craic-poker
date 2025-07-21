@@ -1,4 +1,3 @@
-// app/api/frame-image/route.tsx
 import { ImageResponse } from "@vercel/og";
 import { NextRequest } from "next/server";
 
@@ -24,18 +23,21 @@ export async function GET(req: NextRequest) {
         <div style={{ fontWeight: "bold", fontSize: 60, marginBottom: 40 }}>
           Today's Tournaments
         </div>
+
+        {/* Bullet-style lines with divs */}
         {[
-          "Battle of Malta – €109",
-          "Big $44 PKO – 100k GTD",
-          "Daily Legends $222",
-          "The Bounty Hunter – $44",
-          "The Craic Classic – $5.50",
-          "Midnight Madness – $33",
+          "• Battle of Malta – €109",
+          "• Big $44 PKO – 100k GTD",
+          "• Daily Legends $222",
+          "• The Bounty Hunter – $44",
+          "• The Craic Classic – $5.50",
+          "• Midnight Madness – $33",
         ].map((text, idx) => (
-          <p key={idx} style={{ margin: "6px 0" }}>
-            • {text}
-          </p>
+          <div key={idx} style={{ marginBottom: 12 }}>
+            {text}
+          </div>
         ))}
+
         <div style={{ marginTop: "auto", fontSize: 28 }}>
           Draw closes in 8h 00m
         </div>
