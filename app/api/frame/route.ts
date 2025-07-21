@@ -1,20 +1,19 @@
 import { NextResponse } from 'next/server';
+import { join } from 'path';
+import { promises as fs } from 'fs';
 
 export async function GET() {
-  const frameMetadata = {
-    name: 'Max Craic Poker Draw',
-    description: 'Enter now to win 5% if we cash — 10% if you recast',
-    image: 'https://max-craic-poker.vercel.app/frame.png',
-    post_url: 'https://max-craic-poker.vercel.app/api/enter',
-    buttons: ['Enter Now'],
-    version: 'vNext',
-  };
-
-  return new NextResponse(JSON.stringify(frameMetadata), {
-    status: 200,
-    headers: {
-      'Cache-Control': 'no-store',
-      'Content-Type': 'application/json', // 👈 THIS IS KEY
-    },
-  });
+  const filePath = join(process.cwd(), 'public', 'frame.png');
+  try {
+    const imageBuffer = await fs.readFile(filePath);
+    return new NextResponse(imageBuffer, {
+      status: 200,
+      headers: {
+        'Content-Type': 'image/png',
+        'Cache-Control': 'no-store',
+      },
+    });
+  } catch (error) {
+    return new NextResponse('Image not found', { status: 404 });
+  }
 }
