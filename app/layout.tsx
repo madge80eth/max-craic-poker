@@ -28,10 +28,10 @@ export const metadata: Metadata = {
     ],
   },
   other: {
-    "fc:frame": "vNext",
-    "fc:frame:image": "https://max-craic-poker.vercel.app/api/frame-image",
-    "fc:frame:button:1": "Enter Now",
-    "fc:frame:post_url": "https://max-craic-poker.vercel.app/api/frame-action",
+    "property:fc:frame": "vNext",
+    "property:fc:frame:image": "https://max-craic-poker.vercel.app/api/frame-image",
+    "property:fc:frame:button:1": "Enter Now",
+    "property:fc:frame:post_url": "https://max-craic-poker.vercel.app/api/frame-action",
   },
 };
 
