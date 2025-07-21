@@ -10,9 +10,10 @@ export async function GET() {
     version: 'vNext'
   };
 
-  return NextResponse.json(frameMetadata, {
+  return new NextResponse(JSON.stringify(frameMetadata), {
     status: 200,
     headers: {
+      'Content-Type': 'application/json+frame',
       'Cache-Control': 'no-store',
     },
   });
