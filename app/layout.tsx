@@ -16,25 +16,22 @@ const geistMono = Geist_Mono({
 // ✅ Frame + SEO metadata
 export const metadata: Metadata = {
   title: "Max Craic Poker",
-  description: "Enter now to win 5% if we cash — 10% if you recast",
-  other: {
-    "fc:frame": "vNext",
-    "fc:frame:image": "https://max-craic-poker.vercel.app/api/frame-image",
-    "fc:frame:post_url": "https://max-craic-poker.vercel.app/api/enter",
-    "fc:frame:button:1": "Enter Now",
-  },
-  metadataBase: new URL("https://max-craic-poker.vercel.app"),
-  robots: {
-    index: true,
-    follow: true,
-  },
-  referrer: "origin-when-cross-origin",
+  description: "Enter today’s tournament draw!",
   openGraph: {
+    title: "Max Craic Poker",
     images: [
       {
         url: "https://max-craic-poker.vercel.app/api/frame-image",
+        width: 1200,
+        height: 630,
       },
     ],
+  },
+  other: {
+    "fc:frame": "vNext",
+    "fc:frame:image": "https://max-craic-poker.vercel.app/api/frame-image",
+    "fc:frame:button:1": "Enter Now",
+    "fc:frame:post_url": "https://max-craic-poker.vercel.app/api/frame-action",
   },
 };
 
