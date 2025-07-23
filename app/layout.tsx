@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// ✅ Frame + SEO metadata
+// ✅ Frame + Mini App Embed metadata
 export const metadata: Metadata = {
   title: "Max Craic Poker",
   description: "Enter today’s tournament draw!",
@@ -28,10 +28,34 @@ export const metadata: Metadata = {
     ],
   },
   other: {
-    "property:fc:frame": "vNext",
-    "property:fc:frame:image": "https://max-craic-poker.vercel.app/api/frame-image",
-    "property:fc:frame:button:1": "Enter Now",
-    "property:fc:frame:post_url": "https://max-craic-poker.vercel.app/api/frame-action",
+    "property:fc:miniapp": JSON.stringify({
+      version: "1",
+      imageUrl: "https://max-craic-poker.vercel.app/api/frame-image",
+      button: {
+        title: "Enter Now",
+        action: {
+          type: "launch_miniapp",
+          url: "https://max-craic-poker.vercel.app",
+          name: "Max Craic Poker",
+          splashImageUrl: "https://max-craic-poker.vercel.app/logo.png", // replace if you have a real logo
+          splashBackgroundColor: "#000000",
+        },
+      },
+    }),
+    "property:fc:frame": JSON.stringify({
+      version: "1",
+      imageUrl: "https://max-craic-poker.vercel.app/api/frame-image",
+      button: {
+        title: "Enter Now",
+        action: {
+          type: "launch_frame",
+          url: "https://max-craic-poker.vercel.app",
+          name: "Max Craic Poker",
+          splashImageUrl: "https://max-craic-poker.vercel.app/logo.png",
+          splashBackgroundColor: "#000000",
+        },
+      },
+    }),
   },
 };
 
