@@ -1,51 +1,35 @@
-import { ImageResponse } from "@vercel/og";
-import { NextRequest } from "next/server";
-
-export const runtime = "edge";
-
-export async function GET(req: NextRequest) {
-  return new ImageResponse(
-    (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "flex-start",
-          backgroundColor: "black",
-          color: "white",
-          width: "1200px",
-          height: "630px",
-          padding: "60px",
-          fontSize: 40,
-          fontFamily: "sans-serif",
-        }}
-      >
-        <div style={{ fontWeight: "bold", fontSize: 60, marginBottom: 40 }}>
-          Today's Tournaments
-        </div>
-
-        {/* Bullet-style lines with divs */}
-        {[
-          "• Battle of Malta – €109",
-          "• Big $44 PKO – 100k GTD",
-          "• Daily Legends $222",
-          "• The Bounty Hunter – $44",
-          "• The Craic Classic – $5.50",
-          "• Midnight Madness – $33",
-        ].map((text, idx) => (
-          <div key={idx} style={{ marginBottom: 12 }}>
-            {text}
-          </div>
-        ))}
-
-        <div style={{ marginTop: "auto", fontSize: 28 }}>
-          Draw closes in 8h 00m
-        </div>
+return new ImageResponse(
+  (
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "flex-start",
+        alignItems: "flex-start",
+        width: "100%",
+        height: "100%",
+        padding: 40,
+        backgroundColor: "black",
+        color: "white",
+        fontSize: 28,
+        fontFamily: "Geist Mono, sans-serif",
+        lineHeight: 1.5,
+      }}
+    >
+      <h1 style={{ fontSize: 42, marginBottom: 24 }}>Today's Tournaments</h1>
+      <p>• Battle of Malta – €109</p>
+      <p>• Big $44 PKO – 100k GTD</p>
+      <p>• Daily Legends – $222</p>
+      <p>• The Bounty Hunter – $44</p>
+      <p>• The Craic Classic – $5.50</p>
+      <p>• Midnight Madness – $33</p>
+      <div style={{ marginTop: 40, fontSize: 20 }}>
+        Draw closes in 8h 00m
       </div>
-    ),
-    {
-      width: 1200,
-      height: 630,
-    }
-  );
-}
+    </div>
+  ),
+  {
+    width: 1200,
+    height: 630,
+  }
+);
