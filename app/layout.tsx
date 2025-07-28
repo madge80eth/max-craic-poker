@@ -1,3 +1,5 @@
+// app/layout.tsx
+
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -13,46 +15,36 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// ✅ Frame + Mini App Embed metadata
+// ✅ Frame + Mini App Embed metadata (with working blue button config)
 export const metadata: Metadata = {
-  title: "Max Craic Poker",
-  description: "Enter today’s tournament draw!",
+  title: "Max Craic Poker Draw",
+  description: "Enter now to win 5% if we cash — 10% if you recast",
   openGraph: {
-    title: "Max Craic Poker",
+    title: "Max Craic Poker Draw",
+    description: "Enter now to win 5% if we cash — 10% if you recast",
     images: [
       {
-        url: "https://max-craic-poker.vercel.app/api/frame-image",
+        url: "https://max-craic-poker.vercel.app/api/frame-image2",
         width: 1200,
         height: 630,
       },
     ],
   },
   other: {
-    "property:fc:miniapp": JSON.stringify({
+    "fc:frame": JSON.stringify({
       version: "1",
-      imageUrl: "https://max-craic-poker.vercel.app/api/frame-image",
+      image: "https://max-craic-poker.vercel.app/api/frame-image2",
+      post_url: "https://max-craic-poker.vercel.app/api/enter",
+      buttons: [{ label: "Enter Now" }],
+    }),
+    "fc:miniapp": JSON.stringify({
+      version: "1",
+      imageUrl: "https://max-craic-poker.vercel.app/api/frame-image2",
       button: {
         title: "Enter Now",
         action: {
           type: "launch_miniapp",
-          url: "https://max-craic-poker.vercel.app",
-          name: "Max Craic Poker",
-          splashImageUrl: "https://max-craic-poker.vercel.app/logo.png", // replace if you have a real logo
-          splashBackgroundColor: "#000000",
-        },
-      },
-    }),
-    "property:fc:frame": JSON.stringify({
-      version: "1",
-      imageUrl: "https://max-craic-poker.vercel.app/api/frame-image",
-      button: {
-        title: "Enter Now",
-        action: {
-          type: "launch_frame",
-          url: "https://max-craic-poker.vercel.app",
-          name: "Max Craic Poker",
-          splashImageUrl: "https://max-craic-poker.vercel.app/logo.png",
-          splashBackgroundColor: "#000000",
+          url: "https://max-craic-poker.vercel.app/",
         },
       },
     }),
