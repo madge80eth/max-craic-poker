@@ -20,7 +20,7 @@ export const metadata = {
       buttons: [{ label: 'Enter Now' }],
     }),
     'fc:miniapp': JSON.stringify({
-      version: '1',
+      version: 'vNext',
       imageUrl: 'https://max-craic-poker.vercel.app/api/frame-image2',
       button: {
         title: 'Enter Now',
