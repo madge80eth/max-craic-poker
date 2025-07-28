@@ -3,35 +3,45 @@
 import { promises as fs } from 'fs';
 import path from 'path';
 import { EnterButton } from '../components/EnterButton';
+import type { Metadata } from 'next';
 
-export const metadata = {
-  title: 'Max Craic Poker Draw',
-  description: 'Enter now to win 5% if we cash — 10% if you recast',
-  openGraph: {
+// ✅ Frame + MiniApp metadata set per page
+export async function generateMetadata(): Promise<Metadata> {
+  return {
     title: 'Max Craic Poker Draw',
     description: 'Enter now to win 5% if we cash — 10% if you recast',
-    images: ['https://max-craic-poker.vercel.app/api/frame-image2'],
-  },
-  other: {
-    'fc:frame': JSON.stringify({
-      version: '1', // ← was 'vNext' before — this is required to be "1"
-      image: 'https://max-craic-poker.vercel.app/api/frame-image2',
-      post_url: 'https://max-craic-poker.vercel.app/api/enter',
-      buttons: [{ label: 'Enter Now' }],
-    }),
-    'fc:miniapp': JSON.stringify({
-      version: 'vNext',
-      imageUrl: 'https://max-craic-poker.vercel.app/api/frame-image2',
-      button: {
-        title: 'Enter Now',
-        action: {
-          type: 'launch_miniapp',
-          url: 'https://max-craic-poker.vercel.app/',
+    openGraph: {
+      title: 'Max Craic Poker Draw',
+      description: 'Enter now to win 5% if we cash — 10% if you recast',
+      images: [
+        {
+          url: 'https://max-craic-poker.vercel.app/api/frame-image2',
+          width: 1200,
+          height: 630,
         },
-      },
-    }),
-  },
-};
+      ],
+    },
+    other: {
+      'fc:frame': JSON.stringify({
+        version: '1',
+        image: 'https://max-craic-poker.vercel.app/api/frame-image2',
+        post_url: 'https://max-craic-poker.vercel.app/api/enter',
+        buttons: [{ label: 'Enter Now' }],
+      }),
+      'fc:miniapp': JSON.stringify({
+        version: '1',
+        imageUrl: 'https://max-craic-poker.vercel.app/api/frame-image2',
+        button: {
+          title: 'Enter Now',
+          action: {
+            type: 'launch_miniapp',
+            url: 'https://max-craic-poker.vercel.app/',
+          },
+        },
+      }),
+    },
+  };
+}
 
 export default async function Home() {
   const filePath = path.join(process.cwd(), 'tournaments.json');
