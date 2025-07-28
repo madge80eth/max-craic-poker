@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// ✅ Minimal metadata for FRAME ONLY
+// ✅ Correct Farcaster-compatible metadata
 export const metadata: Metadata = {
   title: "Max Craic Poker Draw",
   description: "Enter now to win 5% if we cash — 10% if you recast",
@@ -31,12 +31,10 @@ export const metadata: Metadata = {
     ],
   },
   other: {
-    "fc:frame": JSON.stringify({
-      version: "1",
-      image: "https://max-craic-poker.vercel.app/api/frame-image2",
-      post_url: "https://max-craic-poker.vercel.app/api/enter",
-      buttons: [{ label: "Enter Now" }],
-    }),
+    "fc:frame": "vNext",
+    "fc:frame:image": "https://max-craic-poker.vercel.app/api/frame-image2",
+    "fc:frame:post_url": "https://max-craic-poker.vercel.app/api/enter",
+    "fc:frame:button:1": "Enter Now",
   },
 };
 
