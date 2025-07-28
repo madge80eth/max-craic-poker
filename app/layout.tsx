@@ -1,5 +1,3 @@
-// app/layout.tsx
-
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -15,7 +13,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// ✅ Base site-wide metadata (no Frame config here)
+// ✅ Metadata lives here — picked up by Farcaster
 export const metadata: Metadata = {
   title: "Max Craic Poker Draw",
   description: "Enter now to win 5% if we cash — 10% if you recast",
@@ -29,6 +27,25 @@ export const metadata: Metadata = {
         height: 630,
       },
     ],
+  },
+  other: {
+    "fc:frame": JSON.stringify({
+      version: "1",
+      image: "https://max-craic-poker.vercel.app/api/frame-image2",
+      post_url: "https://max-craic-poker.vercel.app/api/enter",
+      buttons: [{ label: "Enter Now" }],
+    }),
+    "fc:miniapp": JSON.stringify({
+      version: "1",
+      imageUrl: "https://max-craic-poker.vercel.app/api/frame-image2",
+      button: {
+        title: "Enter Now",
+        action: {
+          type: "launch_miniapp",
+          url: "https://max-craic-poker.vercel.app/",
+        },
+      },
+    }),
   },
 };
 
