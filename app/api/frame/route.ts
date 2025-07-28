@@ -4,7 +4,7 @@ export async function GET() {
   return NextResponse.json({
     name: "Max Craic Poker Draw",
     description: "Enter now to win 5% if we cash — 10% if you recast",
-    image: "https://max-craic-poker.vercel.app/api/frame-image",
+    image: "https://max-craic-poker.vercel.app/api/frame-image?v=1",
     post_url: "https://max-craic-poker.vercel.app/api/enter",
     buttons: ["Enter Now"],
     version: "vNext",
