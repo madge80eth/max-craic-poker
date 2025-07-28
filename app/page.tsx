@@ -10,10 +10,11 @@ export const metadata = {
   openGraph: {
     title: 'Max Craic Poker Draw',
     description: 'Enter now to win 5% if we cash — 10% if you recast',
+    images: ['https://max-craic-poker.vercel.app/api/frame-image2'],
   },
   other: {
     'fc:frame': JSON.stringify({
-      version: 'vNext',
+      version: '1', // ← was 'vNext' before — this is required to be "1"
       image: 'https://max-craic-poker.vercel.app/api/frame-image2',
       post_url: 'https://max-craic-poker.vercel.app/api/enter',
       buttons: [{ label: 'Enter Now' }],
