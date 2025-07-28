@@ -1,5 +1,3 @@
-// app/layout.tsx
-
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -15,7 +13,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// ✅ Frame + Mini App Embed metadata (with working blue button config)
+// ✅ Frame + Mini App metadata (correctly formed)
 export const metadata: Metadata = {
   title: "Max Craic Poker Draw",
   description: "Enter now to win 5% if we cash — 10% if you recast",
@@ -51,7 +49,7 @@ export const metadata: Metadata = {
   },
 };
 
-// ✅ Root layout with lang="en"
+// ✅ Root layout wrapper
 export default function RootLayout({
   children,
 }: Readonly<{
