@@ -8,7 +8,7 @@
     "splashImageUrl": "https://max-craic-poker.vercel.app/splash.png",
     "splashBackgroundColor": "#4B0082",
     "webhookUrl": "https://max-craic-poker.vercel.app/api/webhook",
-    "subtitle": "Enter a draw, get paid if I cash",
+    "subtitle": "Enter draw, get paid if I cash",
     "primaryCategory": "social",
     "description": "Enter the daily draw from the Mini App. If I cash in a tournament, one entrant gets USDC automatically. I post a screenshot of the finish for transparency."
   },
