@@ -1,0 +1,14 @@
+{
+  "id": "max-craic-poker",
+  "version": "1.0.0",
+  "name": "Max Craic Poker",
+  "iconUrl": "https://max-craic-poker.vercel.app/icon.png",
+  "homepageUrl": "https://max-craic-poker.vercel.app",
+  "developer": {
+    "name": "Dominic Emanuel",
+    "url": "https://max-craic-poker.vercel.app"
+  },
+  "frame": {
+    "url": "https://max-craic-poker.vercel.app/api/frame"
+  }
+}
