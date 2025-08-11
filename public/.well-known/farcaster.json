@@ -15,5 +15,10 @@
   "developer": {
     "name": "madge80",
     "url": "https://max-craic-poker.vercel.app"
+  },
+  "accountAssociation": {
+    "header": "eyJmaWQiOjIzODE2OSwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweGEwMEFFZUZiZEJDNjY0NjMxNDdCZjFmZUIzMDU4NWZEZjRhNzgwODUifQ",
+    "payload": "eyJkb21haW4iOiJtYXgtY3JhaWMtcG9rZXIudmVyY2VsLmFwcCJ9",
+    "signature": "MHhmYjQ5NTlhMjZkMjc5MzE5NDkxYTc5ZjgzYjI0ZDc1OWY2MTAxYTNmZDBkNzQzOGYxODRjMGVhYjQ5Y2I0ZTVmM2JjNDYwOWExYTMzMjBjY2Q2Y2JjYmNmY2FkYjAwODIwODMxNTUyMDkwMGY4NjU3NDE0ZWRkZTliOTAwMDIzZTFi"
   }
 }
