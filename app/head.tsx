@@ -9,7 +9,7 @@ export default function Head() {
       <meta name="fc:frame" content="vNext" />
       <meta
         name="fc:frame:image"
-        content="https://max-craic-poker.vercel.app/frame.png"
+        content="https://max-craic-poker.vercel.app/api/frame-image2"
       />
       <meta name="fc:frame:button:1" content="Enter Now" />
       <meta
@@ -17,10 +17,10 @@ export default function Head() {
         content="https://max-craic-poker.vercel.app/api/enter"
       />
 
-      {/* Required fallback for clients */}
+      {/* Fallback */}
       <meta
         property="og:image"
-        content="https://max-craic-poker.vercel.app/frame.png"
+        content="https://max-craic-poker.vercel.app/api/frame-image2"
       />
     </>
   );
