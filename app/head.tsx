@@ -16,6 +16,12 @@ export default function Head() {
         name="fc:frame:post_url"
         content="https://max-craic-poker.vercel.app/api/enter"
       />
+
+      {/* Required fallback for clients */}
+      <meta
+        property="og:image"
+        content="https://max-craic-poker.vercel.app/frame.png"
+      />
     </>
   );
 }
