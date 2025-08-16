@@ -10,7 +10,16 @@
     "webhookUrl": "https://max-craic-poker.vercel.app/api/webhook",
     "subtitle": "Enter draw, get paid if I cash",
     "primaryCategory": "social",
-    "description": "Enter the daily draw from the Mini App. If I cash in a tournament, one entrant gets USDC automatically. I post a screenshot of the finish for transparency."
+    "description": "Enter the daily draw from the Mini App. If I cash in a tournament, one entrant gets USDC automatically. I post a screenshot of the finish for transparency.",
+    "buttons": [
+      {
+        "title": "Enter Now",
+        "action": {
+          "type": "post",
+          "target": "https://max-craic-poker.vercel.app/api/enter"
+        }
+      }
+    ]
   },
   "developer": {
     "name": "madge80",
@@ -21,4 +30,4 @@
     "payload": "eyJkb21haW4iOiJtYXgtY3JhaWMtcG9rZXIudmVyY2VsLmFwcCJ9",
     "signature": "MHhmYjQ5NTlhMjZkMjc5MzE5NDkxYTc5ZjgzYjI0ZDc1OWY2MTAxYTNmZDBkNzQzOGYxODRjMGVhYjQ5Y2I0ZTVmM2JjNDYwOWExYTMzMjBjY2Q2Y2JjYmNmY2FkYjAwODIwODMxNTUyMDkwMGY4NjU3NDE0ZWRkZTliOTAwMDIzZTFi"
   }
-} 
+}
