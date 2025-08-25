@@ -17,16 +17,25 @@ export async function POST(req: NextRequest) {
       timestamp: new Date().toISOString(),
     };
 
-    // Save entry to Redis
-    await fetch(
-      `${process.env.UPSTASH_REDIS_REST_URL}/lpush/entries/${encodeURIComponent(JSON.stringify(entry))}`,
+    // ✅ Save entry to Redis (Upstash REST API expects body array)
+    const redisRes = await fetch(
+      `${process.env.UPSTASH_REDIS_REST_URL}/lpush/entries`,
       {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}`,
+          "Content-Type": "application/json"
         },
+        body: JSON.stringify([JSON.stringify(entry)])
       }
     );
+
+    const redisText = await redisRes.text();
+    console.log("Redis response:", redisText);
+
+    if (!redisRes.ok) {
+      throw new Error(`Redis error: ${redisRes.status} ${redisText}`);
+    }
 
     // ✅ Minimal valid Farcaster Frame response
     const frameResponse = {
