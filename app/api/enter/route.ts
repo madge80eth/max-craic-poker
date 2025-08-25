@@ -6,19 +6,13 @@ export async function POST(req: NextRequest) {
     const fid = data?.untrustedData?.fid;
 
     if (!fid) {
-      return new NextResponse(
-        JSON.stringify({ error: 'Missing FID' }),
-        { status: 400, headers: { "Content-Type": "application/json" } }
-      );
+      return NextResponse.json({ error: 'Missing FID' }, { status: 400 });
     }
 
-    const entry = {
-      fid,
-      timestamp: new Date().toISOString(),
-    };
+    const entry = { fid, timestamp: new Date().toISOString() };
 
-    // ✅ Call Upstash REST API
-    const redisRes = await fetch(
+    // Save entry to Redis
+    await fetch(
       `${process.env.UPSTASH_REDIS_REST_URL}/lpush/entries`,
       {
         method: 'POST',
@@ -30,35 +24,16 @@ export async function POST(req: NextRequest) {
       }
     );
 
-    const redisText = await redisRes.text();
-    console.log("Redis response:", redisText);
-
-    // ✅ Always return Redis response so we can debug
-    if (!redisRes.ok) {
-      return new NextResponse(
-        JSON.stringify({ error: `Redis error`, details: redisText }),
-        { status: 500, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // ✅ Valid Farcaster Frame response
-    const frameResponse = {
-      imageUrl: "https://max-craic-poker.vercel.app/api/frame-image?entered=true",
+    // ✅ Correct Farcaster Frame response
+    return NextResponse.json({
+      image: "https://max-craic-poker.vercel.app/api/frame-image?entered=true",
       buttons: [
         { label: "✅ Entered!" }
-      ]
-    };
-
-    return new NextResponse(
-      JSON.stringify(frameResponse),
-      { status: 200, headers: { "Content-Type": "application/json" } }
-    );
-
+      ],
+      post_url: "https://max-craic-poker.vercel.app/api/enter"
+    });
   } catch (error) {
-    console.error('Error in /api/enter:', error);
-    return new NextResponse(
-      JSON.stringify({ error: 'Internal server error', details: String(error) }),
-      { status: 500, headers: { "Content-Type": "application/json" } }
-    );
+    console.error("Error in /api/enter:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
