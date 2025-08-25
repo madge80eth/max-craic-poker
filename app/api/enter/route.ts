@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
       timestamp: new Date().toISOString(),
     };
 
-    // ✅ Save entry to Redis (Upstash REST API expects body array)
+    // ✅ Call Upstash REST API
     const redisRes = await fetch(
       `${process.env.UPSTASH_REDIS_REST_URL}/lpush/entries`,
       {
@@ -33,11 +33,15 @@ export async function POST(req: NextRequest) {
     const redisText = await redisRes.text();
     console.log("Redis response:", redisText);
 
+    // ✅ Always return Redis response so we can debug
     if (!redisRes.ok) {
-      throw new Error(`Redis error: ${redisRes.status} ${redisText}`);
+      return new NextResponse(
+        JSON.stringify({ error: `Redis error`, details: redisText }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
     }
 
-    // ✅ Minimal valid Farcaster Frame response
+    // ✅ Valid Farcaster Frame response
     const frameResponse = {
       imageUrl: "https://max-craic-poker.vercel.app/api/frame-image?entered=true",
       buttons: [
@@ -53,7 +57,7 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Error in /api/enter:', error);
     return new NextResponse(
-      JSON.stringify({ error: 'Internal server error' }),
+      JSON.stringify({ error: 'Internal server error', details: String(error) }),
       { status: 500, headers: { "Content-Type": "application/json" } }
     );
   }
