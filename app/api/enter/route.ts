@@ -6,7 +6,10 @@ export async function POST(req: NextRequest) {
     const fid = data?.untrustedData?.fid;
 
     if (!fid) {
-      return NextResponse.json({ error: 'Missing FID' }, { status: 400 });
+      return new NextResponse(
+        JSON.stringify({ error: 'Missing FID' }),
+        { status: 400, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     const entry = {
@@ -29,17 +32,24 @@ export async function POST(req: NextRequest) {
       throw new Error(`Redis error: ${redisRes.statusText}`);
     }
 
-    // ✅ Proper Farcaster Frame response
-    return NextResponse.json({
-      type: "frame",
-      version: "1",
+    // ✅ Proper Farcaster Frame response with explicit headers
+    const frameResponse = {
       imageUrl: "https://max-craic-poker.vercel.app/api/frame-image?entered=true",
       buttons: [
         { label: "✅ Entered!" }
       ]
-    });
+    };
+
+    return new NextResponse(
+      JSON.stringify(frameResponse),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+
   } catch (error) {
     console.error('Error in /api/enter:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return new NextResponse(
+      JSON.stringify({ error: 'Internal server error' }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
   }
 }
