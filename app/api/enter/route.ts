@@ -29,11 +29,11 @@ export async function POST(req: NextRequest) {
       throw new Error(`Redis error: ${redisRes.statusText}`);
     }
 
-    // ✅ Return a valid Farcaster Frame response
+    // ✅ Proper Farcaster Frame response
     return NextResponse.json({
       type: "frame",
       version: "1",
-      image: "https://max-craic-poker.vercel.app/api/frame-image?entered=true",
+      imageUrl: "https://max-craic-poker.vercel.app/api/frame-image?entered=true",
       buttons: [
         { label: "✅ Entered!" }
       ]
