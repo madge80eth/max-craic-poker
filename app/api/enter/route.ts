@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
     };
 
     // Save entry to Redis
-    const redisRes = await fetch(
+    await fetch(
       `${process.env.UPSTASH_REDIS_REST_URL}/lpush/entries/${encodeURIComponent(JSON.stringify(entry))}`,
       {
         method: 'POST',
@@ -28,11 +28,7 @@ export async function POST(req: NextRequest) {
       }
     );
 
-    if (!redisRes.ok) {
-      throw new Error(`Redis error: ${redisRes.statusText}`);
-    }
-
-    // ✅ Proper Farcaster Frame response with explicit headers
+    // ✅ Minimal valid Farcaster Frame response
     const frameResponse = {
       imageUrl: "https://max-craic-poker.vercel.app/api/frame-image?entered=true",
       buttons: [
