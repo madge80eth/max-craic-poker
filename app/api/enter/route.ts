@@ -6,7 +6,13 @@ export async function POST(req: NextRequest) {
     const fid = data?.untrustedData?.fid;
 
     if (!fid) {
-      return NextResponse.json({ error: "Missing FID" }, { status: 400 });
+      return new NextResponse(
+        JSON.stringify({ error: "Missing FID" }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json; charset=utf-8" }
+        }
+      );
     }
 
     const entry = { fid, timestamp: new Date().toISOString() };
@@ -24,15 +30,31 @@ export async function POST(req: NextRequest) {
       }
     ).catch(err => console.error("Redis error:", err));
 
-    // ✅ Minimal valid Farcaster Frame response
-    return NextResponse.json({
-      image: "https://max-craic-poker.vercel.app/api/frame-image?entered=true",
-      buttons: [
-        { label: "✅ Entered!" }
-      ]
-    });
+    // ✅ Minimal valid Farcaster Frame response with forced headers
+    return new NextResponse(
+      JSON.stringify({
+        image: "https://max-craic-poker.vercel.app/api/frame-image?entered=true",
+        buttons: [
+          { label: "✅ Entered!" }
+        ]
+      }),
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          "Cache-Control": "no-store"
+        }
+      }
+    );
+
   } catch (error) {
     console.error("Error in /api/enter:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return new NextResponse(
+      JSON.stringify({ error: "Internal server error" }),
+      {
+        status: 500,
+        headers: { "Content-Type": "application/json; charset=utf-8" }
+      }
+    );
   }
 }
