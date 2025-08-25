@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
-  console.log("Redis URL:", process.env.UPSTASH_REDIS_REST_URL);
-  console.log("Redis Token loaded?", !!process.env.UPSTASH_REDIS_REST_TOKEN);
-
   try {
     const data = await req.json();
     const fid = data?.untrustedData?.fid;
@@ -17,6 +14,7 @@ export async function POST(req: NextRequest) {
       timestamp: new Date().toISOString(),
     };
 
+    // Save entry to Redis
     const redisRes = await fetch(
       `${process.env.UPSTASH_REDIS_REST_URL}/lpush/entries/${encodeURIComponent(JSON.stringify(entry))}`,
       {
@@ -31,7 +29,15 @@ export async function POST(req: NextRequest) {
       throw new Error(`Redis error: ${redisRes.statusText}`);
     }
 
-    return NextResponse.json({ success: true, entry });
+    // ✅ Return a valid Farcaster Frame response
+    return NextResponse.json({
+      type: "frame",
+      version: "1",
+      image: "https://max-craic-poker.vercel.app/api/frame-image?entered=true",
+      buttons: [
+        { label: "✅ Entered!" }
+      ]
+    });
   } catch (error) {
     console.error('Error in /api/enter:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
