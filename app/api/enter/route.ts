@@ -30,12 +30,14 @@ export async function POST(req: NextRequest) {
       }
     ).catch(err => console.error("Redis error:", err));
 
-    // ✅ Minimal valid Farcaster Frame response with forced headers
+    // ✅ Full Farcaster Frame spec response
     return new NextResponse(
       JSON.stringify({
+        type: "frame",
+        version: "vNext",
         image: "https://max-craic-poker.vercel.app/api/frame-image?entered=true",
         buttons: [
-          { label: "✅ Entered!" }
+          { label: "✅ Entered!", action: "post" }
         ]
       }),
       {
