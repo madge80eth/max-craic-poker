@@ -1,8 +1,9 @@
+/** @jsxImportSource react */
+import React from 'react';
 import { ImageResponse } from '@vercel/og';
 import { NextRequest } from 'next/server';
 import { promises as fs } from 'fs';
 import { join } from 'path';
-import React from 'react';
 
 export const runtime = 'edge';
 
