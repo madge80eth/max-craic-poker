@@ -1,12 +1,18 @@
 /** @jsxImportSource react */
 import React from 'react';
 import { ImageResponse } from '@vercel/og';
-import tournaments from '../../../tournaments.json'; // ✅ import JSON directly
 
 export const runtime = 'edge';
 export const preferredRegion = 'auto';
 
 export async function GET() {
+  // ✅ Hardcoded test list
+  const tournaments = [
+    "Battle of Malta – €109",
+    "Big $44 PKO – 100k GTD",
+    "Daily Legends $222",
+  ];
+
   return new ImageResponse(
     (
       <div
