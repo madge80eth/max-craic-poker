@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     description: "Enter now to win 5% if we cash — 10% if you recast",
     images: [
       {
-        url: "https://max-craic-poker.vercel.app/api/frame-image2",
+        url: "https://max-craic-poker.vercel.app/api/frame-image",
         width: 1200,
         height: 630,
       },
@@ -32,7 +32,7 @@ export const metadata: Metadata = {
   },
   other: {
     "fc:frame": "vNext",
-    "fc:frame:image": "https://max-craic-poker.vercel.app/api/frame-image2",
+    "fc:frame:image": "https://max-craic-poker.vercel.app/api/frame-image",
     "fc:frame:post_url": "https://max-craic-poker.vercel.app/api/enter",
     "fc:frame:button:1": "Enter Now",
   },
