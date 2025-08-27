@@ -2,17 +2,12 @@
 import React from 'react';
 import { ImageResponse } from '@vercel/og';
 import { NextRequest } from 'next/server';
-import { promises as fs } from 'fs';
-import { join } from 'path';
+import tournaments from '../../../tournaments.json'; // ✅ direct import instead of fs/path
 
 export const runtime = 'edge';
 
 export async function GET(req: NextRequest) {
   try {
-    const filePath = join(process.cwd(), 'tournaments.json');
-    const data = await fs.readFile(filePath, 'utf-8');
-    const tournaments: string[] = JSON.parse(data);
-
     return new ImageResponse(
       (
         <div
