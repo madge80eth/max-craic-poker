@@ -2,7 +2,7 @@
 import React from 'react';
 import { ImageResponse } from '@vercel/og';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs'; // ✅ switched from 'edge'
 export const preferredRegion = 'auto';
 
 export async function GET() {
