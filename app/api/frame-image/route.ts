@@ -1,17 +1,16 @@
-// app/api/frame-image/route.ts
 import { ImageResponse } from '@vercel/og';
 import { NextRequest } from 'next/server';
 import { promises as fs } from 'fs';
 import { join } from 'path';
+import React from 'react';
 
-export const runtime = 'edge'; // ✅ required for @vercel/og
+export const runtime = 'edge';
 
 export async function GET(req: NextRequest) {
   try {
-    // Load tournaments.json
     const filePath = join(process.cwd(), 'tournaments.json');
     const data = await fs.readFile(filePath, 'utf-8');
-    const tournaments = JSON.parse(data);
+    const tournaments: string[] = JSON.parse(data);
 
     return new ImageResponse(
       (
@@ -33,9 +32,9 @@ export async function GET(req: NextRequest) {
             🎲 Max Craic Poker
           </h1>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            {tournaments.map((t: any, i: number) => (
+            {tournaments.map((t, i) => (
               <div key={i} style={{ fontSize: 32 }}>
-                • {t.name} — {t.time}
+                • {t}
               </div>
             ))}
           </div>
