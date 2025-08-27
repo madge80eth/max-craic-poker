@@ -7,7 +7,7 @@ export default function Head() {
       <meta name="fc:frame" content="vNext" />
       <meta
         name="fc:frame:image"
-        content="https://max-craic-poker.vercel.app/api/frame-image?v=1"
+        content="https://max-craic-poker.vercel.app/api/frame-image"
       />
       <meta name="fc:frame:button:1" content="Enter Now" />
       <meta
@@ -17,7 +17,7 @@ export default function Head() {
 
       <meta
         property="og:image"
-        content="https://max-craic-poker.vercel.app/api/frame-image?v=1"
+        content="https://max-craic-poker.vercel.app/api/frame-image"
       />
     </>
   );
