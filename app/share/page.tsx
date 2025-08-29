@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
-import { actions } from "@farcaster/frame-sdk";
+import actions from "@farcaster/frame-sdk";
 
 export default function SharePage() {
   useEffect(() => {
