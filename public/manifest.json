@@ -1,0 +1,11 @@
+{
+  "id": "max-craic-poker",
+  "name": "Max Craic Poker",
+  "iconUrl": "https://max-craic-poker.vercel.app/icon.png",
+  "url": "https://max-craic-poker.vercel.app/share",
+  "description": "Daily poker draws and onchain rewards",
+  "developer": {
+    "name": "Dominic Emanuel",
+    "url": "https://max-craic-poker.vercel.app"
+  }
+}
