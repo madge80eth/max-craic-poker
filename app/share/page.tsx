@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect } from "react";
-import actions from "@farcaster/frame-sdk";
+import sdk from "@farcaster/frame-sdk";
 
 export default function SharePage() {
   useEffect(() => {
     // Notify Warpcast Mini App container that we're ready
-    actions.ready();
+    sdk.actions.ready();
   }, []);
 
   return (
