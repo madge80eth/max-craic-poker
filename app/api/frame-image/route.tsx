@@ -1,6 +1,4 @@
 import { ImageResponse } from "next/og";
-import fs from "fs";
-import path from "path";
 
 export const runtime = "edge";
 
@@ -9,7 +7,6 @@ export async function GET(req: Request) {
   const entered = searchParams.get("entered") === "true";
 
   if (entered) {
-    // 🎉 Entered celebratory screen
     return new ImageResponse(
       (
         <div
@@ -23,7 +20,6 @@ export async function GET(req: Request) {
             fontSize: 70,
             fontWeight: "bold",
             color: "white",
-            textAlign: "center",
           }}
         >
           🎉 You’re Entered! 🎉
@@ -33,12 +29,11 @@ export async function GET(req: Request) {
     );
   }
 
-  // ✅ Default: tournament list
-  const filePath = path.join(process.cwd(), "tournaments.json");
-  const raw = fs.readFileSync(filePath, "utf-8");
-  const tournaments: string[] = JSON.parse(raw);
+  // ✅ Fetch tournaments.json from public
+  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || "https://max-craic-poker.vercel.app"}/tournaments.json`);
+  const tournaments: string[] = await res.json();
 
-  // Countdown: fixed 12h timer from "now"
+  // Countdown: fixed 12h
   const now = new Date();
   const end = new Date(now.getTime() + 12 * 60 * 60 * 1000);
   const diffMs = end.getTime() - now.getTime();
@@ -62,17 +57,12 @@ export async function GET(req: Request) {
           padding: "40px",
         }}
       >
-        {/* MCP Header */}
         <div style={{ fontSize: 60, marginBottom: 20, fontWeight: "bold" }}>
           🍀 Max Craic Poker
         </div>
-
-        {/* Title */}
         <h1 style={{ fontSize: 50, marginBottom: 20 }}>
           🎲 Today’s Tournaments
         </h1>
-
-        {/* Tournament list */}
         <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           {tournaments.map((t, idx) => (
             <div key={idx} style={{ fontSize: 36 }}>
@@ -80,8 +70,6 @@ export async function GET(req: Request) {
             </div>
           ))}
         </div>
-
-        {/* Countdown footer */}
         <div
           style={{
             marginTop: "auto",
