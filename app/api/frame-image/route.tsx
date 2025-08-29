@@ -1,27 +1,33 @@
-/** @jsxImportSource react */
-import React from 'react';
-import { ImageResponse } from '@vercel/og';
+import { ImageResponse } from "next/og";
 
-export const runtime = 'edge';
-export const preferredRegion = 'auto';
+// Route segment config
+export const runtime = "edge";
 
-export async function GET() {
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const entered = searchParams.get("entered") === "true";
+
+  // Show different images depending on entered state
+  const text = entered ? "🎉 You’re Entered! 🎉" : "🚀 HELLO WORLD V2 🚀";
+  const bgColor = entered ? "lightgreen" : "yellow";
+  const textColor = entered ? "darkgreen" : "red";
+
   return new ImageResponse(
     (
       <div
         style={{
-          width: '100%',
-          height: '100%',
-          backgroundColor: 'yellow',
-          color: 'red',
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          fontSize: 80,
-          fontWeight: 'bold',
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          width: "100%",
+          height: "100%",
+          backgroundColor: bgColor,
+          fontSize: 60,
+          color: textColor,
         }}
       >
-        🚀 HELLO WORLD V2 🚀
+        {text}
       </div>
     ),
     {
