@@ -1,43 +1,34 @@
-// app/page.tsx
+export default async function Page() {
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL || "https://max-craic-poker.vercel.app";
 
-import { promises as fs } from 'fs';
-import path from 'path';
-import { EnterButton } from '../components/EnterButton';
+  let tournaments: string[] = [
+    "Sample Game – $55",
+    "Sample KO – $109",
+  ];
 
-export default async function Home() {
-  const filePath = path.join(process.cwd(), 'tournaments.json');
-  const rawData = await fs.readFile(filePath, 'utf-8');
-  const tournaments = JSON.parse(rawData);
+  try {
+    const res = await fetch(`${baseUrl}/tournaments.json`, { cache: "no-store" });
+    if (res.ok) {
+      tournaments = await res.json();
+    }
+  } catch (e) {
+    console.warn("⚠️ Using fallback tournaments because fetch failed:", e);
+  }
 
   return (
-    <main className="p-6">
-      <div className="flex items-center gap-4 mb-6">
-        <img
-          src="/mcp-logo.png"
-          alt="Max Craic Poker"
-          className="w-14 rounded-full"
-        />
-        <h1 className="text-3xl font-bold">Today's Tournaments</h1>
-      </div>
-
-      <ul className="list-disc ml-6 mb-6">
-        {tournaments.map((tourney: string, index: number) => (
-          <li key={index}>{tourney}</li>
+    <main className="flex flex-col items-center justify-center min-h-screen p-4">
+      <h1 className="text-2xl font-bold">Max Craic Poker</h1>
+      <p className="mt-2 text-gray-600">
+        Daily draws, onchain rewards, and chaos at the poker table.
+      </p>
+      <ul className="mt-6 space-y-2">
+        {tournaments.map((t, idx) => (
+          <li key={idx} className="text-lg">
+            {t}
+          </li>
         ))}
       </ul>
-
-      <EnterButton tournaments={tournaments} />
-
-      {process.env.NODE_ENV === 'development' && (
-        <form action="/api/start-session" method="get" className="mt-8">
-          <button
-            type="submit"
-            className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
-          >
-            🔄 Reset Session (Dev Only)
-          </button>
-        </form>
-      )}
     </main>
   );
 }
