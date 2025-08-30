@@ -30,52 +30,22 @@ export async function GET(req: Request) {
       );
     }
 
-    // ✅ Inline fallback tournaments list for testing
-    const tournaments: string[] = [
-      "Battle of Malta – €109",
-      "Big $44 PKO – 100k GTD",
-      "Daily Legends $222",
-      "The Bounty Hunter – $44",
-      "The Craic Classic – $5.50",
-      "Midnight Madness – $33"
-    ];
-
-    // Countdown to 12 hours from now
-    const now = new Date();
-    const end = new Date(now.getTime() + 12 * 60 * 60 * 1000);
-    const diffMs = end.getTime() - now.getTime();
-    const hours = Math.floor(diffMs / (1000 * 60 * 60));
-    const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-
+    // 🔹 Super simple tournaments placeholder
     return new ImageResponse(
       (
         <div
           style={{
             display: "flex",
-            flexDirection: "column",
             alignItems: "center",
             justifyContent: "center",
             width: "100%",
             height: "100%",
             background: "linear-gradient(to right, #f7971e, #ffd200)",
-            color: "white",
-            padding: "40px",
-            fontSize: 36,
+            fontSize: 48,
+            color: "black",
           }}
         >
-          <div style={{ fontSize: 48, fontWeight: "bold", marginBottom: "20px" }}>
-            Today&apos;s Tournaments
-          </div>
-          <ul style={{ textAlign: "left" }}>
-            {tournaments.map((t, i) => (
-              <li key={i} style={{ marginBottom: "10px" }}>
-                {t}
-              </li>
-            ))}
-          </ul>
-          <div style={{ marginTop: "40px", fontSize: 32 }}>
-            ⏳ Draw closes in {hours}h {mins}m
-          </div>
+          🃏 Today’s Tournaments Placeholder
         </div>
       ),
       { width: 1200, height: 630 }
