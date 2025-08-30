@@ -1,6 +1,6 @@
 // app/api/frame-image/route.tsx
 import { ImageResponse } from "next/og";
-import tournaments from "../../../public/tournaments.json";
+import tournaments from "../../data/tournaments.json";
 
 export const runtime = "edge";
 
