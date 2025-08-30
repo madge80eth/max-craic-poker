@@ -8,6 +8,7 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const entered = searchParams.get("entered");
 
+    // ✅ Entered branch
     if (entered) {
       return new ImageResponse(
         (
@@ -30,7 +31,7 @@ export async function GET(req: Request) {
       );
     }
 
-    // 🔹 Super simple tournaments placeholder
+    // ✅ Default branch (super simple test)
     return new ImageResponse(
       (
         <div
@@ -45,7 +46,7 @@ export async function GET(req: Request) {
             color: "black",
           }}
         >
-          🃏 Today’s Tournaments Placeholder
+          🃏 Frame Default Working
         </div>
       ),
       { width: 1200, height: 630 }
