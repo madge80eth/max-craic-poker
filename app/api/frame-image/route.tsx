@@ -1,4 +1,6 @@
+// app/api/frame-image/route.tsx
 import { ImageResponse } from "next/og";
+import tournaments from "../../../public/tournaments.json";
 
 export const runtime = "edge";
 
@@ -29,17 +31,6 @@ export async function GET(req: Request) {
       );
     }
 
-    // --- Default case (tournaments) ---
-    let tournaments: string[] = [];
-    try {
-      // Hardcode prod URL for now (simpler + reliable)
-      const res = await fetch("https://max-craic-poker.vercel.app/tournaments.json");
-      tournaments = await res.json();
-    } catch (err) {
-      console.error("Failed to load tournaments.json:", err);
-      tournaments = ["No tournaments available"];
-    }
-
     // Countdown to 12 hours from now
     const now = new Date();
     const end = new Date(now.getTime() + 12 * 60 * 60 * 1000);
@@ -63,11 +54,17 @@ export async function GET(req: Request) {
             fontSize: 36,
           }}
         >
-          <div style={{ fontSize: 48, fontWeight: "bold", marginBottom: "20px" }}>
+          <div
+            style={{
+              fontSize: 48,
+              fontWeight: "bold",
+              marginBottom: "20px",
+            }}
+          >
             Today&apos;s Tournaments
           </div>
           <ul style={{ textAlign: "left" }}>
-            {tournaments.map((t, i) => (
+            {tournaments.map((t: string, i: number) => (
               <li key={i} style={{ marginBottom: "10px" }}>
                 {t}
               </li>
