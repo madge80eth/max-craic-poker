@@ -63,13 +63,14 @@ export async function GET(req: Request) {
           >
             Today&apos;s Tournaments
           </div>
-          <ul style={{ textAlign: "left" }}>
+
+          {/* Render tournaments safely */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", textAlign: "left" }}>
             {tournaments.map((t: string, i: number) => (
-              <li key={i} style={{ marginBottom: "10px" }}>
-                {t}
-              </li>
+              <div key={i}>• {t}</div>
             ))}
-          </ul>
+          </div>
+
           <div style={{ marginTop: "40px", fontSize: 32 }}>
             ⏳ Draw closes in {hours}h {mins}m
           </div>
