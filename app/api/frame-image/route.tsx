@@ -4,7 +4,7 @@ export const runtime = "edge";
 
 export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(req.url);
+    const { searchParams, origin } = new URL(req.url);
     const entered = searchParams.get("entered");
 
     if (entered) {
@@ -32,7 +32,7 @@ export async function GET(req: Request) {
     // --- Default case (tournaments) ---
     let tournaments: string[] = [];
     try {
-      const res = await fetch(`${req.url.origin}/tournaments.json`);
+      const res = await fetch(`${origin}/tournaments.json`, { cache: "no-store" });
       tournaments = await res.json();
     } catch (err) {
       console.error("Failed to load tournaments.json:", err);
@@ -57,7 +57,7 @@ export async function GET(req: Request) {
             width: "100%",
             height: "100%",
             background: "linear-gradient(to right, #f7971e, #ffd200)",
-            color: "white",
+            color: "black",
             padding: "40px",
             fontSize: 36,
           }}
