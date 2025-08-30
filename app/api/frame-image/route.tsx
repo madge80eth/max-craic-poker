@@ -3,85 +3,102 @@ import { ImageResponse } from "next/og";
 export const runtime = "edge";
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const entered = searchParams.get("entered") === "true";
+  try {
+    const { searchParams } = new URL(req.url);
+    const entered = searchParams.get("entered");
 
-  if (entered) {
+    if (entered) {
+      return new ImageResponse(
+        (
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              width: "100%",
+              height: "100%",
+              background: "linear-gradient(to right, #38ef7d, #11998e)",
+              fontSize: 48,
+              color: "white",
+            }}
+          >
+            🎉 You’re Entered! 🎉
+          </div>
+        ),
+        { width: 1200, height: 630 }
+      );
+    }
+
+    // --- Default case (tournaments) ---
+    let tournaments: string[] = [];
+    try {
+      const res = await fetch(`${req.url.origin}/tournaments.json`);
+      tournaments = await res.json();
+    } catch (err) {
+      console.error("Failed to load tournaments.json:", err);
+      tournaments = ["No tournaments available"];
+    }
+
+    // Countdown to 12 hours from now
+    const now = new Date();
+    const end = new Date(now.getTime() + 12 * 60 * 60 * 1000);
+    const diffMs = end.getTime() - now.getTime();
+    const hours = Math.floor(diffMs / (1000 * 60 * 60));
+    const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
     return new ImageResponse(
       (
         <div
           style={{
             display: "flex",
-            justifyContent: "center",
+            flexDirection: "column",
             alignItems: "center",
+            justifyContent: "center",
             width: "100%",
             height: "100%",
-            background: "linear-gradient(135deg, #a8e063, #56ab2f)",
-            fontSize: 70,
-            fontWeight: "bold",
+            background: "linear-gradient(to right, #f7971e, #ffd200)",
             color: "white",
+            padding: "40px",
+            fontSize: 36,
           }}
         >
-          🎉 You’re Entered! 🎉
+          <div style={{ fontSize: 48, fontWeight: "bold", marginBottom: "20px" }}>
+            Today&apos;s Tournaments
+          </div>
+          <ul style={{ textAlign: "left" }}>
+            {tournaments.map((t, i) => (
+              <li key={i} style={{ marginBottom: "10px" }}>
+                {t}
+              </li>
+            ))}
+          </ul>
+          <div style={{ marginTop: "40px", fontSize: 32 }}>
+            ⏳ Draw closes in {hours}h {mins}m
+          </div>
+        </div>
+      ),
+      { width: 1200, height: 630 }
+    );
+  } catch (err) {
+    console.error("Frame image error:", err);
+    return new ImageResponse(
+      (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: "100%",
+            height: "100%",
+            background: "black",
+            color: "white",
+            fontSize: 48,
+          }}
+        >
+          Error rendering image
         </div>
       ),
       { width: 1200, height: 630 }
     );
   }
-
-  // ✅ Fetch tournaments.json from public
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || "https://max-craic-poker.vercel.app"}/tournaments.json`);
-  const tournaments: string[] = await res.json();
-
-  // Countdown: fixed 12h
-  const now = new Date();
-  const end = new Date(now.getTime() + 12 * 60 * 60 * 1000);
-  const diffMs = end.getTime() - now.getTime();
-  const hours = Math.floor(diffMs / (1000 * 60 * 60));
-  const mins = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-  const countdown = `${hours}h ${mins}m`;
-
-  return new ImageResponse(
-    (
-      <div
-        style={{
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "flex-start",
-          alignItems: "center",
-          width: "100%",
-          height: "100%",
-          background: "linear-gradient(135deg, #ffe259, #ffa751)",
-          fontSize: 40,
-          color: "black",
-          padding: "40px",
-        }}
-      >
-        <div style={{ fontSize: 60, marginBottom: 20, fontWeight: "bold" }}>
-          🍀 Max Craic Poker
-        </div>
-        <h1 style={{ fontSize: 50, marginBottom: 20 }}>
-          🎲 Today’s Tournaments
-        </h1>
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-          {tournaments.map((t, idx) => (
-            <div key={idx} style={{ fontSize: 36 }}>
-              • {t}
-            </div>
-          ))}
-        </div>
-        <div
-          style={{
-            marginTop: "auto",
-            fontSize: 32,
-            fontWeight: "bold",
-            color: "#222",
-          }}
-        >
-          ⏳ Draw closes in {countdown}
-        </div>
-      </div>
-    ),
-    { width: 1200, height: 630 }
-  );
 }
