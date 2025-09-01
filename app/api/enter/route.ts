@@ -7,7 +7,6 @@ export async function POST(req: Request) {
     const body = await req.json();
     const fid = body?.untrustedData?.fid;
 
-    // ✅ Require FID
     if (!fid) {
       return NextResponse.json(
         { error: "FID required to enter. Please create a Farcaster account." },
@@ -15,7 +14,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // Get current community tournament
+    // Load today's community tournament
     const tournamentRaw = await redis.get("communityTournament");
     if (!tournamentRaw) {
       return NextResponse.json(
@@ -23,27 +22,29 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-
-    // Explicitly parse JSON string
     const tournament = JSON.parse(tournamentRaw as string);
 
-    // Check if user already entered
+    // Check if already entered
     const existing = await redis.hget("entries", String(fid));
     if (existing) {
       return NextResponse.json({
         success: false,
         alreadyEntered: true,
         fid,
+        tournament,
       });
     }
 
-    // Store new entry with tournament
+    // Store new entry
     const entry = { fid, tournament, body };
     await redis.hset("entries", { [String(fid)]: JSON.stringify(entry) });
 
     return NextResponse.json({ success: true, fid, tournament });
   } catch (err) {
     console.error("Error in /api/enter:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }
