@@ -22,7 +22,14 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    const tournament = JSON.parse(tournamentRaw as string);
+
+    let tournament;
+    try {
+      tournament = JSON.parse(tournamentRaw as string);
+    } catch (parseErr) {
+      console.error("Failed to parse tournamentRaw:", tournamentRaw, parseErr);
+      throw parseErr;
+    }
 
     // Check if already entered
     const existing = await redis.hget("entries", String(fid));
@@ -37,7 +44,12 @@ export async function POST(req: Request) {
 
     // Store new entry
     const entry = { fid, tournament, body };
-    await redis.hset("entries", { [String(fid)]: JSON.stringify(entry) });
+    try {
+      await redis.hset("entries", { [String(fid)]: JSON.stringify(entry) });
+    } catch (hsetErr) {
+      console.error("Redis hset failed:", hsetErr);
+      throw hsetErr;
+    }
 
     return NextResponse.json({ success: true, fid, tournament });
   } catch (err) {
