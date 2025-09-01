@@ -15,13 +15,9 @@ export default function Head() {
         content="https://max-craic-poker.vercel.app/api/frame-image"
       />
       <meta name="fc:frame:button:1" content="Enter Now" />
-      <meta name="fc:frame:button:1:action" content="post" />
-      <meta
-        name="fc:frame:button:1:target"
-        content="https://max-craic-poker.vercel.app/api/enter"
-      />
+      <meta name="fc:frame:post_url" content="https://max-craic-poker.vercel.app/api/enter" />
 
-      {/* OpenGraph for fallback previews */}
+      {/* OpenGraph fallback */}
       <meta
         property="og:image"
         content="https://max-craic-poker.vercel.app/api/frame-image"
