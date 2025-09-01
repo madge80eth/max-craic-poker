@@ -1,8 +1,4 @@
 [
-  "Battle of Malta – €109",
-  "Big $44 PKO – 100k GTD",
-  "Daily Legends $222",
-  "The Bounty Hunter – $44",
-  "The Craic Classic – $5.50",
-  "Midnight Madness – $33"
+  { "name": "The Bounty Hunter", "buyIn": "$44" },
+  { "name": "Midnight Madness", "buyIn": "$33" }
 ]
