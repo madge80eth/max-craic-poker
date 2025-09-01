@@ -13,26 +13,10 @@ export default function SharePageInner() {
     "loading" | "idle" | "entered" | "no-fid" | "error"
   >("loading");
   const [message, setMessage] = useState("");
-  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [tournament, setTournament] = useState<Tournament | null>(null);
 
   // ⚠️ Stub FID for local testing — in production this comes from frame payload
   const fid = 123;
-
-  // Load tournaments
-  useEffect(() => {
-    async function loadTournaments() {
-      try {
-        const res = await fetch("/tournaments.json");
-        if (res.ok) {
-          const data = await res.json();
-          setTournaments(data);
-        }
-      } catch (err) {
-        console.error("Failed to load tournaments", err);
-      }
-    }
-    loadTournaments();
-  }, []);
 
   // Check if already entered on mount
   useEffect(() => {
@@ -51,6 +35,7 @@ export default function SharePageInner() {
         } else if (data.entered) {
           setStatus("entered");
           setMessage(`You’re already in! FID: ${data.fid}`);
+          setTournament(data.tournament || null);
         } else {
           setStatus("idle");
         }
@@ -59,6 +44,7 @@ export default function SharePageInner() {
         setMessage("Network error.");
       }
     }
+
     checkStatus();
   }, []);
 
@@ -78,9 +64,11 @@ export default function SharePageInner() {
       } else if (data.success) {
         setStatus("entered");
         setMessage(`You’re in! FID: ${data.fid}`);
+        setTournament(data.tournament || null);
       } else if (data.alreadyEntered) {
         setStatus("entered");
         setMessage(`You’re already in! FID: ${data.fid}`);
+        setTournament(data.tournament || null);
       } else {
         setStatus("error");
         setMessage("Unexpected error. Please try again.");
@@ -92,28 +80,15 @@ export default function SharePageInner() {
   }
 
   return (
-    <main className="flex flex-col items-center justify-center min-h-screen p-6 space-y-4">
+    <main className="flex flex-col items-center justify-center min-h-screen p-6">
       {status === "loading" && <div>Loading...</div>}
 
       {status === "idle" && (
         <>
-          <h1 className="text-2xl font-bold">Max Craic Poker Draw</h1>
-
-          {tournaments.length > 0 ? (
-            <ul className="mt-4 space-y-2">
-              {tournaments.map((t, idx) => (
-                <li key={idx} className="border p-2 rounded bg-gray-800 text-white">
-                  {t.name} — {t.buyIn}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-gray-500 mt-4">No tournaments found.</p>
-          )}
-
+          <h1 className="text-2xl font-bold mb-4">Max Craic Poker Draw</h1>
           <button
             onClick={handleEnter}
-            className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-lg"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg"
           >
             Enter Now
           </button>
@@ -121,11 +96,19 @@ export default function SharePageInner() {
       )}
 
       {status === "entered" && (
-        <div className="text-green-600 font-semibold">{message}</div>
+        <div className="text-green-600 font-semibold text-center">
+          {message}
+          {tournament && (
+            <p className="mt-2">
+              Tournament: <strong>{tournament.name}</strong> (
+              {tournament.buyIn})
+            </p>
+          )}
+        </div>
       )}
 
       {status === "no-fid" && (
-        <div className="text-red-600">
+        <div className="text-red-600 text-center">
           {message} <br />
           <a
             href="https://warpcast.com/"

@@ -14,21 +14,20 @@ export async function POST(req: Request) {
       );
     }
 
-    // Load today's community tournament
+    // Get community tournament
     const tournamentRaw = await redis.get("communityTournament");
     if (!tournamentRaw) {
       return NextResponse.json(
-        { error: "No active tournament. Please try again later." },
+        { error: "No active community tournament. Please try again later." },
         { status: 400 }
       );
     }
 
     let tournament;
     try {
-      tournament = JSON.parse(tournamentRaw as string);
-    } catch (parseErr) {
-      console.error("Failed to parse tournamentRaw:", tournamentRaw, parseErr);
-      throw parseErr;
+      tournament = JSON.parse(tournamentRaw);
+    } catch {
+      tournament = null;
     }
 
     // Check if already entered
@@ -42,21 +41,17 @@ export async function POST(req: Request) {
       });
     }
 
-    // Store new entry
-    const entry = { fid, tournament, body };
-    try {
-      await redis.hset("entries", { [String(fid)]: JSON.stringify(entry) });
-    } catch (hsetErr) {
-      console.error("Redis hset failed:", hsetErr);
-      throw hsetErr;
-    }
+    // Save entry
+    const entry = { fid, tournament };
+    await redis.hset("entries", { [String(fid)]: JSON.stringify(entry) });
 
-    return NextResponse.json({ success: true, fid, tournament });
+    return NextResponse.json({
+      success: true,
+      fid,
+      tournament,
+    });
   } catch (err) {
     console.error("Error in /api/enter:", err);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
