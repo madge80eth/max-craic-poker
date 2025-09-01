@@ -2,15 +2,19 @@
 import { NextResponse } from "next/server";
 import { redis } from "@/lib/redis";
 
-export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const fid = searchParams.get("fid");
-
-  if (!fid) {
-    return NextResponse.json({ error: "Missing fid" }, { status: 400 });
-  }
-
+export async function POST(req: Request) {
   try {
+    const body = await req.json();
+    const fid = body?.untrustedData?.fid;
+
+    if (!fid) {
+      return NextResponse.json(
+        { error: "FID required to check status." },
+        { status: 400 }
+      );
+    }
+
+    // Look up entry in Redis
     const existing = await redis.hget("entries", String(fid));
 
     if (existing) {
