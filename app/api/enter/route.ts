@@ -23,7 +23,9 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    const tournament = JSON.parse(tournamentRaw);
+
+    // Explicitly parse JSON string
+    const tournament = JSON.parse(tournamentRaw as string);
 
     // Check if user already entered
     const existing = await redis.hget("entries", String(fid));
