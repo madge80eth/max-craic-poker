@@ -15,6 +15,16 @@ export async function POST(req: Request) {
       );
     }
 
+    // Get current community tournament
+    const tournamentRaw = await redis.get("communityTournament");
+    if (!tournamentRaw) {
+      return NextResponse.json(
+        { error: "No active tournament. Please try again later." },
+        { status: 400 }
+      );
+    }
+    const tournament = typeof tournamentRaw === "string" ? tournamentRaw : JSON.stringify(tournamentRaw);
+
     // Check if user already entered
     const existing = await redis.hget("entries", String(fid));
     if (existing) {
@@ -25,10 +35,15 @@ export async function POST(req: Request) {
       });
     }
 
-    // ✅ Store new entry (object form required by Upstash SDK)
-    await redis.hset("entries", { [String(fid)]: JSON.stringify(body) });
+    // Store new entry with tournament
+    const entry = {
+      fid,
+      tournament: JSON.parse(tournament),
+      body,
+    };
+    await redis.hset("entries", String(fid), JSON.stringify(entry));
 
-    return NextResponse.json({ success: true, fid });
+    return NextResponse.json({ success: true, fid, tournament: JSON.parse(tournament) });
   } catch (err) {
     console.error("Error in /api/enter:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
