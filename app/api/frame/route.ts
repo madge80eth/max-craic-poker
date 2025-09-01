@@ -18,15 +18,20 @@ export async function POST(req: Request) {
       );
     }
 
-    const validation = await client.validateFrameAction(messageBytes);
-
-    // Echo fid back so we can confirm
-    const fid = validation?.action?.interactor?.fid;
+    // Try validating
+    let fid: number | undefined = undefined;
+    try {
+      const validation = await client.validateFrameAction(messageBytes);
+      fid = validation?.action?.interactor?.fid;
+    } catch (err) {
+      console.error("Validation failed:", err);
+    }
 
     return NextResponse.json({
       image: "https://max-craic-poker.vercel.app/api/frame-image",
-      buttons: [{ label: `FID: ${fid ?? "unknown"}`, action: "post" }],
-      state: { raw: validation },
+      buttons: [
+        { label: fid ? `FID: ${fid}` : "Validation failed", action: "post" },
+      ],
     });
   } catch (err) {
     console.error("Frame error:", err);
