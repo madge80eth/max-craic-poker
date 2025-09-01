@@ -3,21 +3,11 @@ import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
 
-const tournaments = [
-  "Battle of Malta – €109",
-  "Big $44 PKO – 100k GTD",
-  "Daily Legends $222",
-  "The Bounty Hunter – $44",
-  "The Craic Classic – $5.50",
-  "Midnight Madness – $33",
-];
-
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const entered = searchParams.get("entered");
 
-    // ✅ Entered state
     if (entered) {
       return new ImageResponse(
         (
@@ -40,7 +30,16 @@ export async function GET(req: Request) {
       );
     }
 
-    // ✅ Default state (show tournaments list)
+    // 🔹 Tournament list (hardcoded for now)
+    const tournaments = [
+      "Battle of Malta – €109",
+      "Big $44 PKO – 100k GTD",
+      "Daily Legends $222",
+      "The Bounty Hunter – $44",
+      "The Craic Classic – $5.50",
+      "Midnight Madness – $33",
+    ];
+
     return new ImageResponse(
       (
         <div
@@ -52,30 +51,20 @@ export async function GET(req: Request) {
             width: "100%",
             height: "100%",
             background: "linear-gradient(to right, #f7971e, #ffd200)",
+            fontSize: 36,
             color: "black",
             padding: "40px",
-            fontSize: 36,
           }}
         >
-          <div
-            style={{
-              fontSize: 48,
-              fontWeight: "bold",
-              marginBottom: "20px",
-            }}
-          >
-            Today&apos;s Tournaments
+          <div style={{ fontSize: 48, fontWeight: "bold", marginBottom: "30px" }}>
+            Today’s Tournaments
           </div>
-          <ul style={{ textAlign: "left" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
             {tournaments.map((t, i) => (
-              <li key={i} style={{ marginBottom: "10px" }}>
-                {t}
-              </li>
+              <div key={i}>• {t}</div>
             ))}
-          </ul>
-          <div style={{ marginTop: "40px", fontSize: 32 }}>
-            ⏳ Draw closes soon
           </div>
+          <div style={{ marginTop: "40px", fontSize: 28 }}>⏳ Draw closes soon</div>
         </div>
       ),
       { width: 1200, height: 630 }
