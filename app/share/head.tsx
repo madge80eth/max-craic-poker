@@ -2,24 +2,34 @@
 export default function Head() {
   return (
     <>
-      <title>Max Craic Poker — Share</title>
+      <title>Max Craic Poker Draw</title>
+      <meta
+        name="description"
+        content="Daily draws, onchain rewards, and chaos at the poker table."
+      />
 
-      {/* Required Farcaster Frame meta */}
+      {/* Farcaster Frame Meta */}
       <meta name="fc:frame" content="vNext" />
       <meta
         name="fc:frame:image"
-        content="https://max-craic-poker.vercel.app/api/frame-image?v=11"
+        content="https://max-craic-poker.vercel.app/api/frame-image"
       />
       <meta name="fc:frame:button:1" content="Enter Now" />
+      <meta name="fc:frame:button:1:action" content="post" />
       <meta
-        name="fc:frame:post_url"
+        name="fc:frame:button:1:target"
         content="https://max-craic-poker.vercel.app/api/enter"
       />
 
-      {/* Open Graph fallback for Warpcast previews */}
+      {/* OpenGraph for fallback previews */}
       <meta
         property="og:image"
-        content="https://max-craic-poker.vercel.app/api/frame-image?v=11"
+        content="https://max-craic-poker.vercel.app/api/frame-image"
+      />
+      <meta property="og:title" content="Max Craic Poker Draw" />
+      <meta
+        property="og:description"
+        content="Enter the daily draw and join the community game."
       />
     </>
   );

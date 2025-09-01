@@ -1,27 +1,24 @@
-import { NextRequest, NextResponse } from "next/server";
+// app/api/enter/route.ts
+import { NextResponse } from "next/server";
+import { Redis } from "@upstash/redis";
 
-export async function POST(req: NextRequest) {
+const redis = Redis.fromEnv();
+
+export const runtime = "edge";
+
+export async function POST(req: Request) {
   try {
-    const data = await req.json();
-    const fid = data?.untrustedData?.fid;
+    const body = await req.json();
+    const fid = body?.untrustedData?.fid;
 
     if (!fid) {
-      return new NextResponse("Missing FID", { status: 400 });
+      return NextResponse.json({ error: "Missing fid" }, { status: 400 });
     }
 
-    const entry = { fid, timestamp: new Date().toISOString() };
+    // Save entry
+    await redis.sadd("entries", fid);
 
-    // Save to Redis (fire and forget)
-    fetch(`${process.env.UPSTASH_REDIS_REST_URL}/lpush/entries`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.UPSTASH_REDIS_REST_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify([JSON.stringify(entry)]),
-    }).catch((err) => console.error("Redis error:", err));
-
-    // ✅ Respond with a new Frame (HTML + meta tags)
+    // Response for Farcaster Frame (post action)
     return new NextResponse(
       `
       <html>
@@ -36,11 +33,18 @@ export async function POST(req: NextRequest) {
       `,
       {
         status: 200,
-        headers: { "Content-Type": "text/html; charset=utf-8" },
+        headers: {
+          "Content-Type": "text/html",
+        },
       }
     );
-  } catch (error) {
-    console.error("Error in /api/enter:", error);
-    return new NextResponse("Internal server error", { status: 500 });
+  } catch (err) {
+    console.error("Enter API error:", err);
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
+}
+
+export async function GET() {
+  // Mini app users get redirected after entering
+  return NextResponse.redirect("https://max-craic-poker.vercel.app/share?entered=true");
 }
