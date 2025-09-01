@@ -3,7 +3,9 @@ import { NextResponse } from "next/server";
 import { NeynarAPIClient, isApiErrorResponse } from "@neynar/nodejs-sdk";
 import { redis } from "@/lib/redis";
 
-const client = new NeynarAPIClient(process.env.NEYNAR_API_KEY as string);
+const client = new NeynarAPIClient({
+  apiKey: process.env.NEYNAR_API_KEY as string,
+});
 
 export async function POST(req: Request) {
   try {
@@ -14,12 +16,18 @@ export async function POST(req: Request) {
     const { messageBytes } = trustedData || {};
 
     if (!messageBytes) {
-      return NextResponse.json({ error: "Missing messageBytes" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing messageBytes" },
+        { status: 400 }
+      );
     }
 
     const frameValidation = await client.validateFrameAction(messageBytes);
     if (isApiErrorResponse(frameValidation)) {
-      return NextResponse.json({ error: "Invalid frame action" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid frame action" },
+        { status: 400 }
+      );
     }
 
     const fid = frameValidation.action?.interactor?.fid;
@@ -64,6 +72,9 @@ export async function POST(req: Request) {
     });
   } catch (err) {
     console.error("Frame error:", err);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }
