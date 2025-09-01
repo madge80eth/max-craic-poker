@@ -25,8 +25,8 @@ export async function POST(req: Request) {
       });
     }
 
-    // Store new entry
-    await redis.hset("entries", String(fid), JSON.stringify(body));
+    // ✅ Store new entry (object form required by Upstash SDK)
+    await redis.hset("entries", { [String(fid)]: JSON.stringify(body) });
 
     return NextResponse.json({ success: true, fid });
   } catch (err) {

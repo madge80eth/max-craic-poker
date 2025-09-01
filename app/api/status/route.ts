@@ -7,6 +7,7 @@ export async function POST(req: Request) {
     const body = await req.json();
     const fid = body?.untrustedData?.fid;
 
+    // ✅ Require FID
     if (!fid) {
       return NextResponse.json(
         { error: "FID required" },
@@ -14,6 +15,7 @@ export async function POST(req: Request) {
       );
     }
 
+    // ✅ Check if entry exists
     const entry = await redis.hget("entries", String(fid));
 
     if (entry) {
