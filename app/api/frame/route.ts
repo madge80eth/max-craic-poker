@@ -5,9 +5,17 @@ export async function POST() {
   const res = {
     type: "frame",
     version: "1",
-    image: "https://max-craic-poker.vercel.app/api/frame-image",
-    buttons: [{ label: "Got POST" }],
-    post_url: "https://max-craic-poker.vercel.app/api/frame"
+    imageUrl: "https://max-craic-poker.vercel.app/api/frame-image",
+    buttons: [
+      {
+        title: "Got POST",
+        action: {
+          type: "launch_frame",
+          name: "Max Craic Poker",
+          url: "https://max-craic-poker.vercel.app/api/frame",
+        },
+      },
+    ],
   };
 
   return new NextResponse(JSON.stringify(res), {
