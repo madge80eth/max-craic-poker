@@ -6,7 +6,7 @@ export async function POST() {
     type: "frame",
     version: "1",
     image: "https://max-craic-poker.vercel.app/api/frame-image",
-    buttons: [{ label: "Got POST" }]
+    buttons: [{ label: "Got POST" }],
   };
 
   return new NextResponse(JSON.stringify(res), {
