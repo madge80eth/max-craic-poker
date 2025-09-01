@@ -14,42 +14,32 @@ export async function POST(req: Request) {
       );
     }
 
-    // Get community tournament
+    // Get the active community tournament
     const tournamentRaw = await redis.get("communityTournament");
     if (!tournamentRaw) {
       return NextResponse.json(
-        { error: "No active community tournament. Please try again later." },
+        { error: "No community tournament is active. Please reset first." },
         { status: 400 }
       );
     }
+    // tournamentRaw is already a string from redis.set(JSON.stringify(...))
+    const tournament = JSON.parse(tournamentRaw);
 
-    let tournament;
-    try {
-      tournament = JSON.parse(tournamentRaw);
-    } catch {
-      tournament = null;
-    }
-
-    // Check if already entered
+    // Check if this FID already entered
     const existing = await redis.hget("entries", String(fid));
     if (existing) {
       return NextResponse.json({
         success: false,
         alreadyEntered: true,
         fid,
-        tournament,
       });
     }
 
-    // Save entry
-    const entry = { fid, tournament };
+    // Store new entry
+    const entry = { fid, tournament, body };
     await redis.hset("entries", { [String(fid)]: JSON.stringify(entry) });
 
-    return NextResponse.json({
-      success: true,
-      fid,
-      tournament,
-    });
+    return NextResponse.json({ success: true, fid, tournament });
   } catch (err) {
     console.error("Error in /api/enter:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
