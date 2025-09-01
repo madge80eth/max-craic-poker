@@ -8,36 +8,24 @@ export async function POST(req: Request) {
     const fid = body?.untrustedData?.fid;
 
     if (!fid) {
-      return NextResponse.json({ error: "FID required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "FID required to check status." },
+        { status: 400 }
+      );
     }
 
-    // Check if already entered
     const existing = await redis.hget("entries", String(fid));
 
-    // Get current community tournament (if any)
-    const tournamentRaw = await redis.get("communityTournament");
-    let tournament = null;
-    if (tournamentRaw) {
-      try {
-        tournament = JSON.parse(tournamentRaw);
-      } catch {
-        tournament = null;
-      }
-    }
-
     if (existing) {
+      const parsed = JSON.parse(existing);
       return NextResponse.json({
         entered: true,
         fid,
-        tournament,
+        tournament: parsed.tournament,
       });
     }
 
-    return NextResponse.json({
-      entered: false,
-      fid,
-      tournament,
-    });
+    return NextResponse.json({ entered: false, fid });
   } catch (err) {
     console.error("Error in /api/status:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
