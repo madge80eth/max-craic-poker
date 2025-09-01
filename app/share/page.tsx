@@ -2,10 +2,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 
 export default function SharePage() {
   const [tournaments, setTournaments] = useState<string[]>([]);
   const [entered, setEntered] = useState(false);
+
+  const searchParams = useSearchParams();
+  const enteredParam = searchParams.get("entered");
+
+  // Mark as entered if query param exists
+  useEffect(() => {
+    if (enteredParam === "true") {
+      setEntered(true);
+    }
+  }, [enteredParam]);
 
   // Load tournaments.json
   useEffect(() => {
@@ -20,10 +31,14 @@ export default function SharePage() {
       const res = await fetch("/api/enter", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ untrustedData: { fid: 12345 } }), // TODO: replace with real FID
+        body: JSON.stringify({ untrustedData: { fid: 12345 } }), // placeholder FID
       });
       if (res.ok) {
         setEntered(true);
+        // Update the URL with ?entered=true without reload
+        const url = new URL(window.location.href);
+        url.searchParams.set("entered", "true");
+        window.history.replaceState({}, "", url.toString());
       }
     } catch (err) {
       console.error("Enter failed", err);
