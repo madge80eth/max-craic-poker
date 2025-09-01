@@ -14,35 +14,30 @@ export async function POST(req: Request) {
       );
     }
 
-    // Get community tournament from Redis
+    // Get community tournament
     const tournamentRaw = await redis.get("communityTournament");
     if (!tournamentRaw) {
       return NextResponse.json(
-        { error: "No active tournament. Please reset first." },
+        { error: "No community tournament set. Please reset first." },
         { status: 400 }
       );
     }
+    const tournament = JSON.parse(tournamentRaw as string);
 
-    // Handle both string and object cases
-    const tournament =
-      typeof tournamentRaw === "string"
-        ? JSON.parse(tournamentRaw)
-        : tournamentRaw;
-
-    // Check if this FID already entered
+    // Check if already entered
     const existing = await redis.hget("entries", String(fid));
     if (existing) {
       return NextResponse.json({
         success: false,
         alreadyEntered: true,
         fid,
-        tournament,
+        tournament: JSON.parse(existing),
       });
     }
 
-    // Save entry
-    const entry = { fid, tournament, body };
-    await redis.hset("entries", { [String(fid)]: JSON.stringify(entry) });
+    // Always save a JSON string
+    const entry = { fid, tournament };
+    await redis.hset("entries", String(fid), JSON.stringify(entry));
 
     return NextResponse.json({
       success: true,
