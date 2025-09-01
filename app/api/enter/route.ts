@@ -23,7 +23,7 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
-    const tournament = typeof tournamentRaw === "string" ? tournamentRaw : JSON.stringify(tournamentRaw);
+    const tournament = JSON.parse(tournamentRaw);
 
     // Check if user already entered
     const existing = await redis.hget("entries", String(fid));
@@ -36,14 +36,10 @@ export async function POST(req: Request) {
     }
 
     // Store new entry with tournament
-    const entry = {
-      fid,
-      tournament: JSON.parse(tournament),
-      body,
-    };
-    await redis.hset("entries", String(fid), JSON.stringify(entry));
+    const entry = { fid, tournament, body };
+    await redis.hset("entries", { [String(fid)]: JSON.stringify(entry) });
 
-    return NextResponse.json({ success: true, fid, tournament: JSON.parse(tournament) });
+    return NextResponse.json({ success: true, fid, tournament });
   } catch (err) {
     console.error("Error in /api/enter:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
