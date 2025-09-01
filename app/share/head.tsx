@@ -21,7 +21,7 @@ export default function Head() {
         content="Daily draws, onchain rewards, and chaos at the poker table."
       />
 
-      {/* Farcaster Frame Meta */}
+      {/* Base/Farcaster Frame Meta */}
       <meta name="fc:frame" content={JSON.stringify(frameMeta)} />
 
       {/* OpenGraph fallback */}
