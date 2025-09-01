@@ -17,9 +17,10 @@ export async function POST() {
 
     // Load tournaments and pick one at random
     const tournaments = await loadTournaments();
-    const randomTournament = tournaments[Math.floor(Math.random() * tournaments.length)];
+    const randomTournament =
+      tournaments[Math.floor(Math.random() * tournaments.length)];
 
-    // Save chosen tournament
+    // Save chosen tournament (as JSON string)
     await redis.set("communityTournament", JSON.stringify(randomTournament));
 
     return NextResponse.json({
