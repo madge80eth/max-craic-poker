@@ -14,15 +14,20 @@ export async function POST(req: Request) {
       );
     }
 
-    // Look up entry in Redis
     const existing = await redis.hget("entries", String(fid));
 
     if (existing) {
-      const parsed = JSON.parse(existing as string);
+      let parsed: any;
+      try {
+        parsed = typeof existing === "string" ? JSON.parse(existing) : existing;
+      } catch {
+        parsed = existing;
+      }
+
       return NextResponse.json({
         entered: true,
         fid,
-        tournament: parsed.tournament,
+        entry: parsed,
       });
     }
 
