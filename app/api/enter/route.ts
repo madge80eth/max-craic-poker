@@ -1,6 +1,6 @@
 // app/api/enter/route.ts
 import { NextResponse } from "next/server";
-import { redis } from "@/lib/redis"; // adjust import if needed
+import { redis } from "../../../lib/redis";
 
 export async function POST(req: Request) {
   try {
