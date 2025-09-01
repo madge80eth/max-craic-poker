@@ -7,6 +7,7 @@ export async function POST() {
     version: "1",
     image: "https://max-craic-poker.vercel.app/api/frame-image",
     buttons: [{ label: "Got POST" }],
+    post_url: "https://max-craic-poker.vercel.app/api/frame"
   };
 
   return new NextResponse(JSON.stringify(res), {
