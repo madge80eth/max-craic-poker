@@ -1,6 +1,6 @@
 // app/api/status/route.ts
 import { NextResponse } from "next/server";
-import { redis } from "../../../lib/redis";
+import { redis } from "@/lib/redis";
 
 adjust path if needed
 
