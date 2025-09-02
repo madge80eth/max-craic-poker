@@ -5,9 +5,11 @@ export const metadata = {
   title: "Max Craic Poker Draw",
   description: "Daily draws, onchain rewards, and chaos at the poker table.",
   other: {
-    // ✅ Frame-only embed: button posts to /api/enter
+    // ✅ Frame JSON: only image + button
     "fc:frame":
-      '{"version":"next","imageUrl":"https://max-craic-poker.vercel.app/api/frame-image","button":{"title":"Enter Now","action":{"type":"post"}}}',
+      '{"version":"next","imageUrl":"https://max-craic-poker.vercel.app/api/frame-image","button":{"title":"Enter Now"}}',
+
+    // ✅ Action handled here
     "fc:frame:post_url": "https://max-craic-poker.vercel.app/api/enter",
   },
   openGraph: {
