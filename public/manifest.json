@@ -1,15 +1,16 @@
 {
-  "id": "max-craic-poker",
-  "name": "Max Craic Poker",
-  "iconUrl": "https://max-craic-poker.vercel.app/icon.png",
-  "url": "https://max-craic-poker.vercel.app/share",
-  "description": "Daily poker draws and onchain rewards",
-  "developer": {
-    "name": "madge80",
-    "url": "https://max-craic-poker.vercel.app"
+  "accountAssociation": {
+    "header": "…",
+    "payload": "…",
+    "signature": "…"
+  },
+  "frame": {
+    "version": "1",
+    "name": "Max Craic Poker",
+    "iconUrl": "https://max-craic-poker.vercel.app/icon.png",
+    "url": "https://max-craic-poker.vercel.app/share"
   },
   "baseBuilder": {
-    "version": "1",
     "allowedAddresses": [
       "0xCc7659fbE122AcdE826725cf3a4cd5dfD72763F0"
     ]
