@@ -1,39 +1,38 @@
-// app/api/enter/route.ts
-import { NextResponse } from "next/server";
-import { redis } from "@/lib/redis";
+import { NextResponse } from "next/server"
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json().catch(() => ({}));
-    const fid = body?.fid || "test-user"; // fallback while testing
+    // Log the full request URL
+    console.log("ENTER endpoint hit:", req.url)
 
-    // Check if user already entered
-    const existing = await redis.get(fid);
-    if (existing) {
-      return NextResponse.json({
-        version: "next",
-        imageUrl: "https://max-craic-poker.vercel.app/api/frame-image",
-        buttons: [{ title: "Already Entered" }]
-      });
+    // Log headers for debugging
+    console.log("Headers:", Object.fromEntries(req.headers.entries()))
+
+    // Try to parse JSON body
+    let body = null
+    try {
+      body = await req.json()
+    } catch (err) {
+      console.log("No JSON body or failed to parse:", err)
     }
+    console.log("Request body:", body)
 
-    // Otherwise, mark as entered
-    await redis.set(fid, "entered");
-
+    // Respond with a simple frame JSON (for testing)
     return NextResponse.json({
-      version: "next",
-      imageUrl: "https://max-craic-poker.vercel.app/api/frame-image",
-      buttons: [{ title: "You’re Entered!" }]
-    });
-  } catch (err) {
-    console.error("Enter error:", err);
+      version: "vNext",
+      image: "https://max-craic-poker.vercel.app/api/frame-image",
+      buttons: [
+        {
+          label: "Back to Start"
+        }
+      ],
+      post_url: "https://max-craic-poker.vercel.app/share"
+    })
+  } catch (error) {
+    console.error("Error in /api/enter:", error)
     return NextResponse.json(
-      {
-        version: "next",
-        imageUrl: "https://max-craic-poker.vercel.app/api/frame-image",
-        buttons: [{ title: "Error, try again" }]
-      },
+      { error: "Internal server error" },
       { status: 500 }
-    );
+    )
   }
 }
