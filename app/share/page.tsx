@@ -2,8 +2,18 @@
 
 import tournaments from "@/public/tournaments.json"
 
+export const metadata = {
+  title: "Max Craic Poker — Share",
+  other: {
+    "fc:frame": "vNext",
+    "fc:frame:image": "https://max-craic-poker.vercel.app/api/frame-image",
+    "fc:frame:post_url": "https://max-craic-poker.vercel.app/api/enter",
+    "fc:frame:button:1": "Enter Now"
+  }
+}
+
 export default function SharePage() {
-  const communityTournament = tournaments[0] // ✅ get first tournament
+  const communityTournament = tournaments[0]
 
   if (!communityTournament) {
     return <div>No tournament data available</div>
@@ -17,4 +27,3 @@ export default function SharePage() {
     </main>
   )
 }
-// force redeploy
