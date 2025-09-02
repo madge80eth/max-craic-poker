@@ -4,53 +4,36 @@ import { redis } from "@/lib/redis";
 
 export async function POST(req: Request) {
   try {
-    const { fid } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const fid = body?.fid || "test-user"; // fallback while testing
 
-    if (!fid) {
-      return NextResponse.json({ error: "Missing fid" }, { status: 400 });
-    }
-
-    // Check if this fid already exists
+    // Check if user already entered
     const existing = await redis.get(fid);
-
     if (existing) {
-      let tournament;
-      try {
-        tournament =
-          typeof existing === "string" ? JSON.parse(existing) : existing;
-      } catch {
-        tournament = existing;
-      }
-
       return NextResponse.json({
-        alreadyEntered: true,
-        fid,
-        tournament,
+        version: "next",
+        imageUrl: "https://max-craic-poker.vercel.app/api/frame-image",
+        buttons: [{ title: "Already Entered" }]
       });
     }
 
-    // Get the active community tournament
-    const communityTournament = await redis.get("communityTournament");
-    if (!communityTournament) {
-      return NextResponse.json(
-        { error: "No active tournament" },
-        { status: 400 }
-      );
-    }
-
-    // Store entry
-    await redis.set(fid, communityTournament);
+    // Otherwise, mark as entered
+    await redis.set(fid, "entered");
 
     return NextResponse.json({
-      success: true,
-      fid,
-      tournament:
-        typeof communityTournament === "string"
-          ? JSON.parse(communityTournament)
-          : communityTournament,
+      version: "next",
+      imageUrl: "https://max-craic-poker.vercel.app/api/frame-image",
+      buttons: [{ title: "You’re Entered!" }]
     });
   } catch (err) {
-    console.error(err);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    console.error("Enter error:", err);
+    return NextResponse.json(
+      {
+        version: "next",
+        imageUrl: "https://max-craic-poker.vercel.app/api/frame-image",
+        buttons: [{ title: "Error, try again" }]
+      },
+      { status: 500 }
+    );
   }
 }
