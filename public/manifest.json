@@ -5,7 +5,10 @@
   "url": "https://max-craic-poker.vercel.app/share",
   "description": "Daily poker draws and onchain rewards",
   "developer": {
-    "name": "Dominic Emanuel",
+    "name": "madge80",
     "url": "https://max-craic-poker.vercel.app"
+  },
+  "baseBuilder": {
+    "version": "1"
   }
 }
