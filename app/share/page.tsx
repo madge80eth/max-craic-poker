@@ -3,7 +3,7 @@
 import tournaments from "@/public/tournaments.json"
 
 export default function SharePage() {
-  const communityTournament = tournaments.communityTournament
+  const communityTournament = tournaments[0] // ✅ get first tournament
 
   if (!communityTournament) {
     return <div>No tournament data available</div>
