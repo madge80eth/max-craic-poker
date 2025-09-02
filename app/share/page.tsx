@@ -1,30 +1,19 @@
 // app/share/page.tsx
-import SharePageInner from "./share-page-inner";
 
-export const metadata = {
-  title: "Max Craic Poker Draw",
-  description: "Daily draws, onchain rewards, and chaos at the poker table.",
-  other: {
-    // ✅ Frame JSON: only image + button
-    "fc:frame":
-      '{"version":"next","imageUrl":"https://max-craic-poker.vercel.app/api/frame-image","button":{"title":"Enter Now"}}',
+import tournaments from "@/public/tournaments.json"
 
-    // ✅ Action handled here
-    "fc:frame:post_url": "https://max-craic-poker.vercel.app/api/enter",
-  },
-  openGraph: {
-    title: "Max Craic Poker Draw",
-    description: "Enter the daily draw and join the community game.",
-    images: [
-      {
-        url: "https://max-craic-poker.vercel.app/api/frame-image",
-        width: 1200,
-        height: 630,
-      },
-    ],
-  },
-};
+export default function SharePage() {
+  const communityTournament = tournaments.communityTournament
 
-export default function Page() {
-  return <SharePageInner />;
+  if (!communityTournament) {
+    return <div>No tournament data available</div>
+  }
+
+  return (
+    <main style={{ padding: "1rem" }}>
+      <h1>Max Craic Poker</h1>
+      <h2>{communityTournament.name || "Unknown Tournament"}</h2>
+      <p>Buy-in: {communityTournament.buyIn || "N/A"}</p>
+    </main>
+  )
 }
