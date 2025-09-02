@@ -1,18 +1,5 @@
 // app/share/head.tsx
 export default function Head() {
-  const frameMeta = {
-    version: "next",
-    imageUrl: "https://max-craic-poker.vercel.app/api/frame-image",
-    button: {
-      title: "Enter Now",
-      action: {
-        type: "launch_frame",
-        name: "Max Craic Poker",
-        url: "https://max-craic-poker.vercel.app/api/frame",
-      },
-    },
-  };
-
   return (
     <>
       <title>Max Craic Poker Draw</title>
@@ -21,8 +8,11 @@ export default function Head() {
         content="Daily draws, onchain rewards, and chaos at the poker table."
       />
 
-      {/* Base/Farcaster Frame Meta */}
-      <meta name="fc:frame" content={JSON.stringify(frameMeta)} />
+      {/* Farcaster / Base Frame Embed */}
+      <meta
+        name="fc:frame"
+        content='{"version":"next","imageUrl":"https://max-craic-poker.vercel.app/api/frame-image","button":{"title":"Enter Now","action":{"type":"launch_frame","name":"Max Craic Poker","url":"https://max-craic-poker.vercel.app/api/frame"}}}'
+      />
 
       {/* OpenGraph fallback */}
       <meta

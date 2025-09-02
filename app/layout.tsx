@@ -15,13 +15,13 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-// ✅ Correct Farcaster-compatible metadata
+// ✅ Keep only generic site metadata here
 export const metadata: Metadata = {
-  title: "Max Craic Poker Draw",
-  description: "Enter now to win 5% if we cash — 10% if you recast",
+  title: "Max Craic Poker",
+  description: "Daily draws, onchain rewards, and chaos at the poker table.",
   openGraph: {
-    title: "Max Craic Poker Draw",
-    description: "Enter now to win 5% if we cash — 10% if you recast",
+    title: "Max Craic Poker",
+    description: "Daily draws, onchain rewards, and chaos at the poker table.",
     images: [
       {
         url: "https://max-craic-poker.vercel.app/api/frame-image",
@@ -29,12 +29,6 @@ export const metadata: Metadata = {
         height: 630,
       },
     ],
-  },
-  other: {
-    "fc:frame": "vNext",
-    "fc:frame:image": "https://max-craic-poker.vercel.app/api/frame-image",
-    "fc:frame:post_url": "https://max-craic-poker.vercel.app/api/enter",
-    "fc:frame:button:1": "Enter Now",
   },
 };
 
