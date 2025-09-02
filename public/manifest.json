@@ -9,6 +9,9 @@
     "url": "https://max-craic-poker.vercel.app"
   },
   "baseBuilder": {
-    "version": "1"
+    "version": "1",
+    "allowedAddresses": [
+      "0xCc7659fbE122AcdE826725cf3a4cd5dfD72763F0"
+    ]
   }
 }
