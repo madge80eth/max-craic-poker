@@ -11,7 +11,7 @@ const MiniApp = () => {
   const [walletConnected, setWalletConnected] = useState(false)
   const [userAddress, setUserAddress] = useState('')
   const [loading, setLoading] = useState(false)
-  const [tournaments, setTournaments] = useState([])
+  const [tournaments, setTournaments] = useState<any[]>([])
 
   useEffect(() => {
     fetch('/tournaments.json')
