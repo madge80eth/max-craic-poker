@@ -6,7 +6,7 @@ import Link from 'next/link'
 
 const Homepage = () => {
   const [timeLeft, setTimeLeft] = useState(43200)
-  const [tournaments, setTournaments] = useState([])
+  const [tournaments, setTournaments] = useState<any[]>([])
 
   useEffect(() => {
     fetch('/tournaments.json')
@@ -27,7 +27,7 @@ const Homepage = () => {
     return () => clearInterval(timer)
   }, [])
 
-  const formatTime = (seconds) => {
+  const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600)
     const minutes = Math.floor((seconds % 3600) / 60)
     const secs = seconds % 60
