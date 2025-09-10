@@ -1,39 +1,32 @@
-// app/api/status/route.ts
-import { NextResponse } from "next/server";
-import { redis } from "@/lib/redis";
+import { NextResponse } from "next/server"
+import { redis } from "@/lib/redis"
+
+export async function GET() {
+  try {
+    // Get current winner - need to parse JSON for local Redis
+    const winnerData = await redis.get("winner")
+    const winner = winnerData ? JSON.parse(winnerData) : null
+    
+    // Get total entries count
+    const entries = await redis.hgetall("entries")
+    const totalEntries = entries ? Object.keys(entries).length : 0
+
+    return NextResponse.json({
+      success: true,
+      winner,
+      totalEntries,
+      hasWinner: !!winner
+    })
+
+  } catch (error) {
+    console.error("Error in /api/status:", error)
+    return NextResponse.json(
+      { error: "Internal server error" }, 
+      { status: 500 }
+    )
+  }
+}
 
 export async function POST(req: Request) {
-  try {
-    const body = await req.json();
-    const fid = body?.untrustedData?.fid;
-
-    if (!fid) {
-      return NextResponse.json(
-        { error: "FID required to check status." },
-        { status: 400 }
-      );
-    }
-
-    const existing = await redis.hget("entries", String(fid));
-
-    if (existing) {
-      let parsed: any;
-      try {
-        parsed = typeof existing === "string" ? JSON.parse(existing) : existing;
-      } catch {
-        parsed = existing;
-      }
-
-      return NextResponse.json({
-        entered: true,
-        fid,
-        entry: parsed,
-      });
-    }
-
-    return NextResponse.json({ entered: false, fid });
-  } catch (err) {
-    console.error("Error in /api/status:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
-  }
+  return GET()
 }
