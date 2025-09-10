@@ -252,4 +252,4 @@ const MiniApp = () => {
   )
 }
 
-export default MiniApp
+export default MiniApp// Production build ready
