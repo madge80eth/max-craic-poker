@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     }
 
     // Store in Redis
-    await redis.hset("entries", walletAddress, JSON.stringify(entry))
+    await redis.hset("entries", { [walletAddress]: JSON.stringify(entry) })
 
     return NextResponse.json({
       success: true,
@@ -48,4 +48,4 @@ export async function POST(req: Request) {
     console.error("Error in /api/enter:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
-}
+}// Force rebuild
