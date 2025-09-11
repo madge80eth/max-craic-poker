@@ -2,20 +2,22 @@ import tournaments from "@/public/tournaments.json"
 
 export const metadata = {
   title: "Max Craic Poker - Community Game",
+  description: "Community-Rewarded Poker - one winner gets 5% of tournament profits + 5% bonus for sharing!",
   other: {
-    "fc:frame": "vNext",
-    "fc:frame:image": "https://max-craic-poker.vercel.app/api/frame-image",
-    "fc:frame:button:1": "🚀 Join Community Game",
-    "fc:frame:button:1:action": "link",
-    "fc:frame:button:1:target": "https://max-craic-poker.vercel.app/mini-app",
-    "fc:miniapp": JSON.stringify({
-      version: "1",
-      name: "Max Craic Poker",
-      description: "Community-Rewarded Poker - one winner gets 5% of tournament profits + 5% bonus for sharing!",
-      iconUrl: "https://max-craic-poker.vercel.app/mcp-logo.png",
-      homeUrl: "https://max-craic-poker.vercel.app/mini-app",
-      imageUrl: "https://max-craic-poker.vercel.app/api/frame-image"
-    })
+    'fc:frame': JSON.stringify({
+      version: 'next',
+      imageUrl: 'https://max-craic-poker.vercel.app/api/frame-image',
+      button: {
+        title: 'Launch Max Craic Poker',
+        action: {
+          type: 'launch_frame',
+          name: 'Max Craic Poker',
+          url: 'https://max-craic-poker.vercel.app/mini-app',
+          splashImageUrl: 'https://max-craic-poker.vercel.app/api/frame-image',
+          splashBackgroundColor: '#1e1b4b',
+        },
+      },
+    }),
   }
 }
 
@@ -95,7 +97,7 @@ export default function SharePage() {
           textAlign: "center",
           fontStyle: "italic"
         }}>
-          Click "Join Community Game" to enter with the full Mini App experience!
+          Click "Launch Max Craic Poker" to enter with the full Mini App experience!
         </p>
       </div>
     </main>
