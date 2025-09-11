@@ -1,60 +1,173 @@
+// app/mini-app/page.tsx
 'use client'
 
-import React, { useState, useEffect } from 'react'
-import { Clock, Trophy, Users, ExternalLink } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { useAccount, useConnect, useDisconnect } from 'wagmi'
+import { base } from 'wagmi/chains'
+import { coinbaseWallet } from 'wagmi/connectors'
 
-const MiniApp = () => {
-  const [timeLeft, setTimeLeft] = useState(43200)
-  const [isEntered, setIsEntered] = useState(false)
-  const [totalEntries, setTotalEntries] = useState(0)
-  const [winner, setWinner] = useState<any>(null)
-  const [walletConnected, setWalletConnected] = useState(false)
-  const [userAddress, setUserAddress] = useState('')
+interface Tournament {
+  name: string
+  buyIn: string
+}
+
+interface Entry {
+  walletAddress: string
+  platform: string
+  tournament: string
+  tournamentBuyIn: string
+  timestamp: string
+  hasRecasted: boolean
+}
+
+interface Winner {
+  walletAddress: string
+  entry: Entry
+  drawnAt: string
+  totalEntries: number
+}
+
+export default function MiniApp() {
+  const { address, isConnected } = useAccount()
+  const { connect } = useConnect()
+  const { disconnect } = useDisconnect()
+  
+  const [tournaments, setTournaments] = useState<Tournament[]>([])
+  const [hasEntered, setHasEntered] = useState(false)
+  const [entry, setEntry] = useState<Entry | null>(null)
+  const [winner, setWinner] = useState<Winner | null>(null)
+  const [timeLeft, setTimeLeft] = useState<number>(0)
   const [loading, setLoading] = useState(false)
-  const [tournaments, setTournaments] = useState<any[]>([])
 
+  // Load tournaments on mount
   useEffect(() => {
     fetch('/tournaments.json')
       .then(res => res.json())
-      .then(data => setTournaments(data))
+      .then(data => setTournaments(data.tournaments))
       .catch(err => console.error('Failed to load tournaments:', err))
   }, [])
 
-  // CHECK FOR WINNER IMMEDIATELY ON PAGE LOAD
+  // Check entry status when wallet connects
   useEffect(() => {
-    checkWinner()
-  }, [])
+    if (address) {
+      checkEntryStatus()
+      checkWinnerStatus()
+      getTimeLeft()
+    }
+  }, [address])
 
+  // Timer countdown
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          checkWinner()
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [])
+    if (timeLeft > 0) {
+      const timer = setInterval(() => {
+        setTimeLeft(prev => {
+          const newTime = prev - 1
+          if (newTime <= 0) {
+            checkWinner()
+          }
+          return Math.max(0, newTime)
+        })
+      }, 1000)
+      return () => clearInterval(timer)
+    }
+  }, [timeLeft])
 
-  const checkWinner = async () => {
+  const connectWallet = () => {
+    connect({ 
+      connector: coinbaseWallet({
+        appName: 'Max Craic Poker',
+        appLogoUrl: `${window.location.origin}/mcp-logo.png`
+      }),
+      chainId: base.id
+    })
+  }
+
+  const checkEntryStatus = async () => {
+    if (!address) return
+    
+    try {
+      const response = await fetch(`/api/status?wallet=${address}`)
+      const data = await response.json()
+      
+      if (data.hasEntered) {
+        setHasEntered(true)
+        setEntry(data.entry)
+      }
+    } catch (error) {
+      console.error('Error checking entry status:', error)
+    }
+  }
+
+  const checkWinnerStatus = async () => {
     try {
       const response = await fetch('/api/status')
-      
-      if (!response.ok) {
-        console.log('Status API returned error:', response.status)
-        return
-      }
-      
       const data = await response.json()
       
       if (data.winner) {
         setWinner(data.winner)
       }
-      setTotalEntries(data.totalEntries || 0)
+    } catch (error) {
+      console.error('Error checking winner status:', error)
+    }
+  }
+
+  const getTimeLeft = async () => {
+    try {
+      const response = await fetch('/api/status')
+      const data = await response.json()
+      setTimeLeft(data.timeLeft || 0)
+    } catch (error) {
+      console.error('Error getting time left:', error)
+    }
+  }
+
+  const checkWinner = async () => {
+    try {
+      const response = await fetch('/api/draw', { method: 'POST' })
+      const data = await response.json()
+      
+      if (data.winner) {
+        setWinner(data.winner)
+      }
     } catch (error) {
       console.error('Error checking winner:', error)
+    }
+  }
+
+  const enterRaffle = async () => {
+    if (!address) return
+    
+    setLoading(true)
+    
+    // Select random tournament
+    const randomTournament = tournaments[Math.floor(Math.random() * tournaments.length)]
+    
+    try {
+      const response = await fetch('/api/enter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          walletAddress: address,
+          platform: 'base',
+          tournament: randomTournament.name,
+          tournamentBuyIn: randomTournament.buyIn,
+          hasRecasted: false
+        })
+      })
+
+      const data = await response.json()
+      
+      if (data.success) {
+        setHasEntered(true)
+        setEntry(data.entry)
+      } else {
+        alert('Failed to enter raffle. Please try again.')
+      }
+    } catch (error) {
+      console.error('Error entering raffle:', error)
+      alert('Error entering raffle. Please try again.')
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -65,94 +178,62 @@ const MiniApp = () => {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
 
-  const handleConnectWallet = () => {
-    const mockAddress = '0x742d35Cc6634C0532925a3b8D91D21d3025c1'
-    setWalletConnected(true)
-    setUserAddress(mockAddress)
-  }
-
-  const handleEnterRaffle = async () => {
-    if (!walletConnected) {
-      handleConnectWallet()
-      return
-    }
-    
-    setLoading(true)
-    try {
-      const response = await fetch('/api/enter', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          address: userAddress,
-          platform: 'base'
-        })
-      })
-      
-      const data = await response.json()
-      
-      if (data.success) {
-        setIsEntered(true)
-        setTotalEntries(prev => prev + 1)
-      } else {
-        alert(data.error || 'Entry failed')
-      }
-    } catch (error) {
-      console.error('Entry error:', error)
-      alert('Entry failed')
-    }
-    setLoading(false)
-  }
-
+  // Winner announcement screen
   if (winner) {
+    const isWinner = address && winner.walletAddress.toLowerCase() === address.toLowerCase()
+    
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white p-6">
-        <div className="max-w-md mx-auto">
-          <div className="text-center mb-8">
-            <div className="mb-4">
-              <img 
-                src="/mcp-logo.png" 
-                alt="Max Craic Poker Logo" 
-                style={{ width: '64px', height: '64px', objectFit: 'contain' }}
-                className="mx-auto"
-              />
-            </div>
-            <h1 className="text-2xl font-bold mb-1">WINNER DRAWN!</h1>
-            <div className="text-red-400 font-bold text-sm mb-2">MAX CRAIC POKER</div>
-          </div>
-
-          <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 mb-6">
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
+        <div className="max-w-md mx-auto pt-8">
+          <div className="bg-black/30 backdrop-blur-lg rounded-3xl p-8 border border-white/10">
             <div className="text-center">
-              <Trophy className="h-12 w-12 text-yellow-400 mx-auto mb-4" />
-              <h2 className="text-xl font-bold mb-2">
-                {winner.walletAddress ? 
-                  `${winner.walletAddress.slice(0, 6)}...${winner.walletAddress.slice(-4)}` : 
-                  'Winner'
-                }
-              </h2>
-              <p className="text-gray-300 mb-4">
-                Assigned to: <span className="text-purple-300 font-semibold">
-                  {winner.entry?.tournament || winner.tournament || 'Random Tournament'}
-                </span>
-              </p>
-              <div className="text-sm text-gray-400">
-                If I cash in this tournament, the winner gets 5% of the profit + 5% bonus for sharing the post!
+              <h1 className="text-3xl font-bold text-white mb-6">
+                🎉 Winner Drawn! 🎉
+              </h1>
+              
+              {isWinner ? (
+                <div className="space-y-4">
+                  <div className="text-6xl">🏆</div>
+                  <h2 className="text-2xl font-bold text-yellow-400">
+                    Congratulations! You Won!
+                  </h2>
+                  <p className="text-white">
+                    Tournament: <span className="font-semibold">{winner.entry.tournament}</span>
+                  </p>
+                  <p className="text-white">
+                    Buy-in: <span className="font-semibold">{winner.entry.tournamentBuyIn}</span>
+                  </p>
+                  <p className="text-sm text-gray-300">
+                    If Max cashes in this tournament, you'll receive 5% of the profit in USDC!
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="text-4xl">🎲</div>
+                  <h2 className="text-xl text-white">
+                    Winner Selected
+                  </h2>
+                  <p className="text-white">
+                    Tournament: <span className="font-semibold">{winner.entry.tournament}</span>
+                  </p>
+                  <p className="text-white">
+                    Buy-in: <span className="font-semibold">{winner.entry.tournamentBuyIn}</span>
+                  </p>
+                  <p className="text-sm text-gray-300">
+                    Better luck next time! Follow Max's stream to see the results.
+                  </p>
+                </div>
+              )}
+              
+              <div className="mt-6 pt-6 border-t border-white/10">
+                <p className="text-xs text-gray-400">
+                  Total Entries: {winner.totalEntries}
+                </p>
+                <p className="text-xs text-gray-400">
+                  Drawn: {new Date(winner.drawnAt).toLocaleString()}
+                </p>
               </div>
             </div>
-          </div>
-
-          <div className="bg-gradient-to-r from-red-500/20 to-purple-500/20 rounded-xl p-6 border border-red-300/30">
-            <h3 className="text-lg font-bold mb-2 text-center">LIVE ACTION</h3>
-            <p className="text-sm text-center mb-4 text-gray-300">
-              Join the stream to see how the community game unfolds! 
-              Chat participants get $MCP airdrops.
-            </p>
-            <button
-              onClick={() => window.open('https://twitch.tv/maxcraic', '_blank')}
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
-            >
-              <ExternalLink className="h-4 w-4" />
-              Watch Live Stream
-            </button>
           </div>
         </div>
       </div>
@@ -160,96 +241,124 @@ const MiniApp = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white p-6">
-      <div className="max-w-md mx-auto">
-        <div className="text-center mb-8">
-          <div className="mb-4">
-            <img 
-              src="/mcp-logo.png" 
-              alt="Max Craic Poker Logo" 
-              style={{ width: '80px', height: '80px', objectFit: 'contain' }}
-              className="mx-auto"
-            />
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
+      <div className="max-w-md mx-auto pt-8">
+        <div className="bg-black/30 backdrop-blur-lg rounded-3xl p-8 border border-white/10">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-white mb-2">Max Craic Poker</h1>
+            <p className="text-gray-300 text-sm">Community-backed tournament play</p>
           </div>
-          <h1 className="text-2xl font-bold mb-1">MAX CRAIC</h1>
-          <div className="text-red-400 font-bold text-lg mb-2">POKER</div>
-          <p className="text-purple-200 text-sm">Community-Rewarded Poker</p>
-        </div>
 
-        <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 mb-6">
-          <div className="text-center">
-            <Clock className="h-8 w-8 mx-auto mb-2 text-purple-300" />
-            <h2 className="text-lg font-semibold mb-1">Draw in:</h2>
-            <div className="text-3xl font-bold text-purple-300 font-mono">
-              {formatTime(timeLeft)}
+          {/* Wallet Connection */}
+          {!isConnected ? (
+            <div className="space-y-6">
+              <div className="text-center">
+                <p className="text-white mb-4">Connect your wallet to enter the raffle</p>
+                <button
+                  onClick={connectWallet}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors"
+                >
+                  Connect Wallet
+                </button>
+              </div>
             </div>
-          </div>
-        </div>
-
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-            <Trophy className="h-5 w-5" />
-            Today's Tournaments
-          </h3>
-          <div className="space-y-2">
-            {tournaments.slice(0, 6).map((tournament, index) => (
-              <div key={index} className="bg-white/5 rounded-lg p-3 border border-white/10">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="font-medium">{tournament.name}</div>
+          ) : hasEntered ? (
+            /* Already Entered */
+            <div className="space-y-6">
+              <div className="text-center">
+                <div className="text-6xl mb-4">✅</div>
+                <h2 className="text-2xl font-bold text-green-400 mb-4">You're In!</h2>
+                
+                {entry && (
+                  <div className="bg-white/10 rounded-xl p-4 mb-6">
+                    <p className="text-white font-semibold">{entry.tournament}</p>
+                    <p className="text-gray-300 text-sm">Buy-in: {entry.tournamentBuyIn}</p>
                   </div>
-                  <div className="text-purple-300 font-semibold">
-                    {tournament.buyIn}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+                )}
 
-        <div className="bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-xl p-6 border border-purple-300/30 mb-4">
-          <div className="text-center mb-4">
-            <Users className="h-8 w-8 mx-auto mb-2 text-blue-300" />
-            <h3 className="text-lg font-bold">Join the Community Game</h3>
-            <p className="text-sm text-gray-300 mt-1">
-              One winner gets 5% of tournament profits + 5% bonus for sharing!
-            </p>
-          </div>
-          
-          {!walletConnected ? (
-            <button
-              onClick={handleConnectWallet}
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors"
-            >
-              Connect Wallet to Enter
-            </button>
-          ) : isEntered ? (
-            <div className="text-center">
-              <div className="bg-green-500/20 border border-green-300/30 rounded-lg p-4 mb-3">
-                <div className="text-green-300 font-semibold">You're entered!</div>
-                <div className="text-sm text-gray-300">Good luck! Winner drawn at countdown end.</div>
+                {timeLeft > 0 ? (
+                  <div className="space-y-4">
+                    <p className="text-white">Draw in:</p>
+                    <div className="text-3xl font-mono text-yellow-400">
+                      {formatTime(timeLeft)}
+                    </div>
+                    <p className="text-sm text-gray-300">
+                      Winner gets 5% of tournament profit if Max cashes!
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <p className="text-white">Drawing winner...</p>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto"></div>
+                  </div>
+                )}
               </div>
+
+              <button
+                onClick={() => disconnect()}
+                className="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-xl transition-colors text-sm"
+              >
+                Disconnect Wallet
+              </button>
             </div>
           ) : (
-            <button
-              onClick={handleEnterRaffle}
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-3 px-4 rounded-lg transition-colors disabled:opacity-50"
-            >
-              {loading ? 'Entering...' : 'Enter Raffle'}
-            </button>
-          )}
-        </div>
+            /* Enter Raffle */
+            <div className="space-y-6">
+              <div className="text-center">
+                <p className="text-white mb-4">
+                  Connected: {address?.slice(0, 6)}...{address?.slice(-4)}
+                </p>
 
-        <div className="text-center mt-4">
-          <p className="text-sm text-gray-400 flex items-center justify-center gap-1">
-            <Users className="h-4 w-4" />
-            {totalEntries} entries • Draw at countdown end
-          </p>
+                {timeLeft > 0 ? (
+                  <div className="space-y-4 mb-6">
+                    <p className="text-white">Draw in:</p>
+                    <div className="text-2xl font-mono text-yellow-400">
+                      {formatTime(timeLeft)}
+                    </div>
+                  </div>
+                ) : (
+                  <p className="text-red-400 mb-6">Raffle has ended</p>
+                )}
+
+                <div className="bg-white/10 rounded-xl p-4 mb-6">
+                  <h3 className="text-white font-semibold mb-2">Today's Tournaments:</h3>
+                  <div className="space-y-1">
+                    {tournaments.map((tournament, index) => (
+                      <div key={index} className="text-sm text-gray-300">
+                        {tournament.name} - {tournament.buyIn}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <button
+                  onClick={enterRaffle}
+                  disabled={loading || timeLeft <= 0}
+                  className={`w-full font-semibold py-3 px-6 rounded-xl transition-colors ${
+                    loading || timeLeft <= 0
+                      ? 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                      : 'bg-green-600 hover:bg-green-700 text-white'
+                  }`}
+                >
+                  {loading ? 'Entering...' : timeLeft <= 0 ? 'Raffle Ended' : 'Enter Raffle'}
+                </button>
+
+                <p className="text-xs text-gray-400 text-center">
+                  Win 5% of tournament profit if Max cashes!
+                </p>
+              </div>
+
+              <button
+                onClick={() => disconnect()}
+                className="w-full bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-xl transition-colors text-sm"
+              >
+                Disconnect Wallet
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
   )
 }
-
-export default MiniApp// Production build ready
