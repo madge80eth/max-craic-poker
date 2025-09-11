@@ -14,30 +14,35 @@ export async function GET(req: Request) {
           <div
             style={{
               display: "flex",
+              flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
               width: "100%",
               height: "100%",
-              background: "linear-gradient(to right, #38ef7d, #11998e)",
+              background: "linear-gradient(45deg, #1e1b4b 0%, #312e81 50%, #3730a3 100%)",
               fontSize: 48,
               color: "white",
             }}
           >
-            🎉 You’re Entered! 🎉
+            <div style={{ fontSize: 64, marginBottom: "20px" }}>🎉</div>
+            <div>You're Entered!</div>
+            <div style={{ fontSize: 32, marginTop: "20px", color: "#a78bfa" }}>
+              Good luck in the draw!
+            </div>
           </div>
         ),
         { width: 1200, height: 630 }
       );
     }
 
-    // 🔹 Tournament list (hardcoded for now)
+    // Tournament list from your tournaments.json
     const tournaments = [
-      "Battle of Malta – €109",
-      "Big $44 PKO – 100k GTD",
-      "Daily Legends $222",
-      "The Bounty Hunter – $44",
-      "The Craic Classic – $5.50",
-      "Midnight Madness – $33",
+      "The Bounty Hunter - $44",
+      "Midnight Madness - $33", 
+      "Progressive KO - $22",
+      "Turbo Special - $11",
+      "Evening Flight - $77",
+      "Late Night Grind - $55"
     ];
 
     return new ImageResponse(
@@ -50,21 +55,59 @@ export async function GET(req: Request) {
             justifyContent: "center",
             width: "100%",
             height: "100%",
-            background: "linear-gradient(to right, #f7971e, #ffd200)",
-            fontSize: 36,
-            color: "black",
+            background: "linear-gradient(45deg, #1e1b4b 0%, #312e81 50%, #3730a3 100%)",
+            fontSize: 32,
+            color: "white",
             padding: "40px",
           }}
         >
-          <div style={{ fontSize: 48, fontWeight: "bold", marginBottom: "30px" }}>
-            Today’s Tournaments
+          <div style={{ 
+            fontSize: 72, 
+            fontWeight: "bold", 
+            marginBottom: "10px",
+            color: "white"
+          }}>
+            MAX CRAIC
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            {tournaments.map((t, i) => (
-              <div key={i}>• {t}</div>
+          <div style={{ 
+            fontSize: 48, 
+            fontWeight: "bold", 
+            color: "#ef4444", 
+            marginBottom: "30px" 
+          }}>
+            POKER
+          </div>
+          <div style={{ 
+            fontSize: 28, 
+            color: "#c4b5fd", 
+            marginBottom: "30px",
+            textAlign: "center"
+          }}>
+            Community-Rewarded Poker
+          </div>
+          <div style={{ 
+            fontSize: 24, 
+            fontWeight: "bold", 
+            marginBottom: "20px",
+            color: "#fbbf24"
+          }}>
+            Today's Tournaments:
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {tournaments.slice(0, 6).map((tournament, i) => (
+              <div key={i} style={{ fontSize: 20, color: "#e5e7eb" }}>
+                • {tournament}
+              </div>
             ))}
           </div>
-          <div style={{ marginTop: "40px", fontSize: 28 }}>⏳ Draw closes soon</div>
+          <div style={{ 
+            marginTop: "30px", 
+            fontSize: 22, 
+            color: "#a78bfa",
+            textAlign: "center"
+          }}>
+            Winner gets 5% profit + 5% bonus for sharing!
+          </div>
         </div>
       ),
       { width: 1200, height: 630 }
