@@ -35,16 +35,6 @@ export async function GET(req: Request) {
       );
     }
 
-    // Tournament list from your tournaments.json
-    const tournaments = [
-      "The Bounty Hunter - $44",
-      "Midnight Madness - $33", 
-      "Progressive KO - $22",
-      "Turbo Special - $11",
-      "Evening Flight - $77",
-      "Late Night Grind - $55"
-    ];
-
     return new ImageResponse(
       (
         <div
@@ -93,12 +83,17 @@ export async function GET(req: Request) {
           }}>
             Today's Tournaments:
           </div>
-          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-            {tournaments.slice(0, 6).map((tournament, i) => (
-              <div key={i} style={{ fontSize: 20, color: "#e5e7eb" }}>
-                • {tournament}
-              </div>
-            ))}
+          <div style={{ 
+            display: "flex", 
+            flexDirection: "column", 
+            gap: "8px",
+            alignItems: "center"
+          }}>
+            <div style={{ fontSize: 20, color: "#e5e7eb" }}>• The Bounty Hunter - $44</div>
+            <div style={{ fontSize: 20, color: "#e5e7eb" }}>• Midnight Madness - $33</div>
+            <div style={{ fontSize: 20, color: "#e5e7eb" }}>• Progressive KO - $22</div>
+            <div style={{ fontSize: 20, color: "#e5e7eb" }}>• Evening Flight - $77</div>
+            <div style={{ fontSize: 20, color: "#e5e7eb" }}>• Late Night Grind - $55</div>
           </div>
           <div style={{ 
             marginTop: "30px", 
