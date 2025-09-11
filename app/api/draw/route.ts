@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server"
 import { redis } from "@/lib/redis"
 
+export async function GET() {
+  return POST()
+}
+
 export async function POST() {
   try {
     // Get all entries
     const entries = await redis.hgetall("entries")
-    if (!entries || Object.keys(entries).length === 0) {
-      return NextResponse.json({ error: "No entries found" }, { status: 400 })
-    }
 
     // Pick random winner wallet address
     const walletAddresses = Object.keys(entries)
