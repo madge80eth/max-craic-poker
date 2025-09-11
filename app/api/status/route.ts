@@ -3,9 +3,9 @@ import { redis } from "@/lib/redis"
 
 export async function GET() {
   try {
-    // Get current winner - need to parse JSON for local Redis
+    // Get current winner - Upstash Redis returns parsed JSON automatically
     const winnerData = await redis.get("winner")
-    const winner = winnerData ? JSON.parse(winnerData) : null
+    const winner = winnerData ? JSON.parse(winnerData as string) : null
     
     // Get total entries count
     const entries = await redis.hgetall("entries")

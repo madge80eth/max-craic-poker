@@ -31,10 +31,9 @@ export async function POST() {
     }
 
     // Save as proper JSON string to Redis
-    const winnerJson = JSON.stringify(winnerData)
-    await redis.set("winner", winnerJson)
+    await redis.set("winner", JSON.stringify(winnerData))
 
-    console.log("Winner saved to Redis:", winnerJson)
+    console.log("Winner saved to Redis:", JSON.stringify(winnerData))
 
     return NextResponse.json({
       success: true,
