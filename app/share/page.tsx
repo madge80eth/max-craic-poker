@@ -1,7 +1,7 @@
 import tournaments from "@/public/tournaments.json"
 
 export const metadata = {
-  title: "Max Craic Poker – Community Game",
+  title: "Max Craic Poker - Community Game",
   other: {
     "fc:frame": "vNext",
     "fc:frame:image": "https://max-craic-poker.vercel.app/api/frame-image",
