@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 import { useAccount, useConnect, useDisconnect } from 'wagmi'
 import { base } from 'wagmi/chains'
 import { coinbaseWallet } from 'wagmi/connectors'
+import dynamic from 'next/dynamic'
 
 interface Tournament {
   name: string
@@ -27,7 +28,7 @@ interface Winner {
   totalEntries: number
 }
 
-export default function MiniApp() {
+function MiniAppContent() {
   const { address, isConnected } = useAccount()
   const { connect } = useConnect()
   const { disconnect } = useDisconnect()
@@ -362,3 +363,22 @@ export default function MiniApp() {
     </div>
   )
 }
+
+// Dynamic import to prevent SSR issues
+const MiniApp = dynamic(() => Promise.resolve(MiniAppContent), {
+  ssr: false,
+  loading: () => (
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
+      <div className="max-w-md mx-auto pt-8">
+        <div className="bg-black/30 backdrop-blur-lg rounded-3xl p-8 border border-white/10">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white mx-auto mb-4"></div>
+            <p className="text-white">Loading...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+})
+
+export default MiniApp
