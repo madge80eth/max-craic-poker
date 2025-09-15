@@ -68,16 +68,16 @@ export async function GET(request: NextRequest) {
               userEntry,
               tournament: userEntry?.tournament || null,
               winner: {
-                walletAddress: newWinnerData.walletAddress,
+                walletAddress: newWinnerData.walletAddress as string,
                 entry: {
-                  tournament: newWinnerData.tournament,
-                  tournamentBuyIn: parseInt(newWinnerData.tournamentBuyIn),
-                  platform: newWinnerData.platform,
+                  tournament: newWinnerData.tournament as string,
+                  tournamentBuyIn: parseInt(newWinnerData.tournamentBuyIn as string),
+                  platform: newWinnerData.platform as string,
                   hasRecasted: newWinnerData.hasRecasted === 'true',
-                  timestamp: parseInt(newWinnerData.timestamp)
+                  timestamp: parseInt(newWinnerData.timestamp as string)
                 },
-                drawnAt: parseInt(newWinnerData.drawnAt),
-                totalEntries: parseInt(newWinnerData.totalEntries)
+                drawnAt: parseInt(newWinnerData.drawnAt as string),
+                totalEntries: parseInt(newWinnerData.totalEntries as string)
               }
             });
           }
