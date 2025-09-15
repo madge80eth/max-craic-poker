@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
     const existingEntry = await redis.hgetall(`entry:${walletAddress}`);
     if (existingEntry && Object.keys(existingEntry).length > 0) {
       // If just updating recast status
-      if (hasRecasted && !existingEntry.hasRecasted) {
+      if (hasRecasted && existingEntry.hasRecasted !== 'true') {
         const updatedEntry = {
           ...existingEntry,
           hasRecasted: 'true'
@@ -65,8 +65,8 @@ export async function POST(request: NextRequest) {
           success: true,
           message: 'Recast status updated',
           tournament: {
-            name: existingEntry.tournament,
-            buyIn: parseInt(existingEntry.tournamentBuyIn)
+            name: existingEntry.tournament as string,
+            buyIn: parseInt(existingEntry.tournamentBuyIn as string)
           }
         });
       }
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
         success: false, 
         error: 'Already entered this raffle',
         tournament: {
-          name: existingEntry.tournament,
+          name: existingEntry.tournament as string,
           buyIn: parseInt(existingEntry.tournamentBuyIn as string)
         }
       }, { status: 400 });
@@ -142,7 +142,7 @@ export async function GET() {
     
     // Get draw time
     const drawTime = await redis.get('draw_time');
-    const timeRemaining = drawTime ? Math.max(0, Math.floor((parseInt(drawTime) - Date.now()) / 1000)) : 0;
+    const timeRemaining = drawTime ? Math.max(0, Math.floor((parseInt(drawTime as string) - Date.now()) / 1000)) : 0;
     
     // Get current winner if exists
     const winner = await redis.hgetall('current_winner');
@@ -154,11 +154,11 @@ export async function GET() {
       timeRemaining,
       hasWinner,
       winner: hasWinner ? {
-        walletAddress: winner.walletAddress,
-        tournament: winner.tournament,
-        tournamentBuyIn: parseInt(winner.tournamentBuyIn),
-        drawnAt: parseInt(winner.drawnAt),
-        totalEntries: parseInt(winner.totalEntries)
+        walletAddress: winner.walletAddress as string,
+        tournament: winner.tournament as string,
+        tournamentBuyIn: parseInt(winner.tournamentBuyIn as string),
+        drawnAt: parseInt(winner.drawnAt as string),
+        totalEntries: parseInt(winner.totalEntries as string)
       } : null
     });
 
