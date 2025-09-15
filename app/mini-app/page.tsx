@@ -376,6 +376,7 @@ export default function MiniAppPage() {
   return (
     <MiniKitProvider
       projectId={process.env.NEXT_PUBLIC_MINIKIT_PROJECT_ID || 'test'}
+      chain={base}
       notificationProxyUrl="/api/notification"
     >
       <MiniApp />
