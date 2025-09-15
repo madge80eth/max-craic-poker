@@ -67,7 +67,7 @@ export default function MiniApp() {
   const [currentWinner, setCurrentWinner] = useState<Winner | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
   const [tournaments] = useState<Tournament[]>([
-    { name: "Sunday Storm", buyIn: 109 },
+    { name: "Sun Storm", buyIn: 109 },
     { name: "Big $55", buyIn: 55 },
     { name: "Mini Main Event", buyIn: 22 },
     { name: "Bounty Builder", buyIn: 33 },
