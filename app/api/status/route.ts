@@ -15,16 +15,16 @@ export async function GET(request: NextRequest) {
     // Get current winner
     const winnerData = await redis.hgetall('current_winner');
     const winner = winnerData && Object.keys(winnerData).length > 0 ? {
-      walletAddress: winnerData.walletAddress,
+      walletAddress: winnerData.walletAddress as string,
       entry: {
-        tournament: winnerData.tournament,
-        tournamentBuyIn: parseInt(winnerData.tournamentBuyIn),
-        platform: winnerData.platform,
+        tournament: winnerData.tournament as string,
+        tournamentBuyIn: parseInt(winnerData.tournamentBuyIn as string),
+        platform: winnerData.platform as string,
         hasRecasted: winnerData.hasRecasted === 'true',
-        timestamp: parseInt(winnerData.timestamp)
+        timestamp: parseInt(winnerData.timestamp as string)
       },
-      drawnAt: parseInt(winnerData.drawnAt),
-      totalEntries: parseInt(winnerData.totalEntries)
+      drawnAt: parseInt(winnerData.drawnAt as string),
+      totalEntries: parseInt(winnerData.totalEntries as string)
     } : null;
 
     // If wallet address provided, get user-specific data
@@ -35,15 +35,15 @@ export async function GET(request: NextRequest) {
       if (entryData && Object.keys(entryData).length > 0) {
         hasEntered = true;
         userEntry = {
-          walletAddress: entryData.walletAddress,
-          platform: entryData.platform,
+          walletAddress: entryData.walletAddress as string,
+          platform: entryData.platform as string,
           tournament: {
-            name: entryData.tournament,
-            buyIn: parseInt(entryData.tournamentBuyIn)
+            name: entryData.tournament as string,
+            buyIn: parseInt(entryData.tournamentBuyIn as string)
           },
-          timestamp: parseInt(entryData.timestamp),
+          timestamp: parseInt(entryData.timestamp as string),
           hasRecasted: entryData.hasRecasted === 'true',
-          userProfile: entryData.userProfile ? JSON.parse(entryData.userProfile) : null
+          userProfile: entryData.userProfile ? JSON.parse(entryData.userProfile as string) : null
         };
       }
     }
