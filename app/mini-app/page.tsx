@@ -7,7 +7,7 @@ import { Play, Users, Clock, Trophy, Wallet } from 'lucide-react';
 import { sdk as farcasterSdk } from '@farcaster/miniapp-sdk';
 
 // Base/OnchainKit imports  
-import { MiniKitProvider, useMinikit } from '@coinbase/onchainkit/minikit';
+import { MiniKitProvider, useMiniKit } from '@coinbase/onchainkit/minikit';
 import { Wallet as OnchainWallet } from '@coinbase/onchainkit/wallet';
 
 interface Tournament {
