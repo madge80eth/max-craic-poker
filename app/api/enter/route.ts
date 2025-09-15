@@ -1,104 +1,169 @@
-// app/api/status/route.ts
+// app/api/enter/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { redis } from '@/lib/redis';
+import tournaments from '@/public/tournaments.json';
 
-export async function GET(request: NextRequest) {
+interface EntryRequest {
+  walletAddress: string;
+  platform: 'frame' | 'miniapp';
+  hasRecasted?: boolean;
+  userProfile?: {
+    fid?: number;
+    username?: string;
+    displayName?: string;
+  };
+}
+
+interface Entry {
+  walletAddress: string;
+  platform: string;
+  tournament: string;
+  tournamentBuyIn: number;
+  timestamp: number;
+  hasRecasted: boolean;
+  userProfile?: {
+    fid?: number;
+    username?: string;
+    displayName?: string;
+  };
+}
+
+export async function POST(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const walletAddress = searchParams.get('address');
+    const body: EntryRequest = await request.json();
+    const { walletAddress, platform, hasRecasted = false, userProfile } = body;
 
-    // Get general status
-    const totalEntries = await redis.scard('entries');
-    const drawTime = await redis.get('draw_time');
-    const timeRemaining = drawTime ? Math.max(0, Math.floor((parseInt(drawTime) - Date.now()) / 1000)) : 0;
-    
-    // Get current winner
-    const winnerData = await redis.hgetall('current_winner');
-    const winner = winnerData && Object.keys(winnerData).length > 0 ? {
-      walletAddress: winnerData.walletAddress,
-      entry: {
-        tournament: winnerData.tournament,
-        tournamentBuyIn: parseInt(winnerData.tournamentBuyIn),
-        platform: winnerData.platform,
-        hasRecasted: winnerData.hasRecasted === 'true',
-        timestamp: parseInt(winnerData.timestamp)
-      },
-      drawnAt: parseInt(winnerData.drawnAt),
-      totalEntries: parseInt(winnerData.totalEntries)
-    } : null;
+    // Validate wallet address
+    if (!walletAddress || !walletAddress.match(/^0x[a-fA-F0-9]{40}$/)) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Invalid wallet address' 
+      }, { status: 400 });
+    }
 
-    // If wallet address provided, get user-specific data
-    let userEntry = null;
-    let hasEntered = false;
-    if (walletAddress && walletAddress.match(/^0x[a-fA-F0-9]{40}$/)) {
-      const entryData = await redis.hgetall(`entry:${walletAddress}`);
-      if (entryData && Object.keys(entryData).length > 0) {
-        hasEntered = true;
-        userEntry = {
-          walletAddress: entryData.walletAddress,
-          platform: entryData.platform,
-          tournament: {
-            name: entryData.tournament,
-            buyIn: parseInt(entryData.tournamentBuyIn)
-          },
-          timestamp: parseInt(entryData.timestamp),
-          hasRecasted: entryData.hasRecasted === 'true',
-          userProfile: entryData.userProfile ? JSON.parse(entryData.userProfile) : null
+    // Check if draw has already happened
+    const winner = await redis.hgetall('current_winner');
+    if (winner && Object.keys(winner).length > 0) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Raffle has already been drawn' 
+      }, { status: 400 });
+    }
+
+    // Check if user has already entered
+    const existingEntry = await redis.hgetall(`entry:${walletAddress}`);
+    if (existingEntry && Object.keys(existingEntry).length > 0) {
+      // If just updating recast status
+      if (hasRecasted && existingEntry.hasRecasted !== 'true') {
+        const updatedEntry = {
+          ...existingEntry,
+          hasRecasted: 'true'
         };
+        await redis.hset(`entry:${walletAddress}`, updatedEntry);
+        
+        return NextResponse.json({
+          success: true,
+          message: 'Recast status updated',
+          tournament: {
+            name: existingEntry.tournament as string,
+            buyIn: parseInt(existingEntry.tournamentBuyIn as string)
+          }
+        });
       }
+      
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Already entered this raffle',
+        tournament: {
+          name: existingEntry.tournament as string,
+          buyIn: parseInt(existingEntry.tournamentBuyIn as string)
+        }
+      }, { status: 400 });
     }
 
-    // Auto-trigger draw if time is up and no winner yet
-    if (timeRemaining <= 0 && !winner && totalEntries > 0) {
-      try {
-        const drawResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/draw`, {
-          method: 'POST'
-        });
-        const drawResult = await drawResponse.json();
-        
-        if (drawResult.success) {
-          // Refresh winner data
-          const newWinnerData = await redis.hgetall('current_winner');
-          if (newWinnerData && Object.keys(newWinnerData).length > 0) {
-            return NextResponse.json({
-              success: true,
-              totalEntries,
-              timeRemaining: 0,
-              hasEntered,
-              userEntry,
-              tournament: userEntry?.tournament || null,
-              winner: {
-                walletAddress: newWinnerData.walletAddress as string,
-                entry: {
-                  tournament: newWinnerData.tournament as string,
-                  tournamentBuyIn: parseInt(newWinnerData.tournamentBuyIn as string),
-                  platform: newWinnerData.platform as string,
-                  hasRecasted: newWinnerData.hasRecasted === 'true',
-                  timestamp: parseInt(newWinnerData.timestamp as string)
-                },
-                drawnAt: parseInt(newWinnerData.drawnAt as string),
-                totalEntries: parseInt(newWinnerData.totalEntries as string)
-              }
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Auto-draw failed:', error);
-      }
+    // Randomly assign tournament
+    const randomTournament = tournaments[Math.floor(Math.random() * tournaments.length)];
+    
+    // Create entry
+    const entry: Entry = {
+      walletAddress,
+      platform,
+      tournament: randomTournament.name,
+      tournamentBuyIn: Number(randomTournament.buyIn),
+      timestamp: Date.now(),
+      hasRecasted,
+      userProfile
+    };
+
+    // Store entry
+    await redis.hset(`entry:${walletAddress}`, {
+      walletAddress: entry.walletAddress,
+      platform: entry.platform,
+      tournament: entry.tournament,
+      tournamentBuyIn: entry.tournamentBuyIn.toString(),
+      timestamp: entry.timestamp.toString(),
+      hasRecasted: entry.hasRecasted.toString(),
+      userProfile: JSON.stringify(entry.userProfile || {})
+    });
+
+    // Add to entries list
+    await redis.sadd('entries', walletAddress);
+
+    // Get total entries for response
+    const totalEntries = await redis.scard('entries');
+
+    // Set initial countdown if this is the first entry
+    if (totalEntries === 1) {
+      const drawTime = Date.now() + (12 * 60 * 60 * 1000); // 12 hours from now
+      await redis.set('draw_time', drawTime);
     }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Successfully entered raffle',
+      tournament: randomTournament,
+      totalEntries,
+      entry
+    });
+
+  } catch (error) {
+    console.error('Entry error:', error);
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Internal server error' 
+    }, { status: 500 });
+  }
+}
+
+export async function GET() {
+  try {
+    // Get total entries
+    const totalEntries = await redis.scard('entries');
+    
+    // Get draw time
+    const drawTime = await redis.get('draw_time');
+    const timeRemaining = drawTime ? Math.max(0, Math.floor((parseInt(drawTime as string) - Date.now()) / 1000)) : 0;
+    
+    // Get current winner if exists
+    const winner = await redis.hgetall('current_winner');
+    const hasWinner = winner && Object.keys(winner).length > 0;
 
     return NextResponse.json({
       success: true,
       totalEntries,
       timeRemaining,
-      hasEntered,
-      userEntry,
-      tournament: userEntry?.tournament || null,
-      winner
+      hasWinner,
+      winner: hasWinner ? {
+        walletAddress: winner.walletAddress as string,
+        tournament: winner.tournament as string,
+        tournamentBuyIn: parseInt(winner.tournamentBuyIn as string),
+        drawnAt: parseInt(winner.drawnAt as string),
+        totalEntries: parseInt(winner.totalEntries as string)
+      } : null
     });
 
   } catch (error) {
-    console.error('Status error:', error);
+    console.error('Get entries error:', error);
     return NextResponse.json({ 
       success: false, 
       error: 'Internal server error' 
