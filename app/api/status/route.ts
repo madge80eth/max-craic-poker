@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     // Get general status
     const totalEntries = await redis.scard('entries');
     const drawTime = await redis.get('draw_time');
-    const timeRemaining = drawTime ? Math.max(0, Math.floor((parseInt(drawTime) - Date.now()) / 1000)) : 0;
+    const timeRemaining = drawTime ? Math.max(0, Math.floor((parseInt(drawTime as string) - Date.now()) / 1000)) : 0;
     
     // Get current winner
     const winnerData = await redis.hgetall('current_winner');
