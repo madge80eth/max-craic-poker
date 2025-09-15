@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Play, Users, Clock, Trophy, Wallet } from 'lucide-react';
-import { base } from 'wagmi/chains';  // ADD THIS LINE
+import { base } from 'wagmi/chains';
 
 // Farcaster SDK
 import { sdk as farcasterSdk } from '@farcaster/miniapp-sdk';
@@ -32,12 +32,19 @@ interface Winner {
   totalEntries: number;
 }
 
-// Platform detection utility
+// Fixed Platform detection utility
 function detectPlatform(): 'farcaster' | 'base' | 'unknown' {
   if (typeof window === 'undefined') return 'unknown';
   
-  // Check if we're in Farcaster context
-  if (window.parent !== window && farcasterSdk) {
+  // First check for MiniKit context (more reliable)
+  try {
+    // Check if we're in an iframe/frame context
+    if (window.parent !== window) {
+      // We're in an iframe/frame context
+      return 'farcaster';
+    }
+  } catch (error) {
+    // Cross-origin iframe access blocked
     return 'farcaster';
   }
   
@@ -46,10 +53,15 @@ function detectPlatform(): 'farcaster' | 'base' | 'unknown' {
     return 'base';
   }
   
+  // Check for any ethereum provider as fallback
+  if (window.ethereum) {
+    return 'base';
+  }
+  
   return 'unknown';
 }
 
-// Unified wallet hook
+// Alternative: Use MiniKit's built-in detection
 function useUnifiedWallet() {
   const [platform, setPlatform] = useState<'farcaster' | 'base' | 'unknown'>('unknown');
   const [address, setAddress] = useState<string | null>(null);
@@ -60,13 +72,30 @@ function useUnifiedWallet() {
   const minikit = useMiniKit();
 
   useEffect(() => {
-    const detectedPlatform = detectPlatform();
-    setPlatform(detectedPlatform);
-    
-    // Auto-connect for Farcaster
-    if (detectedPlatform === 'farcaster') {
-      connectFarcaster();
-    }
+    // Let MiniKit handle detection
+    const initializeWallet = async () => {
+      try {
+        // Try Farcaster context first
+        const context = await farcasterSdk.context;
+        if (context?.user?.fid) {
+          setPlatform('farcaster');
+          setAddress(`farcaster:${context.user.fid}`);
+          return;
+        }
+      } catch (error) {
+        console.log('Not in Farcaster context, trying Base...');
+      }
+
+      // Try Base wallet
+      if (window.ethereum) {
+        setPlatform('base');
+        // Don't auto-connect for Base, let user click
+      } else {
+        setPlatform('unknown');
+      }
+    };
+
+    initializeWallet();
   }, []);
 
   const connectFarcaster = async () => {
@@ -74,10 +103,8 @@ function useUnifiedWallet() {
       setIsConnecting(true);
       setError(null);
       
-      // Get Farcaster user context
       const context = await farcasterSdk.context;
       if (context?.user?.fid) {
-        // Use FID as address identifier for Farcaster
         setAddress(`farcaster:${context.user.fid}`);
       } else {
         throw new Error('No Farcaster user context available');
