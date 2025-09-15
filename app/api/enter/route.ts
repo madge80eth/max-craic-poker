@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
       walletAddress,
       platform,
       tournament: randomTournament.name,
-      tournamentBuyIn: randomTournament.buyIn,
+      tournamentBuyIn: Number(randomTournament.buyIn),
       timestamp: Date.now(),
       hasRecasted,
       userProfile
