@@ -56,7 +56,7 @@ function useUnifiedWallet() {
   const [error, setError] = useState<string | null>(null);
 
   // Base/MiniKit context
-  const minikit = useMinikit();
+  const minikit = useMiniKit();
 
   useEffect(() => {
     const detectedPlatform = detectPlatform();
