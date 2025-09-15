@@ -4,12 +4,8 @@ import { useState, useEffect } from 'react';
 import { Play, Users, Clock, Trophy, Wallet } from 'lucide-react';
 import { base } from 'wagmi/chains';
 
-// Farcaster SDK
-import { sdk as farcasterSdk } from '@farcaster/miniapp-sdk';
-
 // Base/OnchainKit imports  
-import { MiniKitProvider, useMiniKit } from '@coinbase/onchainkit/minikit';
-import { Wallet as OnchainWallet } from '@coinbase/onchainkit/wallet';
+import { MiniKitProvider } from '@coinbase/onchainkit/minikit';
 
 interface Tournament {
   name: string;
@@ -32,129 +28,32 @@ interface Winner {
   totalEntries: number;
 }
 
-// Fixed Platform detection utility
-function detectPlatform(): 'farcaster' | 'base' | 'unknown' {
-  if (typeof window === 'undefined') return 'unknown';
-  
-  // First check for MiniKit context (more reliable)
-  try {
-    // Check if we're in an iframe/frame context
-    if (window.parent !== window) {
-      // We're in an iframe/frame context
-      return 'farcaster';
-    }
-  } catch (error) {
-    // Cross-origin iframe access blocked
-    return 'farcaster';
-  }
-  
-  // Check for Base/Coinbase Wallet context
-  if (window.ethereum?.isCoinbaseWallet) {
-    return 'base';
-  }
-  
-  // Check for any ethereum provider as fallback
-  if (window.ethereum) {
-    return 'base';
-  }
-  
-  return 'unknown';
-}
-
-// Alternative: Use MiniKit's built-in detection
-function useUnifiedWallet() {
-  const [platform, setPlatform] = useState<'farcaster' | 'base' | 'unknown'>('unknown');
-  const [address, setAddress] = useState<string | null>(null);
+// Simple mock wallet system
+function useMockWallet() {
+  const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  // Base/MiniKit context
-  const minikit = useMiniKit();
-
-  useEffect(() => {
-    // Let MiniKit handle detection
-    const initializeWallet = async () => {
-      try {
-        // Try Farcaster context first
-        const context = await farcasterSdk.context;
-        if (context?.user?.fid) {
-          setPlatform('farcaster');
-          setAddress(`farcaster:${context.user.fid}`);
-          return;
-        }
-      } catch (error) {
-        console.log('Not in Farcaster context, trying Base...');
-      }
-
-      // Try Base wallet
-      if (window.ethereum) {
-        setPlatform('base');
-        // Don't auto-connect for Base, let user click
-      } else {
-        setPlatform('unknown');
-      }
-    };
-
-    initializeWallet();
-  }, []);
-
-  const connectFarcaster = async () => {
-    try {
-      setIsConnecting(true);
-      setError(null);
-      
-      const context = await farcasterSdk.context;
-      if (context?.user?.fid) {
-        setAddress(`farcaster:${context.user.fid}`);
-      } else {
-        throw new Error('No Farcaster user context available');
-      }
-    } catch (err) {
-      setError('Failed to connect to Farcaster');
-      console.error('Farcaster connection error:', err);
-    } finally {
-      setIsConnecting(false);
-    }
-  };
-
-  const connectBase = async () => {
-    try {
-      setIsConnecting(true);
-      setError(null);
-      
-      if (window.ethereum) {
-        const accounts = await window.ethereum.request({
-          method: 'eth_requestAccounts'
-        });
-        if (accounts[0]) {
-          setAddress(accounts[0]);
-        }
-      } else {
-        throw new Error('No Ethereum provider found');
-      }
-    } catch (err) {
-      setError('Failed to connect wallet');
-      console.error('Base wallet connection error:', err);
-    } finally {
-      setIsConnecting(false);
-    }
-  };
-
+  const [address, setAddress] = useState<string | null>(null);
+  
+  // Mock address for testing
+  const mockAddress = "0x742d35Cc6564C5532C3C1e5329A8C0d3f1e90F43";
+  
   const connect = async () => {
-    if (platform === 'farcaster') {
-      await connectFarcaster();
-    } else {
-      await connectBase();
-    }
+    setIsConnecting(true);
+    // Simulate connection delay
+    setTimeout(() => {
+      setAddress(mockAddress);
+      setIsConnected(true);
+      setIsConnecting(false);
+    }, 1000);
   };
 
   return {
-    platform,
     address,
+    isConnected,
     isConnecting,
-    error,
     connect,
-    isConnected: !!address
+    platform: 'mock' as const,
+    error: null
   };
 }
 
@@ -167,14 +66,7 @@ function MiniApp() {
   const [drawTime, setDrawTime] = useState<Date | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<string>('');
 
-  const { platform, address, isConnecting, error, connect, isConnected } = useUnifiedWallet();
-
-  // Initialize Farcaster SDK
-  useEffect(() => {
-    if (platform === 'farcaster') {
-      farcasterSdk.actions.ready();
-    }
-  }, [platform]);
+  const { platform, address, isConnecting, error, connect, isConnected } = useMockWallet();
 
   // Load tournaments and status
   useEffect(() => {
@@ -187,7 +79,7 @@ function MiniApp() {
     }, 1000);
     
     return () => clearInterval(interval);
-  }, []);
+  }, [address]);
 
   const loadTournaments = async () => {
     try {
@@ -251,7 +143,7 @@ function MiniApp() {
         body: JSON.stringify({
           walletAddress: address,
           platform: platform,
-          hasRecasted: false // Could implement sharing logic here
+          hasRecasted: false
         })
       });
       
@@ -259,13 +151,13 @@ function MiniApp() {
       
       if (data.success) {
         setCurrentEntry(data.entry);
-        // Optional: trigger sharing for bonus
-        if (platform === 'farcaster') {
-          // Could use farcasterSdk.actions.openComposer here
-        }
+      } else {
+        console.error('Entry failed:', data.error);
+        alert('Failed to enter raffle: ' + (data.error || 'Unknown error'));
       }
     } catch (error) {
       console.error('Failed to enter raffle:', error);
+      alert('Network error - please try again');
     } finally {
       setIsLoading(false);
     }
@@ -278,7 +170,7 @@ function MiniApp() {
           <Wallet className="w-12 h-12 mx-auto mb-4 text-purple-600" />
           <h3 className="text-lg font-semibold mb-2">Connect Wallet</h3>
           <p className="text-gray-600 mb-4">
-            Platform detected: {platform === 'farcaster' ? 'Farcaster' : platform === 'base' ? 'Base' : 'Web'}
+            Mock wallet for testing
           </p>
           {error && (
             <p className="text-red-600 mb-4 text-sm">{error}</p>
@@ -299,7 +191,7 @@ function MiniApp() {
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">Connected Wallet</h3>
           <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
-            {platform === 'farcaster' ? 'Farcaster' : 'Base'}
+            Mock
           </span>
         </div>
         <p className="text-gray-600 font-mono text-sm break-all">
