@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Play, Users, Clock, Trophy, Wallet } from 'lucide-react';
+import { base } from 'wagmi/chains';  // ADD THIS LINE
 
 // Farcaster SDK
 import { sdk as farcasterSdk } from '@farcaster/miniapp-sdk';
