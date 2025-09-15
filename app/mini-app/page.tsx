@@ -1,40 +1,8 @@
-{/* Assigned Tournament */}
-        {hasEntered && assignedTournament && (
-          <div className="bg-green-500/20 border border-green-500/30 rounded-xl p-6 mb-6">
-            <div className="flex items-center gap-2 mb-3">
-              <Trophy className="w-6 h-6 text-green-400" />
-              <h3 className="text-xl font-bold">You're In!</h3>
-            </div>
-            <div className="text-center mb-4">
-              <p className="text-lg font-semibold">{assignedTournament.name}</p>
-              <p className="text-green-300">Buy-in: ${assignedTournament.buyIn}</p>
-            </div>
-            <div className="bg-white/10 rounded-lg p-4 mb-4">
-              <h4 className="font-sem'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
-import { Dice6, Trophy, Clock, Users, DollarSign, ExternalLink } from 'lucide-react';
-
-declare global {
-  interface Window {
-    MiniKit: {
-      install: () => Promise<boolean>;
-      isInstalled: () => boolean;
-      user: {
-        wallet: {
-          request: (params: { method: string }) => Promise<{ address: string }>;
-          isConnected: () => boolean;
-        };
-        profile: () => Promise<{
-          fid: number;
-          username: string;
-          displayName: string;
-        }>;
-      };
-      share: (params: { text: string; embeds?: string[] }) => Promise<boolean>;
-    };
-  }
-}
+import { Dice6, Trophy, Clock, Users, DollarSign, ExternalLink, AlertCircle, CheckCircle } from 'lucide-react';
+import { useMiniKit } from '@/hooks/useMiniKit';
 
 interface Tournament {
   name: string;
@@ -58,14 +26,26 @@ interface Winner {
 }
 
 export default function MiniApp() {
-  const [walletAddress, setWalletAddress] = useState<string>('');
-  const [userProfile, setUserProfile] = useState<any>(null);
-  const [isConnecting, setIsConnecting] = useState(false);
+  const { 
+    isAvailable, 
+    isConnected, 
+    isConnecting, 
+    walletAddress, 
+    user, 
+    connect, 
+    share, 
+    error: walletError 
+  } = useMiniKit();
+  
   const [isEntering, setIsEntering] = useState(false);
   const [hasEntered, setHasEntered] = useState(false);
   const [assignedTournament, setAssignedTournament] = useState<Tournament | null>(null);
   const [currentWinner, setCurrentWinner] = useState<Winner | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<number>(0);
+  const [totalEntries, setTotalEntries] = useState<number>(0);
+  const [error, setError] = useState<string>('');
+  const [hasShared, setHasShared] = useState(false);
+  
   const [tournaments] = useState<Tournament[]>([
     { name: "Sun Storm", buyIn: 109 },
     { name: "Big $55", buyIn: 55 },
@@ -76,63 +56,42 @@ export default function MiniApp() {
   ]);
 
   useEffect(() => {
-    initializeMiniKit();
     fetchStatus();
-    startCountdown();
+    const interval = setInterval(fetchStatus, 10000); // Poll every 10 seconds
+    return () => clearInterval(interval);
   }, []);
 
-  const initializeMiniKit = async () => {
-    try {
-      if (typeof window !== 'undefined' && window.MiniKit) {
-        const installed = await window.MiniKit.install();
-        if (installed && window.MiniKit.user.wallet.isConnected()) {
-          await connectWallet();
-        }
-      }
-    } catch (error) {
-      console.error('MiniKit initialization failed:', error);
+  useEffect(() => {
+    if (walletAddress) {
+      checkEntryStatus(walletAddress);
     }
-  };
+  }, [walletAddress]);
 
-  const connectWallet = async () => {
-    if (!window.MiniKit) {
-      alert('MiniKit not available. Please open in Coinbase Wallet.');
-      return;
+  useEffect(() => {
+    if (timeRemaining > 0) {
+      const interval = setInterval(() => {
+        setTimeRemaining(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            fetchStatus(); // Check for winner
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(interval);
     }
-
-    setIsConnecting(true);
-    try {
-      // Get wallet address
-      const walletResponse = await window.MiniKit.user.wallet.request({
-        method: 'eth_requestAccounts'
-      });
-      
-      const address = walletResponse.address;
-      setWalletAddress(address);
-
-      // Get user profile
-      const profile = await window.MiniKit.user.profile();
-      setUserProfile(profile);
-
-      // Check if user has already entered
-      await checkEntryStatus(address);
-      
-    } catch (error) {
-      console.error('Wallet connection failed:', error);
-      alert('Failed to connect wallet. Please try again.');
-    } finally {
-      setIsConnecting(false);
-    }
-  };
+  }, [timeRemaining]);
 
   const checkEntryStatus = async (address: string) => {
     try {
       const response = await fetch(`/api/status?address=${address}`);
       const data = await response.json();
       
-      if (data.hasEntered) {
+      if (data.hasEntered && data.userEntry) {
         setHasEntered(true);
         setAssignedTournament(data.tournament);
+        setHasShared(data.userEntry.hasRecasted);
       }
     } catch (error) {
       console.error('Failed to check entry status:', error);
@@ -148,36 +107,27 @@ export default function MiniApp() {
         setCurrentWinner(data.winner);
       }
       
-      if (data.timeRemaining) {
+      if (data.timeRemaining !== undefined) {
         setTimeRemaining(data.timeRemaining);
+      }
+      
+      if (data.totalEntries !== undefined) {
+        setTotalEntries(data.totalEntries);
       }
     } catch (error) {
       console.error('Failed to fetch status:', error);
     }
   };
 
-  const startCountdown = () => {
-    const interval = setInterval(() => {
-      setTimeRemaining(prev => {
-        if (prev <= 1) {
-          clearInterval(interval);
-          fetchStatus(); // Check for winner
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(interval);
-  };
-
   const enterRaffle = async () => {
-    if (!walletAddress) {
-      await connectWallet();
+    if (!isConnected) {
+      await connect();
       return;
     }
 
     setIsEntering(true);
+    setError('');
+    
     try {
       const response = await fetch('/api/enter', {
         method: 'POST',
@@ -187,7 +137,7 @@ export default function MiniApp() {
         body: JSON.stringify({
           walletAddress,
           platform: 'miniapp',
-          userProfile
+          userProfile: user
         }),
       });
 
@@ -196,40 +146,25 @@ export default function MiniApp() {
       if (result.success) {
         setHasEntered(true);
         setAssignedTournament(result.tournament);
-        alert(`Successfully entered! You're assigned to: ${result.tournament.name}`);
+        setTotalEntries(result.totalEntries);
+        fetchStatus(); // Refresh status
       } else {
-        alert(`Entry failed: ${result.error}`);
+        setError(result.error || 'Entry failed');
       }
     } catch (error) {
       console.error('Entry failed:', error);
-      alert('Failed to enter raffle. Please try again.');
+      setError('Failed to enter raffle. Please try again.');
     } finally {
       setIsEntering(false);
     }
   };
 
   const shareToFarcaster = async () => {
-    if (!window.MiniKit) {
-      // Fallback to regular sharing
-      const shareText = `Just entered the Max Craic Poker raffle! 🎰 Win 5% of tournament profits + 5% bonus for sharing. Join at ${window.location.origin}/share`;
-      
-      if (navigator.share) {
-        await navigator.share({
-          title: 'Max Craic Poker Raffle',
-          text: shareText,
-        });
-      } else {
-        navigator.clipboard.writeText(shareText);
-        alert('Share text copied to clipboard!');
-      }
-      return;
-    }
-
     try {
-      const shared = await window.MiniKit.share({
-        text: `Just entered the Max Craic Poker raffle! 🎰 Win 5% of tournament profits + 5% bonus for sharing.`,
-        embeds: [`${window.location.origin}/share`]
-      });
+      const shareText = `Just entered the Max Craic Poker raffle! 🎰 Win 5% of tournament profits + 5% bonus for sharing.`;
+      const embedUrl = `${window.location.origin}/share`;
+      
+      const shared = await share(shareText, embedUrl);
       
       if (shared) {
         // Update entry to mark as shared for bonus
@@ -242,13 +177,15 @@ export default function MiniApp() {
             walletAddress,
             platform: 'miniapp',
             hasRecasted: true,
-            userProfile
+            userProfile: user
           }),
         });
-        alert('Thanks for sharing! You now qualify for the 5% sharing bonus if you win! 🎉');
+        setHasShared(true);
+        setError('');
       }
     } catch (error) {
       console.error('Sharing failed:', error);
+      setError('Sharing failed. Please try again.');
     }
   };
 
@@ -276,19 +213,33 @@ export default function MiniApp() {
         </div>
 
         {/* Wallet Connection */}
-        {!walletAddress ? (
+        {!isConnected ? (
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 mb-6 text-center">
             <h2 className="text-xl font-semibold mb-4">Connect Your Wallet</h2>
             <p className="text-gray-300 mb-6">
-              Connect with Coinbase Wallet to enter the raffle and win tournament profits
+              {isAvailable 
+                ? "Connect with Coinbase Wallet to enter the raffle and win tournament profits"
+                : "This app works best in Coinbase Wallet. You can still participate with limited features."
+              }
             </p>
+            {(walletError || error) && (
+              <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-3 mb-4 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-red-400" />
+                <p className="text-sm text-red-300">{walletError || error}</p>
+              </div>
+            )}
             <button
-              onClick={connectWallet}
+              onClick={connect}
               disabled={isConnecting}
               className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50"
             >
               {isConnecting ? 'Connecting...' : 'Connect Wallet'}
             </button>
+            {!isAvailable && (
+              <p className="text-xs text-gray-400 mt-2">
+                For full functionality, open in Coinbase Wallet app
+              </p>
+            )}
           </div>
         ) : (
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4 mb-6">
@@ -296,14 +247,31 @@ export default function MiniApp() {
               <div>
                 <p className="text-sm text-gray-300">Connected Wallet</p>
                 <p className="font-mono">{formatAddress(walletAddress)}</p>
-                {userProfile && (
-                  <p className="text-sm text-blue-300">@{userProfile.username}</p>
+                {user && (
+                  <p className="text-sm text-blue-300">@{user.username || user.displayName}</p>
                 )}
               </div>
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-green-500" />
+                <span className="text-xs text-green-400">Connected</span>
+              </div>
             </div>
           </div>
         )}
+
+        {/* Stats Bar */}
+        <div className="bg-white/5 rounded-xl p-4 mb-6">
+          <div className="grid grid-cols-2 gap-4 text-center">
+            <div>
+              <p className="text-2xl font-bold text-blue-400">{totalEntries}</p>
+              <p className="text-sm text-gray-300">Total Entries</p>
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-green-400">5-10%</p>
+              <p className="text-sm text-gray-300">Profit Share</p>
+            </div>
+          </div>
+        </div>
 
         {/* Timer */}
         <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 mb-6 text-center">
@@ -354,9 +322,15 @@ export default function MiniApp() {
         )}
 
         {/* Entry Section */}
-        {walletAddress && !hasEntered && timeRemaining > 0 && (
+        {isConnected && !hasEntered && timeRemaining > 0 && (
           <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 mb-6">
             <h3 className="text-xl font-semibold mb-4 text-center">Enter the Raffle</h3>
+            {error && (
+              <div className="bg-red-500/20 border border-red-500/30 rounded-lg p-3 mb-4 flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 text-red-400" />
+                <p className="text-sm text-red-300">{error}</p>
+              </div>
+            )}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
               {tournaments.map((tournament, index) => (
                 <div key={index} className="bg-white/10 rounded-lg p-3 text-center">
@@ -377,9 +351,16 @@ export default function MiniApp() {
             <button
               onClick={enterRaffle}
               disabled={isEntering}
-              className="w-full bg-green-600 hover:bg-green-700 py-3 px-4 rounded-lg font-semibold transition-colors disabled:opacity-50"
+              className="w-full bg-green-600 hover:bg-green-700 py-3 px-4 rounded-lg font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
             >
-              {isEntering ? 'Entering...' : 'Enter Raffle (Free)'}
+              {isEntering ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  Entering...
+                </>
+              ) : (
+                'Enter Raffle (Free)'
+              )}
             </button>
           </div>
         )}
