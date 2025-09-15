@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
         error: 'Already entered this raffle',
         tournament: {
           name: existingEntry.tournament,
-          buyIn: parseInt(existingEntry.tournamentBuyIn)
+          buyIn: parseInt(existingEntry.tournamentBuyIn as string)
         }
       }, { status: 400 });
     }
