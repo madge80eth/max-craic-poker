@@ -1,112 +1,305 @@
-'use client'
+'use client';
 
-import React, { useState, useEffect } from 'react'
-import { Clock, Trophy, Users, ArrowRight } from 'lucide-react'
-import Link from 'next/link'
+import { useState, useEffect } from 'react';
+import { Play, Users, Clock, Trophy, Wallet } from 'lucide-react';
+import { base } from 'wagmi/chains';
 
-const Homepage = () => {
-  const [timeLeft, setTimeLeft] = useState(43200)
-  const [tournaments, setTournaments] = useState<any[]>([])
+// Base/OnchainKit imports  
+import { MiniKitProvider } from '@coinbase/onchainkit/minikit';
 
-  useEffect(() => {
-    fetch('/tournaments.json')
-      .then(res => res.json())
-      .then(data => setTournaments(data))
-      .catch(err => console.error('Failed to load tournaments:', err))
-  }, [])
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [])
-
-  const formatTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600)
-    const minutes = Math.floor((seconds % 3600) / 60)
-    const secs = seconds % 60
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white p-6">
-      <div className="max-w-md mx-auto">
-        <div className="text-center mb-8">
-          <div className="mb-4">
-            <img 
-              src="/mcp-logo.png" 
-              alt="Max Craic Poker Logo" 
-              style={{ width: '80px', height: '80px', objectFit: 'contain' }}
-              className="mx-auto"
-            />
-          </div>
-          <h1 className="text-2xl font-bold mb-1">MAX CRAIC</h1>
-          <div className="text-red-400 font-bold text-lg mb-2">POKER</div>
-          <p className="text-purple-200 text-sm">Community-Rewarded Poker</p>
-        </div>
-
-        <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 mb-6">
-          <div className="text-center">
-            <Clock className="h-8 w-8 mx-auto mb-2 text-purple-300" />
-            <h2 className="text-lg font-semibold mb-1">Next Draw in:</h2>
-            <div className="text-3xl font-bold text-purple-300 font-mono">
-              {formatTime(timeLeft)}
-            </div>
-          </div>
-        </div>
-
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
-            <Trophy className="h-5 w-5" />
-            Today's Tournaments
-          </h3>
-          <div className="space-y-2">
-            {tournaments.slice(0, 6).map((tournament, index) => (
-              <div key={index} className="bg-white/5 rounded-lg p-3 border border-white/10">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="font-medium">{tournament.name}</div>
-                  </div>
-                  <div className="text-purple-300 font-semibold">
-                    {tournament.buyIn}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-xl p-6 border border-purple-300/30 mb-4">
-          <div className="text-center mb-4">
-            <Users className="h-8 w-8 mx-auto mb-2 text-blue-300" />
-            <h3 className="text-lg font-bold">Community Game</h3>
-            <p className="text-sm text-gray-300 mt-1">
-              Join the raffle! Winner gets 5% of tournament profits + 5% bonus for sharing!
-            </p>
-          </div>
-          
-          <Link href="/mini-app">
-            <button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
-              Enter Community Game
-              <ArrowRight className="h-4 w-4" />
-            </button>
-          </Link>
-        </div>
-
-        <div className="text-center">
-          <p className="text-sm text-gray-400">
-            Click above to join the community raffle in our Mini App!
-          </p>
-        </div>
-      </div>
-    </div>
-  )
+interface Tournament {
+  name: string;
+  buyIn: string;
 }
 
-export default Homepage
+interface Entry {
+  walletAddress: string;
+  platform: string;
+  tournament: Tournament;
+  tournamentBuyIn: string;
+  timestamp: string;
+  hasRecasted: boolean;
+}
+
+interface Winner {
+  walletAddress: string;
+  entry: Entry;
+  drawnAt: string;
+  totalEntries: number;
+}
+
+// Simple mock wallet system
+function useMockWallet() {
+  const [isConnected, setIsConnected] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [address, setAddress] = useState<string | null>(null);
+  
+  // Mock address for testing
+  const mockAddress = "0x742d35Cc6564C5532C3C1e5329A8C0d3f1e90F43";
+  
+  const connect = async () => {
+    setIsConnecting(true);
+    // Simulate connection delay
+    setTimeout(() => {
+      setAddress(mockAddress);
+      setIsConnected(true);
+      setIsConnecting(false);
+    }, 1000);
+  };
+
+  return {
+    address,
+    isConnected,
+    isConnecting,
+    connect,
+    platform: 'mock' as const,
+    error: null
+  };
+}
+
+// Main Mini App Component
+function MiniApp() {
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [currentEntry, setCurrentEntry] = useState<Entry | null>(null);
+  const [currentWinner, setCurrentWinner] = useState<Winner | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [drawTime, setDrawTime] = useState<Date | null>(null);
+  const [timeRemaining, setTimeRemaining] = useState<string>('');
+
+  const { platform, address, isConnecting, error, connect, isConnected } = useMockWallet();
+
+  // Load tournaments and status
+  useEffect(() => {
+    loadTournaments();
+    checkStatus();
+    
+    const interval = setInterval(() => {
+      checkStatus();
+      updateTimeRemaining();
+    }, 1000);
+    
+    return () => clearInterval(interval);
+  }, [address]);
+
+  const loadTournaments = async () => {
+    try {
+      const response = await fetch('/tournaments.json');
+      const data = await response.json();
+      setTournaments(data);
+    } catch (error) {
+      console.error('Failed to load tournaments:', error);
+    }
+  };
+
+  const checkStatus = async () => {
+    if (!address) return;
+    
+    try {
+      const response = await fetch(`/api/status?address=${encodeURIComponent(address)}`);
+      const data = await response.json();
+      
+      if (data.entry) {
+        setCurrentEntry(data.entry);
+      }
+      
+      if (data.winner) {
+        setCurrentWinner(data.winner);
+      }
+      
+      if (data.drawTime) {
+        setDrawTime(new Date(data.drawTime));
+      }
+    } catch (error) {
+      console.error('Failed to check status:', error);
+    }
+  };
+
+  const updateTimeRemaining = () => {
+    if (!drawTime) return;
+    
+    const now = new Date();
+    const diff = drawTime.getTime() - now.getTime();
+    
+    if (diff <= 0) {
+      setTimeRemaining('Draw complete!');
+      return;
+    }
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+    
+    setTimeRemaining(`${hours}h ${minutes}m ${seconds}s`);
+  };
+
+  const enterRaffle = async () => {
+    if (!address) return;
+    
+    setIsLoading(true);
+    try {
+      const response = await fetch('/api/enter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          walletAddress: address,
+          platform: platform,
+          hasRecasted: false
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setCurrentEntry(data.entry);
+      } else {
+        console.error('Entry failed:', data.error);
+        alert('Failed to enter raffle: ' + (data.error || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Failed to enter raffle:', error);
+      alert('Network error - please try again');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const renderWalletSection = () => {
+    if (!isConnected) {
+      return (
+        <div className="bg-white/10 backdrop-blur-lg border border-white/20 p-6 rounded-xl text-center shadow-lg">
+          <Wallet className="w-12 h-12 mx-auto mb-4 text-yellow-400" />
+          <h3 className="text-lg font-semibold mb-2 text-white">Connect Wallet</h3>
+          <p className="text-purple-100 mb-4">
+            Mock wallet for testing
+          </p>
+          {error && (
+            <p className="text-red-600 mb-4 text-sm">{error}</p>
+          )}
+          <button
+            onClick={connect}
+            disabled={isConnecting}
+            className="bg-purple-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-purple-700 disabled:opacity-50"
+          >
+            {isConnecting ? 'Connecting...' : 'Connect Wallet'}
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <div className="bg-white p-6 rounded-xl border border-gray-200">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold">Connected Wallet</h3>
+          <span className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm font-medium">
+            Mock
+          </span>
+        </div>
+        <p className="text-gray-600 font-mono text-sm break-all">
+          {address}
+        </p>
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-600 to-blue-800 p-4">
+      <div className="max-w-md mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="w-20 h-20 mx-auto mb-4 bg-purple-600 rounded-full flex items-center justify-center">
+            <Trophy className="w-10 h-10 text-white" />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900">MAX CRAIC</h1>
+          <p className="text-purple-600 font-semibold">POKER</p>
+          <p className="text-gray-600 mt-2">Community-Rewarded Tournaments</p>
+        </div>
+
+        {/* Wallet Connection */}
+        {renderWalletSection()}
+
+        {/* Tournament Info */}
+        {tournaments.length > 0 && (
+          <div className="bg-white p-6 rounded-xl border border-gray-200 mt-6">
+            <h3 className="text-lg font-semibold mb-4 flex items-center">
+              <Play className="w-5 h-5 mr-2 text-purple-600" />
+              Today's Tournaments ({tournaments.length})
+            </h3>
+            <div className="space-y-3">
+              {tournaments.map((tournament, index) => (
+                <div key={index} className="flex justify-between items-center py-2 border-b border-gray-100 last:border-b-0">
+                  <span className="font-medium">{tournament.name}</span>
+                  <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-semibold">
+                    {tournament.buyIn}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Draw Timer */}
+        {drawTime && (
+          <div className="bg-white p-6 rounded-xl border border-gray-200 mt-6 text-center">
+            <Clock className="w-8 h-8 mx-auto mb-2 text-orange-500" />
+            <h3 className="text-lg font-semibold mb-2">Next Draw</h3>
+            <p className="text-2xl font-mono font-bold text-orange-600">{timeRemaining}</p>
+          </div>
+        )}
+
+        {/* Entry Status */}
+        {currentEntry ? (
+          <div className="bg-green-50 p-6 rounded-xl border border-green-200 mt-6">
+            <h3 className="text-lg font-semibold text-green-800 mb-2">You're Entered!</h3>
+            <p className="text-green-700 mb-2">Tournament: {currentEntry.tournament.name}</p>
+            <p className="text-green-700">Buy-in: {currentEntry.tournamentBuyIn}</p>
+            <p className="text-sm text-green-600 mt-3">Good luck in the draw!</p>
+          </div>
+        ) : (
+          <div className="bg-white p-6 rounded-xl border border-gray-200 mt-6 text-center">
+            <Users className="w-12 h-12 mx-auto mb-4 text-purple-600" />
+            <h3 className="text-lg font-semibold mb-2">Enter Today's Draw</h3>
+            <p className="text-gray-600 mb-4">
+              Winner gets 5% of tournament profits + 5% bonus for sharing!
+            </p>
+            <button
+              onClick={enterRaffle}
+              disabled={!isConnected || isLoading}
+              className="bg-purple-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? 'Entering...' : 'Enter Raffle'}
+            </button>
+          </div>
+        )}
+
+        {/* Winner Display */}
+        {currentWinner && (
+          <div className="bg-yellow-50 p-6 rounded-xl border border-yellow-200 mt-6">
+            <h3 className="text-lg font-semibold text-yellow-800 mb-2">Latest Winner!</h3>
+            <p className="text-yellow-700 font-mono text-sm break-all mb-2">
+              {currentWinner.walletAddress}
+            </p>
+            <p className="text-yellow-700">
+              Won: {currentWinner.entry.tournament.name} ({currentWinner.entry.tournamentBuyIn})
+            </p>
+            <p className="text-sm text-yellow-600 mt-2">
+              Total entries: {currentWinner.totalEntries}
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Wrapper with Base MiniKit Provider
+export default function MiniAppPage() {
+  return (
+    <MiniKitProvider
+      projectId={process.env.NEXT_PUBLIC_MINIKIT_PROJECT_ID || 'test'}
+      chain={base}
+      notificationProxyUrl="/api/notification"
+    >
+      <MiniApp />
+    </MiniKitProvider>
+  );
+}
