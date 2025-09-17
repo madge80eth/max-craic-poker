@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
     // If wallet address provided, get user-specific data
     let userEntry = null;
     let hasEntered = false;
+    
     if (walletAddress && walletAddress.match(/^0x[a-fA-F0-9]{40}$/)) {
       const entryData = await redis.hgetall(`entry:${walletAddress}`);
       if (entryData && Object.keys(entryData).length > 0) {
@@ -42,48 +43,8 @@ export async function GET(request: NextRequest) {
             buyIn: parseInt(entryData.tournamentBuyIn as string)
           },
           timestamp: parseInt(entryData.timestamp as string),
-          hasRecasted: entryData.hasRecasted === 'true',
-          userProfile: entryData.userProfile ? JSON.parse(entryData.userProfile as string) : null
+          hasRecasted: entryData.hasRecasted === 'true'
         };
-      }
-    }
-
-    // Auto-trigger draw if time is up and no winner yet
-    if (timeRemaining <= 0 && !winner && totalEntries > 0) {
-      try {
-        const drawResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/draw`, {
-          method: 'POST'
-        });
-        const drawResult = await drawResponse.json();
-        
-        if (drawResult.success) {
-          // Refresh winner data
-          const newWinnerData = await redis.hgetall('current_winner');
-          if (newWinnerData && Object.keys(newWinnerData).length > 0) {
-            return NextResponse.json({
-              success: true,
-              totalEntries,
-              timeRemaining: 0,
-              hasEntered,
-              userEntry,
-              tournament: userEntry?.tournament || null,
-              winner: {
-                walletAddress: newWinnerData.walletAddress as string,
-                entry: {
-                  tournament: newWinnerData.tournament as string,
-                  tournamentBuyIn: parseInt(newWinnerData.tournamentBuyIn as string),
-                  platform: newWinnerData.platform as string,
-                  hasRecasted: newWinnerData.hasRecasted === 'true',
-                  timestamp: parseInt(newWinnerData.timestamp as string)
-                },
-                drawnAt: parseInt(newWinnerData.drawnAt as string),
-                totalEntries: parseInt(newWinnerData.totalEntries as string)
-              }
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Auto-draw failed:', error);
       }
     }
 
@@ -93,7 +54,6 @@ export async function GET(request: NextRequest) {
       timeRemaining,
       hasEntered,
       userEntry,
-      tournament: userEntry?.tournament || null,
       winner
     });
 
