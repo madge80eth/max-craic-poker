@@ -9,7 +9,16 @@ async function loadTournaments() {
   return res.json();
 }
 
+// Handle both GET and POST requests
+export async function GET() {
+  return handleReset();
+}
+
 export async function POST() {
+  return handleReset();
+}
+
+async function handleReset() {
   try {
     // Clear old state - all possible keys
     await redis.del("entries");
