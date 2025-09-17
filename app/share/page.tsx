@@ -1,8 +1,12 @@
-import tournaments from "@/public/tournaments.json"
+// /app/share/page.tsx - FIXED Base Mini App Frame Metadata
 
-export const metadata = {
+import { Metadata } from 'next'
+
+export const metadata: Metadata = {
   title: "Max Craic Poker - Community Game",
   description: "Community-Rewarded Poker - one winner gets 5% of tournament profits + 5% bonus for sharing!",
+  
+  // CRITICAL: Base Mini App requires this JSON structure
   other: {
     'fc:frame': JSON.stringify({
       version: 'next',
@@ -10,95 +14,93 @@ export const metadata = {
       button: {
         title: 'Launch Max Craic Poker',
         action: {
-          type: 'launch_frame',
+          type: 'launch_frame',  // KEY: This launches Mini App
           name: 'Max Craic Poker',
           url: 'https://max-craic-poker.vercel.app/mini-app',
-          splashImageUrl: 'https://max-craic-poker.vercel.app/api/frame-image',
-          splashBackgroundColor: '#1e1b4b',
+          splashImageUrl: 'https://max-craic-poker.vercel.app/mcp-logo.png',
+          splashBackgroundColor: '#8b5cf6', // Purple theme
         },
       },
     }),
+    
+    // Traditional social sharing (keep these)
+    'og:title': 'Max Craic Poker - Community Game',
+    'og:description': 'Community-Rewarded Poker - one winner gets 5% of tournament profits + 5% bonus for sharing!',
+    'og:image': 'https://max-craic-poker.vercel.app/api/frame-image',
+    'og:url': 'https://max-craic-poker.vercel.app/share',
   }
 }
 
 export default function SharePage() {
   return (
-    <main style={{ padding: "1rem", backgroundColor: "#f9fafb", minHeight: "100vh" }}>
-      <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-        <div style={{ 
-          width: "80px", 
-          height: "80px", 
-          margin: "0 auto 1rem", 
-          display: "flex", 
-          alignItems: "center", 
-          justifyContent: "center"
-        }}>
-          <img 
-            src="/mcp-logo.png" 
-            alt="Max Craic Poker Logo" 
-            style={{ width: '80px', height: '80px', objectFit: 'contain' }}
-          />
+    <main className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-blue-900">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="text-center mb-8">
+          <div className="w-20 h-20 mx-auto mb-4 flex items-center justify-center">
+            <img 
+              src="/mcp-logo.png" 
+              alt="Max Craic Poker Logo" 
+              className="w-20 h-20 object-contain"
+            />
+          </div>
+          <h1 className="text-4xl font-bold text-white mb-2">MAX CRAIC</h1>
+          <div className="text-red-400 font-bold text-2xl mb-4">POKER</div>
         </div>
-        <h1 style={{ fontSize: "28px", fontWeight: "bold", margin: "0.5rem 0", color: "#111827" }}>MAX CRAIC</h1>
-        <div style={{ color: "#ef4444", fontWeight: "bold", fontSize: "20px", marginBottom: "1rem" }}>POKER</div>
-      </div>
-      
-      <div style={{ maxWidth: "600px", margin: "0 auto" }}>
-        <h2 style={{ fontSize: "24px", marginBottom: "1rem", color: "#111827", textAlign: "center" }}>Community-Rewarded Poker</h2>
-        <p style={{ marginBottom: "2rem", fontSize: "18px", color: "#374151", textAlign: "center" }}>
-          One winner gets 5% of tournament profits + 5% bonus for sharing!
-        </p>
         
-        <div style={{ 
-          backgroundColor: "white", 
-          padding: "1.5rem", 
-          borderRadius: "12px", 
-          marginBottom: "2rem",
-          border: "1px solid #e5e7eb",
-          boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.1)"
-        }}>
-          <h3 style={{ 
-            fontSize: "20px", 
-            fontWeight: "600", 
-            marginBottom: "1rem", 
-            color: "#111827",
-            textAlign: "center"
-          }}>
-            Today's Tournaments ({tournaments.length}):
-          </h3>
-          {tournaments.map((tournament, index) => (
-            <div key={index} style={{ 
-              display: "flex", 
-              justifyContent: "space-between", 
-              alignItems: "center",
-              padding: "0.75rem 0",
-              borderBottom: index < tournaments.length - 1 ? "1px solid #f3f4f6" : "none"
-            }}>
-              <span style={{ fontSize: "16px", fontWeight: "500", color: "#111827" }}>
-                {tournament.name}
-              </span>
-              <span style={{ 
-                fontSize: "16px", 
-                fontWeight: "700", 
-                color: "#7c3aed",
-                backgroundColor: "#ede9fe",
-                padding: "0.25rem 0.75rem",
-                borderRadius: "6px"
-              }}>
-                {tournament.buyIn}
-              </span>
+        {/* Main Content */}
+        <div className="max-w-2xl mx-auto">
+          <h2 className="text-3xl font-bold text-white text-center mb-4">
+            Community-Rewarded Poker
+          </h2>
+          
+          <p className="text-xl text-purple-100 text-center mb-8">
+            One winner gets 5% of tournament profits + 5% bonus for sharing!
+          </p>
+          
+          {/* Tournament Cards */}
+          <div className="grid gap-4 mb-8">
+            <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
+              <h3 className="text-lg font-semibold text-white mb-4">Today's Tournaments</h3>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-purple-600/30 rounded-lg p-3 text-center">
+                  <div className="text-purple-200 text-sm">Mystery Cash Game</div>
+                  <div className="text-white font-bold">$25</div>
+                </div>
+                <div className="bg-purple-600/30 rounded-lg p-3 text-center">
+                  <div className="text-purple-200 text-sm">High Stakes MTT</div>
+                  <div className="text-white font-bold">$109</div>
+                </div>
+                <div className="bg-purple-600/30 rounded-lg p-3 text-center">
+                  <div className="text-purple-200 text-sm">Bounty Builder</div>
+                  <div className="text-white font-bold">$55</div>
+                </div>
+                <div className="bg-purple-600/30 rounded-lg p-3 text-center">
+                  <div className="text-purple-200 text-sm">Turbo Satellite</div>
+                  <div className="text-white font-bold">$11</div>
+                </div>
+              </div>
             </div>
-          ))}
+          </div>
+          
+          {/* Call to Action */}
+          <div className="text-center">
+            <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl p-6 border border-white/20">
+              <h3 className="text-xl font-bold text-white mb-2">
+                Ready to Join the Action?
+              </h3>
+              <p className="text-purple-100 mb-4">
+                Click 'Launch Max Craic Poker' to enter with the full Mini App experience!
+              </p>
+              <div className="text-sm text-purple-200">
+                🎰 Random tournament assignment<br/>
+                💰 5% profit share for winner<br/>
+                🚀 Extra 5% bonus for sharing
+              </div>
+            </div>
+          </div>
         </div>
-        
-        <p style={{ 
-          fontSize: "16px", 
-          color: "#6b7280", 
-          textAlign: "center",
-          fontStyle: "italic"
-        }}>
-          Click "Launch Max Craic Poker" to enter with the full Mini App experience!
-        </p>
       </div>
     </main>
   )
