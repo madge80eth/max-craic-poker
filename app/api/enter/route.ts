@@ -1,37 +1,24 @@
 // app/api/enter/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { redis } from '@/lib/redis';
-import tournaments from '@/public/tournaments.json';
 
 interface EntryRequest {
   walletAddress: string;
   platform: 'frame' | 'miniapp';
   hasRecasted?: boolean;
-  userProfile?: {
-    fid?: number;
-    username?: string;
-    displayName?: string;
-  };
 }
 
 interface Entry {
   walletAddress: string;
   platform: string;
-  tournament: string;
-  tournamentBuyIn: number;
   timestamp: number;
   hasRecasted: boolean;
-  userProfile?: {
-    fid?: number;
-    username?: string;
-    displayName?: string;
-  };
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body: EntryRequest = await request.json();
-    const { walletAddress, platform, hasRecasted = false, userProfile } = body;
+    const { walletAddress, platform, hasRecasted = false } = body;
 
     // Validate wallet address
     if (!walletAddress || !walletAddress.match(/^0x[a-fA-F0-9]{40}$/)) {
@@ -46,7 +33,7 @@ export async function POST(request: NextRequest) {
     if (winner && Object.keys(winner).length > 0) {
       return NextResponse.json({ 
         success: false, 
-        error: 'Raffle has already been drawn' 
+        error: 'Draw has already been completed' 
       }, { status: 400 });
     }
 
@@ -63,47 +50,30 @@ export async function POST(request: NextRequest) {
         
         return NextResponse.json({
           success: true,
-          message: 'Recast status updated',
-          tournament: {
-            name: existingEntry.tournament as string,
-            buyIn: parseInt(existingEntry.tournamentBuyIn as string)
-          }
+          message: 'Share status updated - thanks for spreading the word!'
         });
       }
       
       return NextResponse.json({ 
         success: false, 
-        error: 'Already entered this raffle',
-        tournament: {
-          name: existingEntry.tournament as string,
-          buyIn: parseInt(existingEntry.tournamentBuyIn as string)
-        }
+        error: 'Already entered - you\'re in the draw!' 
       }, { status: 400 });
     }
 
-    // Randomly assign tournament
-    const randomTournament = tournaments[Math.floor(Math.random() * tournaments.length)];
-    
-    // Create entry
+    // Create entry (NO tournament assignment)
     const entry: Entry = {
       walletAddress,
       platform,
-      tournament: randomTournament.name,
-      tournamentBuyIn: Number(randomTournament.buyIn),
       timestamp: Date.now(),
-      hasRecasted,
-      userProfile
+      hasRecasted
     };
 
     // Store entry
     await redis.hset(`entry:${walletAddress}`, {
       walletAddress: entry.walletAddress,
       platform: entry.platform,
-      tournament: entry.tournament,
-      tournamentBuyIn: entry.tournamentBuyIn.toString(),
       timestamp: entry.timestamp.toString(),
-      hasRecasted: entry.hasRecasted.toString(),
-      userProfile: JSON.stringify(entry.userProfile || {})
+      hasRecasted: entry.hasRecasted.toString()
     });
 
     // Add to entries list
@@ -120,10 +90,13 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Successfully entered raffle',
-      tournament: randomTournament,
+      message: 'Successfully entered! You\'re in the draw.',
       totalEntries,
-      entry
+      entry: {
+        walletAddress: entry.walletAddress,
+        platform: entry.platform,
+        timestamp: entry.timestamp
+      }
     });
 
   } catch (error) {
@@ -155,7 +128,7 @@ export async function GET() {
       hasWinner,
       winner: hasWinner ? {
         walletAddress: winner.walletAddress as string,
-        tournament: winner.tournament as string,
+        communityTournament: winner.communityTournament as string,
         tournamentBuyIn: parseInt(winner.tournamentBuyIn as string),
         drawnAt: parseInt(winner.drawnAt as string),
         totalEntries: parseInt(winner.totalEntries as string)

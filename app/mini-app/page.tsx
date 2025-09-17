@@ -1,34 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Play, Users, Clock, Trophy, Wallet, ArrowLeft } from 'lucide-react';
+import { Users, Clock, Trophy, Wallet, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-
-interface Tournament {
-  name: string;
-  buyIn: string;
-}
 
 interface UserEntry {
   walletAddress: string;
   platform: string;
-  tournament: {
-    name: string;
-    buyIn: number;
-  };
   timestamp: number;
-  hasRecasted: boolean;
 }
 
 interface Winner {
   walletAddress: string;
-  entry: {
-    tournament: string;
-    tournamentBuyIn: number;
-    platform: string;
-    hasRecasted: boolean;
-    timestamp: number;
-  };
+  communityTournament: string;
+  tournamentBuyIn: number;
   drawnAt: number;
   totalEntries: number;
 }
@@ -162,11 +147,16 @@ export default function MiniApp() {
               <>
                 <h1 className="text-2xl font-bold text-yellow-800 mb-2">🎉 YOU WON! 🎉</h1>
                 <p className="text-yellow-700 mb-4">
-                  You won the raffle for <strong>{winner.entry.tournament}</strong> (${winner.entry.tournamentBuyIn} buy-in)!
+                  You won the community draw!
                 </p>
                 <div className="bg-yellow-100 p-4 rounded-lg mb-4">
-                  <p className="text-sm text-yellow-800">
-                    <strong>If Max cashes in this tournament, you'll receive:</strong>
+                  <p className="text-lg font-bold text-yellow-900 mb-2">Community Tournament:</p>
+                  <p className="text-xl font-bold text-yellow-800">{winner.communityTournament}</p>
+                  <p className="text-sm text-yellow-700 mt-2">${winner.tournamentBuyIn} buy-in</p>
+                </div>
+                <div className="bg-yellow-200 p-3 rounded-lg">
+                  <p className="text-sm text-yellow-800 font-semibold">
+                    If Max cashes in this tournament, you'll receive:
                   </p>
                   <p className="text-lg font-bold text-yellow-900 mt-1">
                     5% of profits + 5% sharing bonus!
@@ -175,14 +165,14 @@ export default function MiniApp() {
               </>
             ) : (
               <>
-                <h1 className="text-2xl font-bold text-gray-800 mb-2">Raffle Complete</h1>
+                <h1 className="text-2xl font-bold text-gray-800 mb-2">Draw Complete</h1>
                 <p className="text-gray-600 mb-4">Better luck next time!</p>
                 <div className="bg-gray-100 p-4 rounded-lg mb-4">
                   <p className="text-sm text-gray-700">Winner:</p>
                   <p className="font-mono text-xs break-all text-gray-800">{winner.walletAddress}</p>
-                  <p className="text-sm text-gray-700 mt-2">
-                    Tournament: <strong>{winner.entry.tournament}</strong>
-                  </p>
+                  <p className="text-lg font-bold text-gray-900 mt-2">Community Tournament:</p>
+                  <p className="text-xl font-bold text-gray-800">{winner.communityTournament}</p>
+                  <p className="text-sm text-gray-600">${winner.tournamentBuyIn} buy-in</p>
                 </div>
               </>
             )}
@@ -210,7 +200,7 @@ export default function MiniApp() {
             <Trophy className="w-10 h-10 text-white" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900">MAX CRAIC POKER</h1>
-          <p className="text-gray-600 mt-2">Enter Today's Raffle</p>
+          <p className="text-gray-600 mt-2">Enter the Community Draw</p>
         </div>
 
         {/* Error Display */}
@@ -254,18 +244,25 @@ export default function MiniApp() {
               You're Entered!
             </h3>
             <div className="bg-white/50 p-4 rounded-lg mb-4">
-              <p className="font-semibold text-green-800">Tournament: {userEntry.tournament.name}</p>
-              <p className="text-green-700">Buy-in: ${userEntry.tournament.buyIn}</p>
+              <p className="text-green-800 text-center font-medium">
+                You're in the community draw!
+              </p>
+              <p className="text-green-700 text-sm text-center mt-1">
+                Winner and tournament will be selected when the countdown ends.
+              </p>
             </div>
-            <p className="text-sm text-green-600">Good luck in the draw!</p>
+            <p className="text-sm text-green-600 text-center">Good luck!</p>
           </div>
         ) : isConnected ? (
           <div className="bg-white p-6 rounded-xl border border-gray-200 mb-6">
             <div className="text-center mb-4">
               <Users className="w-12 h-12 mx-auto mb-4 text-purple-600" />
-              <h3 className="text-lg font-semibold mb-2">Enter Today's Draw</h3>
+              <h3 className="text-lg font-semibold mb-2">Enter the Community Draw</h3>
               <p className="text-gray-600 mb-4">
-                Winner gets 5% of tournament profits + 5% bonus for sharing!
+                One winner gets 5% of tournament profits + 5% bonus for sharing!
+              </p>
+              <p className="text-sm text-gray-500 mb-4">
+                Winner and community tournament selected randomly after countdown.
               </p>
             </div>
             <button
@@ -273,7 +270,7 @@ export default function MiniApp() {
               disabled={isEntering}
               className="w-full bg-purple-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-purple-700 disabled:opacity-50"
             >
-              {isEntering ? 'Entering...' : 'Enter Raffle (Free)'}
+              {isEntering ? 'Entering...' : 'Enter Draw (Free)'}
             </button>
           </div>
         ) : null}
