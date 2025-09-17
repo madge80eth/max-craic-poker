@@ -4,7 +4,7 @@ import { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: "Max Craic Poker - Community Game",
-  description: "Community-Rewarded Poker - one winner gets 5% of tournament profits + 5% bonus for sharing!",
+  description: "Community-Rewarded Poker - one winner gets 5% of tournament profits + 5% bonus for sharing!!",
   
   // CRITICAL: Base Mini App requires this JSON structure
   other: {
