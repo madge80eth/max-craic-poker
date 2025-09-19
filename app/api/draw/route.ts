@@ -33,8 +33,14 @@ export async function POST(request: NextRequest) {
 
     // Get all entries
     const entries = await redis.hgetall('entries');
-    const entryKeys = Object.keys(entries || {});
-    
+    if (!entries) {
+      return NextResponse.json({
+        success: false,
+        error: 'No entries found'
+      }, { status: 400 });
+    }
+
+    const entryKeys = Object.keys(entries);
     if (entryKeys.length === 0) {
       return NextResponse.json({
         success: false,
@@ -42,11 +48,12 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-// Select random winner
-const randomWalletIndex = Math.floor(Math.random() * entryKeys.length);
-const winnerWallet = entryKeys[randomWalletIndex];
-const rawEntry = entries[winnerWallet];
-const winnerEntry = typeof rawEntry === 'string' ? JSON.parse(rawEntry) : rawEntry;
+    // Select random winner
+    const randomWalletIndex = Math.floor(Math.random() * entryKeys.length);
+    const winnerWallet = entryKeys[randomWalletIndex];
+    const rawEntry = entries[winnerWallet];
+    const winnerEntry = rawEntry && typeof rawEntry === 'string' ? JSON.parse(rawEntry) : rawEntry;
+
     // Select random tournament
     const randomTournamentIndex = Math.floor(Math.random() * tournaments.length);
     const communityTournament = tournaments[randomTournamentIndex];
