@@ -31,9 +31,11 @@ export async function POST(request: NextRequest) {
       });
     }
 
+}
+
     // Get all entries
     const entries = await redis.hgetall('entries');
-    const entryKeys = Object.keys(entries);
+    const entryKeys = Object.keys(entries || {});
     
     if (entryKeys.length === 0) {
       return NextResponse.json({
@@ -64,8 +66,16 @@ export async function POST(request: NextRequest) {
       timestamp: winnerEntry.timestamp
     };
 
-    // Store winner
-    await redis.hset('current_winner', winner);
+    // Store winner (FIXED VERSION)
+    await redis.hset('current_winner', {
+      walletAddress: winner.walletAddress,
+      communityTournament: winner.communityTournament,
+      tournamentBuyIn: winner.tournamentBuyIn,
+      drawnAt: winner.drawnAt.toString(),
+      totalEntries: winner.totalEntries.toString(),
+      platform: winner.platform,
+      timestamp: winner.timestamp.toString()
+    });
 
     // Set draw time (marks draw as complete)
     await redis.set('draw_time', Date.now().toString());
