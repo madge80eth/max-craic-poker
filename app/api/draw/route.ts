@@ -42,13 +42,11 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Select random winner
-    const randomWalletIndex = Math.floor(Math.random() * entryKeys.length);
-    const winnerWallet = entryKeys[randomWalletIndex];
-    const winnerEntry = typeof entries[winnerWallet] === 'string' 
-      ? JSON.parse(entries[winnerWallet]) 
-      : entries[winnerWallet];
-
+// Select random winner
+const randomWalletIndex = Math.floor(Math.random() * entryKeys.length);
+const winnerWallet = entryKeys[randomWalletIndex];
+const rawEntry = entries[winnerWallet];
+const winnerEntry = typeof rawEntry === 'string' ? JSON.parse(rawEntry) : rawEntry;
     // Select random tournament
     const randomTournamentIndex = Math.floor(Math.random() * tournaments.length);
     const communityTournament = tournaments[randomTournamentIndex];
