@@ -50,7 +50,7 @@ export async function POST(request: NextRequest) {
     };
 
     // Store entry
-    await redis.hset('entries', walletAddress, JSON.stringify(entry));
+    await redis.hset('entries', { [walletAddress]: JSON.stringify(entry) });
 
     // Get total entries count
     const totalEntries = await redis.hlen('entries');
