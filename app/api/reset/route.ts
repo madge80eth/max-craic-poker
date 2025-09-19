@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
       totalEntries,
       hasWinner,
       timeRemaining,
-      drawTime: drawTime ? parseInt(drawTime) : null
+      drawTime: drawTime ? parseInt(drawTime as string) : null
     });
 
   } catch (error) {
