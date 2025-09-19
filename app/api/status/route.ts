@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
     // Get draw time and calculate remaining
     const drawTime = await redis.get('draw_time');
     const timeRemaining = drawTime ? 
-      Math.max(0, Math.floor((parseInt(drawTime) - Date.now()) / 1000)) : 0;
+      Math.max(0, Math.floor((parseInt(drawTime as string) - Date.now()) / 1000)) : 0;
     
     // Get current winner if exists
     const winner = await redis.hgetall('current_winner');
