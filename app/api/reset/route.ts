@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
     
     const totalEntries = Object.keys(entries || {}).length;
     const hasWinner = winner && Object.keys(winner).length > 0;
-    const timeRemaining = drawTime ? Math.max(0, Math.floor((parseInt(drawTime) - Date.now()) / 1000)) : 0;
+    const timeRemaining = drawTime ? Math.max(0, Math.floor((parseInt(drawTime as string) - Date.now()) / 1000)) : 0;
 
     return NextResponse.json({
       success: true,
