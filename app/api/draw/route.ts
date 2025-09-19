@@ -31,8 +31,6 @@ export async function POST(request: NextRequest) {
       });
     }
 
-}
-
     // Get all entries
     const entries = await redis.hgetall('entries');
     const entryKeys = Object.keys(entries || {});
@@ -66,7 +64,7 @@ export async function POST(request: NextRequest) {
       timestamp: winnerEntry.timestamp
     };
 
-    // Store winner (FIXED VERSION)
+    // Store winner
     await redis.hset('current_winner', {
       walletAddress: winner.walletAddress,
       communityTournament: winner.communityTournament,
