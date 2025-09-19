@@ -8,7 +8,7 @@ const MiniApp = () => {
   const [timeLeft, setTimeLeft] = useState(43200)
   const [isEntered, setIsEntered] = useState(false)
   const [totalEntries, setTotalEntries] = useState(0)
-  const [winner, setWinner] = useState(null)
+  const [winner, setWinner] = useState<any>(null)
   const [walletConnected, setWalletConnected] = useState(false)
   const [userAddress, setUserAddress] = useState('')
   const [loading, setLoading] = useState(false)
