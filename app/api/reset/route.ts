@@ -1,50 +1,59 @@
 // app/api/reset/route.ts
-import { NextResponse } from "next/server";
-import { redis } from "@/lib/redis";
+import { NextRequest, NextResponse } from 'next/server';
+import { redis } from '@/lib/redis';
 
-// Load tournaments.json from the public folder
-async function loadTournaments() {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/tournaments.json`);
-  if (!res.ok) throw new Error("Failed to load tournaments.json");
-  return res.json();
-}
-
-// Handle both GET and POST requests
-export async function GET() {
-  return handleReset();
-}
-
-export async function POST() {
-  return handleReset();
-}
-
-async function handleReset() {
+export async function POST(request: NextRequest) {
   try {
-    // Clear old state - all possible keys
-    await redis.del("entries");
-    await redis.del("winner");
-    await redis.del("current_winner");
-    await redis.del("draw_time");
-    await redis.del("communityTournament");
-    
-    // Clear the specific mock wallet entry hash
-    await redis.del("entry:0x742d35Cc6564C5532C3C1e5329A8C0d3f1e90F43");
+    // Clear all existing data
+    await redis.del('entries');
+    await redis.del('current_winner'); 
+    await redis.del('draw_time');
+    await redis.del('community_tournament');
 
-    // Load tournaments and pick one at random
-    const tournaments = await loadTournaments();
-    const randomTournament =
-      tournaments[Math.floor(Math.random() * tournaments.length)];
-
-    // Save chosen tournament (as JSON string)
-    await redis.set("communityTournament", JSON.stringify(randomTournament));
+    // Set new 12-hour countdown (43200 seconds = 12 hours)
+    const drawTime = Date.now() + (12 * 60 * 60 * 1000);
+    await redis.set('draw_time', drawTime.toString());
 
     return NextResponse.json({
       success: true,
-      communityTournament: randomTournament,
-      message: "All Redis data cleared and new tournament selected"
+      message: 'System reset successfully. Ready for new raffle session.',
+      drawTime: drawTime,
+      countdown: '12:00:00'
     });
-  } catch (err) {
-    console.error("Error in /api/reset:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+
+  } catch (error) {
+    console.error('Reset error:', error);
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Internal server error' 
+    }, { status: 500 });
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    // Just return current system status
+    const entries = await redis.hgetall('entries');
+    const winner = await redis.hgetall('current_winner');
+    const drawTime = await redis.get('draw_time');
+    
+    const totalEntries = Object.keys(entries || {}).length;
+    const hasWinner = winner && Object.keys(winner).length > 0;
+    const timeRemaining = drawTime ? Math.max(0, Math.floor((parseInt(drawTime) - Date.now()) / 1000)) : 0;
+
+    return NextResponse.json({
+      success: true,
+      totalEntries,
+      hasWinner,
+      timeRemaining,
+      drawTime: drawTime ? parseInt(drawTime) : null
+    });
+
+  } catch (error) {
+    console.error('Get reset status error:', error);
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Internal server error' 
+    }, { status: 500 });
   }
 }

@@ -5,46 +5,52 @@ import { redis } from '@/lib/redis';
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const walletAddress = searchParams.get('address');
+    const walletAddress = searchParams.get('wallet');
 
-    // Get general status
-    const totalEntries = await redis.scard('entries');
+    // Get basic stats
+    const entries = await redis.hgetall('entries');
+    const totalEntries = Object.keys(entries || {}).length;
+    
+    // Get draw time and calculate remaining
     const drawTime = await redis.get('draw_time');
-    const timeRemaining = drawTime ? Math.max(0, Math.floor((parseInt(drawTime as string) - Date.now()) / 1000)) : 0;
+    const timeRemaining = drawTime ? 
+      Math.max(0, Math.floor((parseInt(drawTime) - Date.now()) / 1000)) : 0;
     
-    // Get current winner
-    const winnerData = await redis.hgetall('current_winner');
-    const winner = winnerData && Object.keys(winnerData).length > 0 ? {
-      walletAddress: winnerData.walletAddress as string,
-      entry: {
-        tournament: winnerData.tournament as string,
-        tournamentBuyIn: parseInt(winnerData.tournamentBuyIn as string),
-        platform: winnerData.platform as string,
-        hasRecasted: winnerData.hasRecasted === 'true',
-        timestamp: parseInt(winnerData.timestamp as string)
-      },
-      drawnAt: parseInt(winnerData.drawnAt as string),
-      totalEntries: parseInt(winnerData.totalEntries as string)
-    } : null;
+    // Get current winner if exists
+    const winner = await redis.hgetall('current_winner');
+    const hasWinner = winner && Object.keys(winner).length > 0;
 
-    // If wallet address provided, get user-specific data
-    let userEntry = null;
-    let hasEntered = false;
-    
-    if (walletAddress && walletAddress.match(/^0x[a-fA-F0-9]{40}$/)) {
-      const entryData = await redis.hgetall(`entry:${walletAddress}`);
-      if (entryData && Object.keys(entryData).length > 0) {
-        hasEntered = true;
-        userEntry = {
-          walletAddress: entryData.walletAddress as string,
-          platform: entryData.platform as string,
-          tournament: {
-            name: entryData.tournament as string,
-            buyIn: parseInt(entryData.tournamentBuyIn as string)
-          },
-          timestamp: parseInt(entryData.timestamp as string),
-          hasRecasted: entryData.hasRecasted === 'true'
-        };
+    // Basic response without wallet
+    if (!walletAddress) {
+      return NextResponse.json({
+        success: true,
+        totalEntries,
+        timeRemaining,
+        hasWinner,
+        winner: hasWinner ? {
+          walletAddress: winner.walletAddress as string,
+          communityTournament: winner.communityTournament as string,
+          tournamentBuyIn: winner.tournamentBuyIn as string,
+          drawnAt: parseInt(winner.drawnAt as string),
+          totalEntries: parseInt(winner.totalEntries as string)
+        } : null
+      });
+    }
+
+    // Check if specific wallet has entered
+    const userEntry = entries ? entries[walletAddress] : null;
+    const hasEntered = !!userEntry;
+
+    // Check if this wallet is the winner
+    const isWinner = hasWinner && winner.walletAddress === walletAddress;
+
+    // Parse user entry if exists
+    let parsedEntry = null;
+    if (hasEntered && userEntry) {
+      try {
+        parsedEntry = typeof userEntry === 'string' ? JSON.parse(userEntry) : userEntry;
+      } catch (e) {
+        console.error('Error parsing entry:', e);
       }
     }
 
@@ -52,13 +58,21 @@ export async function GET(request: NextRequest) {
       success: true,
       totalEntries,
       timeRemaining,
+      hasWinner,
       hasEntered,
-      userEntry,
-      winner
+      isWinner,
+      userEntry: parsedEntry,
+      winner: hasWinner ? {
+        walletAddress: winner.walletAddress as string,
+        communityTournament: winner.communityTournament as string,
+        tournamentBuyIn: winner.tournamentBuyIn as string,
+        drawnAt: parseInt(winner.drawnAt as string),
+        totalEntries: parseInt(winner.totalEntries as string)
+      } : null
     });
 
   } catch (error) {
-    console.error('Status error:', error);
+    console.error('Status check error:', error);
     return NextResponse.json({ 
       success: false, 
       error: 'Internal server error' 

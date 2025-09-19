@@ -6,7 +6,7 @@ import tournaments from '@/public/tournaments.json';
 interface Winner {
   walletAddress: string;
   communityTournament: string;
-  tournamentBuyIn: number;
+  tournamentBuyIn: string;
   drawnAt: number;
   totalEntries: number;
   platform: string;
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
         winner: {
           walletAddress: existingWinner.walletAddress as string,
           communityTournament: existingWinner.communityTournament as string,
-          tournamentBuyIn: parseInt(existingWinner.tournamentBuyIn as string),
+          tournamentBuyIn: existingWinner.tournamentBuyIn as string,
           drawnAt: parseInt(existingWinner.drawnAt as string),
           totalEntries: parseInt(existingWinner.totalEntries as string)
         }
@@ -32,57 +32,47 @@ export async function POST(request: NextRequest) {
     }
 
     // Get all entries
-    const entryWallets = await redis.smembers('entries');
+    const entries = await redis.hgetall('entries');
+    const entryKeys = Object.keys(entries);
     
-    if (entryWallets.length === 0) {
+    if (entryKeys.length === 0) {
       return NextResponse.json({
         success: false,
-        error: 'No entries found for draw'
-      });
+        error: 'No entries found'
+      }, { status: 400 });
     }
 
     // Select random winner
-    const randomWinnerIndex = Math.floor(Math.random() * entryWallets.length);
-    const winnerWallet = entryWallets[randomWinnerIndex];
+    const randomWalletIndex = Math.floor(Math.random() * entryKeys.length);
+    const winnerWallet = entryKeys[randomWalletIndex];
+    const winnerEntry = typeof entries[winnerWallet] === 'string' 
+      ? JSON.parse(entries[winnerWallet]) 
+      : entries[winnerWallet];
 
-    // Get winner's entry details
-    const winnerEntry = await redis.hgetall(`entry:${winnerWallet}`);
-    if (!winnerEntry || Object.keys(winnerEntry).length === 0) {
-      return NextResponse.json({
-        success: false,
-        error: 'Winner entry not found'
-      });
-    }
-
-    // Select random tournament (community tournament)
+    // Select random tournament
     const randomTournamentIndex = Math.floor(Math.random() * tournaments.length);
     const communityTournament = tournaments[randomTournamentIndex];
 
-    // Create winner record
+    // Create winner object
     const winner: Winner = {
       walletAddress: winnerWallet,
       communityTournament: communityTournament.name,
-      tournamentBuyIn: parseInt(communityTournament.buyIn.replace('$', '')),
+      tournamentBuyIn: communityTournament.buyIn,
       drawnAt: Date.now(),
-      totalEntries: entryWallets.length,
-      platform: winnerEntry.platform as string,
-      timestamp: parseInt(winnerEntry.timestamp as string)
+      totalEntries: entryKeys.length,
+      platform: winnerEntry.platform,
+      timestamp: winnerEntry.timestamp
     };
 
     // Store winner
-    await redis.hset('current_winner', {
-      walletAddress: winner.walletAddress,
-      communityTournament: winner.communityTournament,
-      tournamentBuyIn: winner.tournamentBuyIn.toString(),
-      drawnAt: winner.drawnAt.toString(),
-      totalEntries: winner.totalEntries.toString(),
-      platform: winner.platform,
-      timestamp: winner.timestamp.toString()
-    });
+    await redis.hset('current_winner', winner);
+
+    // Set draw time (marks draw as complete)
+    await redis.set('draw_time', Date.now().toString());
 
     return NextResponse.json({
       success: true,
-      message: 'Winner drawn successfully',
+      message: 'Winner and community tournament selected!',
       winner: {
         walletAddress: winner.walletAddress,
         communityTournament: winner.communityTournament,
@@ -101,15 +91,17 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    // Get current winner if exists
     const winner = await redis.hgetall('current_winner');
-    
-    if (!winner || Object.keys(winner).length === 0) {
+    const hasWinner = winner && Object.keys(winner).length > 0;
+
+    if (!hasWinner) {
       return NextResponse.json({
         success: true,
         hasWinner: false,
-        winner: null
+        message: 'No winner drawn yet'
       });
     }
 
@@ -119,10 +111,9 @@ export async function GET() {
       winner: {
         walletAddress: winner.walletAddress as string,
         communityTournament: winner.communityTournament as string,
-        tournamentBuyIn: parseInt(winner.tournamentBuyIn as string),
+        tournamentBuyIn: winner.tournamentBuyIn as string,
         drawnAt: parseInt(winner.drawnAt as string),
-        totalEntries: parseInt(winner.totalEntries as string),
-        platform: winner.platform as string
+        totalEntries: parseInt(winner.totalEntries as string)
       }
     });
 
