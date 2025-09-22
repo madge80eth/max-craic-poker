@@ -12,6 +12,6 @@
     "homeUrl": "https://max-craic-poker.vercel.app/mini-app"
   },
   "baseBuilder": {
-    "allowedAddresses": ["YOUR_BASE_WALLET_ADDRESS_HERE"]
+    "allowedAddresses": ["0xCc7659fbE122AcdE826725cf3a4cd5dfD72763F0"]
   }
 }
