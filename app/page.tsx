@@ -51,7 +51,9 @@ export default function Homepage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+    <div className="min-h-screen" style={{
+      background: 'linear-gradient(135deg, #663399 0%, #4c1d95 50%, #312e81 100%)'
+    }}>
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
@@ -64,7 +66,11 @@ export default function Homepage() {
 
         {/* Countdown */}
         {timeLeft && (
-          <div className="bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-xl p-4 mb-6 border border-orange-300/30">
+          <div className="mb-6" style={{
+            background: 'linear-gradient(135deg, rgba(251, 146, 60, 0.2) 0%, rgba(239, 68, 68, 0.2) 100%)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(251, 146, 60, 0.3)'
+          }} className="rounded-xl p-4 border">
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <Clock className="h-5 w-5 text-orange-300" />
@@ -87,7 +93,11 @@ export default function Homepage() {
           </h3>
           <div className="space-y-2">
             {tournaments.slice(0, 6).map((tournament, index) => (
-              <div key={index} className="bg-white/5 rounded-lg p-3 border border-white/10">
+              <div key={index} style={{
+                background: 'rgba(255, 255, 255, 0.05)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255, 255, 255, 0.1)'
+              }} className="rounded-lg p-3">
                 <div className="flex justify-between items-center">
                   <div>
                     <div className="font-medium text-white">{tournament.name}</div>
@@ -102,7 +112,11 @@ export default function Homepage() {
         </div>
 
         {/* Call to Action */}
-        <div className="bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-xl p-6 border border-purple-300/30 mb-4">
+        <div style={{
+          background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(147, 51, 234, 0.3)'
+        }} className="rounded-xl p-6 mb-4">
           <div className="text-center mb-4">
             <Users className="h-8 w-8 mx-auto mb-2 text-blue-300" />
             <h3 className="text-lg font-bold text-white">Community Game</h3>
@@ -112,7 +126,9 @@ export default function Homepage() {
           </div>
           
           <Link href="/mini-app">
-            <button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+            <button style={{
+              background: 'linear-gradient(135deg, #7c3aed 0%, #2563eb 100%)'
+            }} className="w-full hover:opacity-90 text-white font-bold py-3 px-4 rounded-lg transition-opacity flex items-center justify-center gap-2">
               Enter Community Game
               <ArrowRight className="h-4 w-4" />
             </button>

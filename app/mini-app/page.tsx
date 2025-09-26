@@ -41,25 +41,28 @@ export default function MiniApp() {
     fetchTournaments();
   }, []);
 
-  // Countdown timer
+  // Fixed Countdown timer - 12 hour countdown
   useEffect(() => {
     const fetchCountdown = async () => {
       try {
         const response = await fetch('/api/countdown');
         if (response.ok) {
           const data = await response.json();
-          if (data.timeLeft > 0) {
-            const hours = Math.floor(data.timeLeft / 3600);
-            const minutes = Math.floor((data.timeLeft % 3600) / 60);
-            const seconds = data.timeLeft % 60;
+          if (data.timeLeft && data.timeLeft > 0) {
+            const totalSeconds = Math.max(0, Math.floor(data.timeLeft));
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
             setTimeLeft({ hours, minutes, seconds });
           } else {
             // Timer expired, check for winner
+            setTimeLeft(null);
             checkForWinner();
           }
         }
       } catch (error) {
         console.error('Error fetching countdown:', error);
+        setTimeLeft(null);
       }
     };
 
@@ -155,7 +158,9 @@ export default function MiniApp() {
     const isWinner = winner.walletAddress === walletAddress;
     
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+      <div className="min-h-screen" style={{
+        background: 'linear-gradient(135deg, #663399 0%, #4c1d95 50%, #312e81 100%)'
+      }}>
         <div className="container mx-auto px-4 py-8">
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-3 mb-4">
@@ -164,7 +169,11 @@ export default function MiniApp() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-xl p-8 border border-purple-300/30 mb-6">
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(147, 51, 234, 0.3)'
+          }} className="rounded-xl p-8 mb-6">
             <div className="text-center">
               <Trophy className="h-16 w-16 mx-auto mb-4 text-yellow-400" />
               {isWinner ? (
@@ -173,35 +182,43 @@ export default function MiniApp() {
                 <h2 className="text-2xl font-bold text-white mb-4">Winner Selected!</h2>
               )}
               
-              <div className="bg-black/30 rounded-lg p-4 mb-6">
+              <div style={{
+                background: 'rgba(0, 0, 0, 0.3)',
+                backdropFilter: 'blur(5px)'
+              }} className="rounded-lg p-4 mb-6">
                 <p className="text-gray-300 text-sm mb-2">Winner Address:</p>
                 <p className="text-yellow-400 font-mono text-lg">{winner.walletAddress}</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div className="bg-white/10 rounded-lg p-3">
+                <div style={{background: 'rgba(255, 255, 255, 0.1)'}} className="rounded-lg p-3">
                   <p className="text-gray-300 text-sm">Tournament</p>
                   <p className="text-white font-semibold">{winner.entry.tournament}</p>
                 </div>
-                <div className="bg-white/10 rounded-lg p-3">
+                <div style={{background: 'rgba(255, 255, 255, 0.1)'}} className="rounded-lg p-3">
                   <p className="text-gray-300 text-sm">Buy-in</p>
                   <p className="text-white font-semibold">{winner.entry.tournamentBuyIn}</p>
                 </div>
-                <div className="bg-white/10 rounded-lg p-3">
+                <div style={{background: 'rgba(255, 255, 255, 0.1)'}} className="rounded-lg p-3">
                   <p className="text-gray-300 text-sm">Total Entries</p>
                   <p className="text-white font-semibold">{winner.totalEntries}</p>
                 </div>
               </div>
 
               {isWinner && (
-                <div className="bg-green-500/20 border border-green-400/30 rounded-lg p-4 mb-6">
+                <div style={{
+                  background: 'rgba(34, 197, 94, 0.2)',
+                  border: '1px solid rgba(34, 197, 94, 0.3)'
+                }} className="rounded-lg p-4 mb-6">
                   <p className="text-green-300 text-sm">
                     If this tournament cashes, you'll receive 5% of the profit + 5% bonus for sharing!
                   </p>
                 </div>
               )}
 
-              <button className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+              <button style={{
+                background: '#dc2626'
+              }} className="w-full hover:opacity-90 text-white font-bold py-3 px-4 rounded-lg transition-opacity flex items-center justify-center gap-2">
                 <ExternalLink className="h-5 w-5" />
                 Watch Live Stream
               </button>
@@ -213,7 +230,9 @@ export default function MiniApp() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+    <div className="min-h-screen" style={{
+      background: 'linear-gradient(135deg, #663399 0%, #4c1d95 50%, #312e81 100%)'
+    }}>
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="text-center mb-8">
@@ -226,7 +245,11 @@ export default function MiniApp() {
 
         {/* Countdown */}
         {timeLeft && (
-          <div className="bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-xl p-4 mb-6 border border-orange-300/30">
+          <div className="mb-6" style={{
+            background: 'linear-gradient(135deg, rgba(251, 146, 60, 0.2) 0%, rgba(239, 68, 68, 0.2) 100%)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(251, 146, 60, 0.3)'
+          }} className="rounded-xl p-4">
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <Clock className="h-5 w-5 text-orange-300" />
@@ -243,11 +266,15 @@ export default function MiniApp() {
 
         {/* Entry Status */}
         {hasEntered && userEntry ? (
-          <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 rounded-xl p-6 border border-green-300/30 mb-6">
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(34, 197, 94, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(34, 197, 94, 0.3)'
+          }} className="rounded-xl p-6 mb-6">
             <div className="text-center">
               <CheckCircle className="h-8 w-8 mx-auto mb-3 text-green-400" />
               <h3 className="text-xl font-bold text-green-400 mb-2">You're Entered!</h3>
-              <div className="bg-black/30 rounded-lg p-4">
+              <div style={{background: 'rgba(0, 0, 0, 0.3)'}} className="rounded-lg p-4">
                 <p className="text-gray-300 text-sm">Tournament: <span className="text-white font-semibold">{userEntry.tournament}</span></p>
                 <p className="text-gray-300 text-sm">Buy-in: <span className="text-purple-300 font-semibold">{userEntry.tournamentBuyIn}</span></p>
                 <p className="text-gray-300 text-sm mt-2">
@@ -260,7 +287,11 @@ export default function MiniApp() {
           <>
             {/* Wallet Connection */}
             {!isConnected ? (
-              <div className="bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-xl p-6 border border-purple-300/30 mb-6">
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(147, 51, 234, 0.3)'
+              }} className="rounded-xl p-6 mb-6">
                 <div className="text-center">
                   <Users className="h-8 w-8 mx-auto mb-3 text-blue-300" />
                   <h3 className="text-xl font-bold text-white mb-2">Connect Wallet</h3>
@@ -268,7 +299,10 @@ export default function MiniApp() {
                   <button 
                     onClick={connectWallet}
                     disabled={isLoading}
-                    className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 text-white font-bold py-3 px-4 rounded-lg transition-colors"
+                    style={{
+                      background: 'linear-gradient(135deg, #7c3aed 0%, #2563eb 100%)'
+                    }}
+                    className="w-full hover:opacity-90 disabled:opacity-50 text-white font-bold py-3 px-4 rounded-lg transition-opacity"
                   >
                     {isLoading ? 'Connecting...' : 'Connect Wallet (Mock)'}
                   </button>
@@ -276,18 +310,25 @@ export default function MiniApp() {
               </div>
             ) : (
               /* Entry Form */
-              <div className="bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-xl p-6 border border-purple-300/30 mb-6">
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(147, 51, 234, 0.3)'
+              }} className="rounded-xl p-6 mb-6">
                 <div className="text-center">
                   <Trophy className="h-8 w-8 mx-auto mb-3 text-purple-300" />
                   <h3 className="text-xl font-bold text-white mb-2">Enter Raffle</h3>
-                  <div className="bg-black/30 rounded-lg p-3 mb-4">
+                  <div style={{background: 'rgba(0, 0, 0, 0.3)'}} className="rounded-lg p-3 mb-4">
                     <p className="text-gray-300 text-sm">Connected: <span className="text-purple-300 font-mono text-xs">{walletAddress}</span></p>
                   </div>
                   <p className="text-gray-300 text-sm mb-4">You'll be randomly assigned to one tournament. Winner gets 5% profit + 5% bonus for sharing!</p>
                   <button 
                     onClick={enterRaffle}
                     disabled={isLoading}
-                    className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 disabled:opacity-50 text-white font-bold py-3 px-4 rounded-lg transition-colors"
+                    style={{
+                      background: 'linear-gradient(135deg, #16a34a 0%, #2563eb 100%)'
+                    }}
+                    className="w-full hover:opacity-90 disabled:opacity-50 text-white font-bold py-3 px-4 rounded-lg transition-opacity"
                   >
                     {isLoading ? 'Entering...' : 'Enter Community Raffle'}
                   </button>
@@ -305,7 +346,11 @@ export default function MiniApp() {
           </h3>
           <div className="space-y-2">
             {tournaments.slice(0, 6).map((tournament, index) => (
-              <div key={index} className="bg-white/5 rounded-lg p-3 border border-white/10">
+              <div key={index} style={{
+                background: 'rgba(255, 255, 255, 0.05)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255, 255, 255, 0.1)'
+              }} className="rounded-lg p-3">
                 <div className="flex justify-between items-center">
                   <div>
                     <div className="font-medium text-white">{tournament.name}</div>
