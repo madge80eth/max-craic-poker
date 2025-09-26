@@ -1,11 +1,11 @@
 import Link from 'next/link'
-import { ArrowRight, Trophy, Users, Share2 } from 'lucide-react'
+import { ArrowRight, Trophy, Users } from 'lucide-react'
 
 export default function HomePage() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      background: 'linear-gradient(135deg, #4c1d95 0%, #581c87 50%, #7c3aed 100%)',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -30,7 +30,7 @@ export default function HomePage() {
             height: '100px',
             marginBottom: '2rem',
             borderRadius: '16px',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.2)'
+            boxShadow: '0 8px 24px rgba(0,0,0,0.3)'
           }}
         />
 
@@ -41,7 +41,7 @@ export default function HomePage() {
             fontWeight: '700',
             color: 'white',
             margin: '0 0 0.5rem 0',
-            textShadow: '0 4px 8px rgba(0,0,0,0.3)',
+            textShadow: '0 4px 8px rgba(0,0,0,0.4)',
             lineHeight: '1'
           }}>
             MAX CRAIC
@@ -64,15 +64,15 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* Feature Cards */}
+        {/* Feature Cards - Only 2 like in reference */}
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
           gap: '1.5rem',
           width: '100%',
           marginBottom: '3rem'
         }}>
-          {/* Feature 1 */}
+          {/* Real Profit Sharing */}
           <div style={{
             background: 'rgba(255, 255, 255, 0.15)',
             backdropFilter: 'blur(20px)',
@@ -80,7 +80,7 @@ export default function HomePage() {
             borderRadius: '20px',
             padding: '2rem',
             textAlign: 'center',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
+            boxShadow: '0 8px 32px rgba(0,0,0,0.3)'
           }}>
             <Trophy size={40} color="#ffd700" style={{ marginBottom: '1rem' }} />
             <h3 style={{
@@ -101,7 +101,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* Feature 2 */}
+          {/* Community Driven */}
           <div style={{
             background: 'rgba(255, 255, 255, 0.15)',
             backdropFilter: 'blur(20px)',
@@ -109,7 +109,7 @@ export default function HomePage() {
             borderRadius: '20px',
             padding: '2rem',
             textAlign: 'center',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
+            boxShadow: '0 8px 32px rgba(0,0,0,0.3)'
           }}>
             <Users size={40} color="#64b5f6" style={{ marginBottom: '1rem' }} />
             <h3 style={{
@@ -129,35 +129,6 @@ export default function HomePage() {
               Audience becomes stakeholders, not just spectators
             </p>
           </div>
-
-          {/* Feature 3 */}
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.15)',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            borderRadius: '20px',
-            padding: '2rem',
-            textAlign: 'center',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
-          }}>
-            <Share2 size={40} color="#4ecdc4" style={{ marginBottom: '1rem' }} />
-            <h3 style={{
-              color: 'white',
-              fontSize: '1.1rem',
-              fontWeight: '600',
-              margin: '0 0 0.75rem 0'
-            }}>
-              Web3 Powered
-            </h3>
-            <p style={{
-              color: 'rgba(255, 255, 255, 0.8)',
-              fontSize: '0.9rem',
-              margin: '0',
-              lineHeight: '1.4'
-            }}>
-              Built on Farcaster Frame + Base Mini App for seamless interaction
-            </p>
-          </div>
         </div>
 
         {/* CTA Buttons */}
@@ -170,7 +141,7 @@ export default function HomePage() {
         }}>
           <Link href="/mini-app" style={{ textDecoration: 'none' }}>
             <button style={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              background: 'linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%)',
               color: 'white',
               border: '2px solid rgba(255, 255, 255, 0.3)',
               borderRadius: '12px',
@@ -184,33 +155,10 @@ export default function HomePage() {
               justifyContent: 'center',
               gap: '0.5rem',
               transition: 'all 0.2s ease',
-              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+              boxShadow: '0 4px 12px rgba(124, 58, 237, 0.4)'
             }}>
               Launch Mini App
               <ArrowRight size={18} />
-            </button>
-          </Link>
-
-          <Link href="/share" style={{ textDecoration: 'none' }}>
-            <button style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              color: 'white',
-              border: '2px solid rgba(255, 255, 255, 0.2)',
-              borderRadius: '12px',
-              padding: '1rem 2rem',
-              fontSize: '1rem',
-              fontWeight: '500',
-              cursor: 'pointer',
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem',
-              transition: 'all 0.2s ease',
-              backdropFilter: 'blur(10px)'
-            }}>
-              <Share2 size={18} />
-              View Farcaster Frame
             </button>
           </Link>
         </div>

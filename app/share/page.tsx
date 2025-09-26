@@ -24,7 +24,7 @@ export default function SharePage() {
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      background: 'linear-gradient(135deg, #4c1d95 0%, #581c87 50%, #7c3aed 100%)',
       display: 'flex',
       flexDirection: 'column',
       alignItems: 'center',
@@ -49,7 +49,7 @@ export default function SharePage() {
             height: '80px',
             marginBottom: '2rem',
             borderRadius: '12px',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.2)'
+            boxShadow: '0 8px 24px rgba(0,0,0,0.3)'
           }}
         />
 
@@ -60,7 +60,7 @@ export default function SharePage() {
             fontWeight: '700',
             color: 'white',
             margin: '0 0 0.5rem 0',
-            textShadow: '0 4px 8px rgba(0,0,0,0.3)',
+            textShadow: '0 4px 8px rgba(0,0,0,0.4)',
             lineHeight: '1'
           }}>
             MAX CRAIC
@@ -92,7 +92,7 @@ export default function SharePage() {
           padding: '3rem',
           width: '100%',
           textAlign: 'center',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
           marginBottom: '2rem'
         }}>
           <div style={{
@@ -117,33 +117,6 @@ export default function SharePage() {
           }}>
             Join the raffle! Winner gets 5% of tournament profits + 5% bonus for sharing!
           </p>
-          
-          {/* Mock Frame Preview */}
-          <div style={{
-            background: 'rgba(255, 255, 255, 0.1)',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
-            borderRadius: '16px',
-            padding: '2rem',
-            marginBottom: '2rem'
-          }}>
-            <p style={{
-              color: 'rgba(255, 255, 255, 0.8)',
-              fontSize: '0.9rem',
-              margin: '0 0 1rem 0'
-            }}>
-              Farcaster Frame Preview
-            </p>
-            <div style={{
-              background: 'rgba(102, 126, 234, 0.2)',
-              borderRadius: '8px',
-              padding: '1rem',
-              fontSize: '0.9rem',
-              color: 'white',
-              marginBottom: '1rem'
-            }}>
-              Frame displays here in Farcaster feeds
-            </div>
-          </div>
 
           {/* CTA Button */}
           <a 
@@ -152,7 +125,7 @@ export default function SharePage() {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '0.75rem',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              background: 'linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%)',
               color: 'white',
               textDecoration: 'none',
               borderRadius: '12px',
@@ -160,49 +133,12 @@ export default function SharePage() {
               fontSize: '1.1rem',
               fontWeight: '600',
               border: '2px solid rgba(255, 255, 255, 0.3)',
-              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
+              boxShadow: '0 4px 12px rgba(124, 58, 237, 0.4)',
               transition: 'all 0.2s ease'
             }}
           >
             Enter Community Game →
           </a>
-        </div>
-
-        {/* Instructions */}
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.1)',
-          backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255, 255, 255, 0.15)',
-          borderRadius: '16px',
-          padding: '2rem',
-          width: '100%',
-          marginBottom: '2rem',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.15)'
-        }}>
-          <h3 style={{
-            color: 'white',
-            fontSize: '1.25rem',
-            fontWeight: '600',
-            margin: '0 0 1rem 0'
-          }}>
-            How to Share
-          </h3>
-          <div style={{
-            textAlign: 'left',
-            color: 'rgba(255, 255, 255, 0.8)',
-            fontSize: '0.95rem',
-            lineHeight: '1.5'
-          }}>
-            <p style={{ margin: '0 0 0.75rem 0' }}>
-              <strong>1.</strong> Copy this page URL and cast it in Farcaster
-            </p>
-            <p style={{ margin: '0 0 0.75rem 0' }}>
-              <strong>2.</strong> Your followers will see the interactive Frame
-            </p>
-            <p style={{ margin: '0' }}>
-              <strong>3.</strong> They can enter the raffle directly from their feed
-            </p>
-          </div>
         </div>
 
         {/* Technical Info */}
