@@ -66,11 +66,11 @@ export default function Homepage() {
 
         {/* Countdown */}
         {timeLeft && (
-          <div className="mb-6" style={{
+          <div className="mb-6 rounded-xl p-4" style={{
             background: 'linear-gradient(135deg, rgba(251, 146, 60, 0.2) 0%, rgba(239, 68, 68, 0.2) 100%)',
             backdropFilter: 'blur(10px)',
             border: '1px solid rgba(251, 146, 60, 0.3)'
-          }} className="rounded-xl p-4 border">
+          }}>
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <Clock className="h-5 w-5 text-orange-300" />
