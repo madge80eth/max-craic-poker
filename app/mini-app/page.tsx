@@ -1,272 +1,324 @@
-'use client'
+'use client';
 
-import React, { useState, useEffect } from 'react'
-import Link from 'next/link'
-import { Clock, Trophy, Users, ExternalLink, ArrowLeft } from 'lucide-react'
+import { useState, useEffect } from 'react';
+import { Dice6, Trophy, Clock, Users, DollarSign, ExternalLink, CheckCircle } from 'lucide-react';
 
-const MiniApp = () => {
-  const [timeLeft, setTimeLeft] = useState(43200)
-  const [isEntered, setIsEntered] = useState(false)
-  const [totalEntries, setTotalEntries] = useState(0)
-  const [winner, setWinner] = useState<any>(null)
-  const [walletConnected, setWalletConnected] = useState(false)
-  const [userAddress, setUserAddress] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [tournaments, setTournaments] = useState([])
-  const [error, setError] = useState('')
+interface Tournament {
+  name: string;
+  buyIn: string;
+}
 
+interface WinnerData {
+  walletAddress: string;
+  entry: {
+    tournament: string;
+    tournamentBuyIn: string;
+  };
+  totalEntries: number;
+}
+
+export default function MiniApp() {
+  const [isConnected, setIsConnected] = useState(false);
+  const [walletAddress, setWalletAddress] = useState('');
+  const [hasEntered, setHasEntered] = useState(false);
+  const [userEntry, setUserEntry] = useState<any>(null);
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [winner, setWinner] = useState<WinnerData | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number } | null>(null);
+
+  // Load tournaments
   useEffect(() => {
-    fetch('/tournaments.json')
-      .then(res => res.json())
-      .then(data => setTournaments(data))
-      .catch(err => console.error('Failed to load tournaments:', err))
-  }, [])
+    const fetchTournaments = async () => {
+      try {
+        const response = await fetch('/tournaments.json');
+        const data: Tournament[] = await response.json();
+        setTournaments(data);
+      } catch (error) {
+        console.error('Error loading tournaments:', error);
+      }
+    };
+    fetchTournaments();
+  }, []);
 
-  // CHECK FOR WINNER IMMEDIATELY ON PAGE LOAD - CRITICAL FIX
+  // Countdown timer
   useEffect(() => {
-    checkWinner()
-  }, [])
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          checkWinner()
-          return 0
+    const fetchCountdown = async () => {
+      try {
+        const response = await fetch('/api/countdown');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.timeLeft > 0) {
+            const hours = Math.floor(data.timeLeft / 3600);
+            const minutes = Math.floor((data.timeLeft % 3600) / 60);
+            const seconds = data.timeLeft % 60;
+            setTimeLeft({ hours, minutes, seconds });
+          } else {
+            // Timer expired, check for winner
+            checkForWinner();
+          }
         }
-        return prev - 1
-      })
-    }, 1000)
+      } catch (error) {
+        console.error('Error fetching countdown:', error);
+      }
+    };
 
-    return () => clearInterval(timer)
-  }, [])
+    fetchCountdown();
+    const interval = setInterval(fetchCountdown, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
-  const checkWinner = async () => {
+  // Check for winner when component mounts or timer expires
+  const checkForWinner = async () => {
     try {
-      const response = await fetch('/api/status')
-      const data = await response.json()
-      
-      if (data.success && data.hasWinner && data.winner) {
-        setWinner(data.winner)
-        setTotalEntries(data.totalEntries || 0)
-      } else {
-        setTotalEntries(data.totalEntries || 0)
+      const response = await fetch('/api/status');
+      if (response.ok) {
+        const data = await response.json();
+        if (data.winner) {
+          setWinner(data.winner);
+        }
       }
     } catch (error) {
-      console.error('Failed to check winner:', error)
+      console.error('Error checking for winner:', error);
     }
-  }
+  };
 
-  const handleConnectWallet = () => {
-    setLoading(true)
-    setTimeout(() => {
-      setWalletConnected(true)
-      setUserAddress('0x742d35Cc6564C5532C3C1e5329A8C0d3f1e90F43')
-      setLoading(false)
-    }, 2000)
-  }
+  // Check user status when wallet connected
+  useEffect(() => {
+    if (isConnected && walletAddress) {
+      checkUserStatus();
+    }
+  }, [isConnected, walletAddress]);
 
-  const handleEnterRaffle = async () => {
-    if (!userAddress) return
+  const checkUserStatus = async () => {
+    try {
+      const response = await fetch(`/api/status?address=${walletAddress}`);
+      if (response.ok) {
+        const data = await response.json();
+        setHasEntered(data.hasEntered);
+        setUserEntry(data.userEntry);
+      }
+    } catch (error) {
+      console.error('Error checking user status:', error);
+    }
+  };
+
+  const connectWallet = async () => {
+    setIsLoading(true);
+    try {
+      // Mock wallet connection
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      setWalletAddress('0x742d35Cc6564C5532C3C1e5329A8C0d3f1e90F43');
+      setIsConnected(true);
+    } catch (error) {
+      console.error('Error connecting wallet:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const enterRaffle = async () => {
+    if (!isConnected) return;
     
-    setLoading(true)
-    setError('')
-    
+    setIsLoading(true);
     try {
       const response = await fetch('/api/enter', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
-          walletAddress: userAddress,
-          platform: 'miniapp',
+          walletAddress,
+          platform: 'mini-app',
           hasRecasted: false
-        })
-      })
-      
-      const data = await response.json()
-      
-      if (data.success) {
-        setIsEntered(true)
-        setTimeout(checkWinner, 500)
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setHasEntered(true);
+        setUserEntry(result.entry);
       } else {
-        setError(data.error || 'Failed to enter raffle')
+        const error = await response.json();
+        alert(error.message || 'Failed to enter raffle');
       }
     } catch (error) {
-      console.error('Entry failed:', error)
-      setError('Network error - please try again')
+      console.error('Error entering raffle:', error);
+      alert('Error entering raffle');
     } finally {
-      setLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
-  const formatTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600)
-    const minutes = Math.floor((seconds % 3600) / 60)
-    const secs = seconds % 60
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-  }
-
-  // WINNER SCREEN - Beautiful purple gradient design
+  // Winner announcement screen
   if (winner) {
-    const isUserWinner = winner.walletAddress === userAddress
+    const isWinner = winner.walletAddress === walletAddress;
     
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white p-6">
-        <div className="max-w-md mx-auto">
-          <Link href="/" className="inline-flex items-center gap-2 text-purple-300 mb-6 hover:text-purple-200">
-            <ArrowLeft className="w-4 h-4" />
-            Back to Home
-          </Link>
-          
-          <div className="bg-white/10 backdrop-blur-md rounded-xl p-8 border border-white/20 text-center mb-6">
-            <Trophy className={`w-16 h-16 mx-auto mb-4 ${isUserWinner ? 'text-yellow-400' : 'text-purple-300'}`} />
-            
-            {isUserWinner ? (
-              <>
-                <h1 className="text-3xl font-bold text-yellow-300 mb-2">🎉 YOU WON! 🎉</h1>
-                <p className="text-yellow-200 mb-4">You won the community draw!</p>
-              </>
-            ) : (
-              <>
-                <h1 className="text-2xl font-bold text-purple-200 mb-2">WINNER DRAWN!</h1>
-                <p className="text-purple-300 mb-4">The community has a winner!</p>
-              </>
-            )}
-            
-            <div className="bg-white/5 rounded-lg p-4 mb-4">
-              <h2 className="text-lg font-bold mb-2">
-                {isUserWinner ? 'Your Address' : 'Winner'}
-              </h2>
-              <p className="font-mono text-sm text-purple-200">
-                {winner.walletAddress ? 
-                  `${winner.walletAddress.slice(0, 6)}...${winner.walletAddress.slice(-4)}` : 
-                  'Winner'
-                }
-              </p>
-              <p className="text-purple-300 mt-3">
-                Community Tournament: <span className="text-white font-semibold">
-                  {winner.communityTournament || 'Tournament Selected'}
-                </span>
-              </p>
-              {winner.tournamentBuyIn && (
-                <p className="text-sm text-purple-400 mt-1">
-                  ${winner.tournamentBuyIn} buy-in
-                </p>
-              )}
-            </div>
-
-            <div className="text-sm text-purple-200 bg-white/5 rounded-lg p-3">
-              <p className="font-semibold mb-1">
-                {isUserWinner ? "If Max cashes in this tournament, you'll receive:" : "Winner receives:"}
-              </p>
-              <p className="text-lg font-bold text-purple-100">
-                5% of profits + 5% sharing bonus!
-              </p>
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center gap-3 mb-4">
+              <Trophy className="h-8 w-8 text-yellow-400" />
+              <h1 className="text-3xl font-bold text-white">Winner Announcement</h1>
             </div>
           </div>
 
-          <div className="bg-gradient-to-r from-red-500/20 to-purple-500/20 rounded-xl p-6 border border-red-300/30">
-            <h3 className="text-lg font-bold mb-2 text-center">🔴 LIVE ACTION</h3>
-            <p className="text-sm text-center mb-4 text-gray-300">
-              Join the stream to see how the community tournament unfolds! 
-              Chat participants get $MCP airdrops.
-            </p>
-            <button
-              onClick={() => window.open('https://twitch.tv/maxcraic', '_blank')}
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
-            >
-              <ExternalLink className="h-4 w-4" />
-              Watch Live Stream
-            </button>
+          <div className="bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-xl p-8 border border-purple-300/30 mb-6">
+            <div className="text-center">
+              <Trophy className="h-16 w-16 mx-auto mb-4 text-yellow-400" />
+              {isWinner ? (
+                <h2 className="text-2xl font-bold text-green-400 mb-4">🎉 You Won! 🎉</h2>
+              ) : (
+                <h2 className="text-2xl font-bold text-white mb-4">Winner Selected!</h2>
+              )}
+              
+              <div className="bg-black/30 rounded-lg p-4 mb-6">
+                <p className="text-gray-300 text-sm mb-2">Winner Address:</p>
+                <p className="text-yellow-400 font-mono text-lg">{winner.walletAddress}</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="bg-white/10 rounded-lg p-3">
+                  <p className="text-gray-300 text-sm">Tournament</p>
+                  <p className="text-white font-semibold">{winner.entry.tournament}</p>
+                </div>
+                <div className="bg-white/10 rounded-lg p-3">
+                  <p className="text-gray-300 text-sm">Buy-in</p>
+                  <p className="text-white font-semibold">{winner.entry.tournamentBuyIn}</p>
+                </div>
+                <div className="bg-white/10 rounded-lg p-3">
+                  <p className="text-gray-300 text-sm">Total Entries</p>
+                  <p className="text-white font-semibold">{winner.totalEntries}</p>
+                </div>
+              </div>
+
+              {isWinner && (
+                <div className="bg-green-500/20 border border-green-400/30 rounded-lg p-4 mb-6">
+                  <p className="text-green-300 text-sm">
+                    If this tournament cashes, you'll receive 5% of the profit + 5% bonus for sharing!
+                  </p>
+                </div>
+              )}
+
+              <button className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+                <ExternalLink className="h-5 w-5" />
+                Watch Live Stream
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    )
+    );
   }
 
-  // ENTRY SCREEN - Only show if no winner
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 text-white p-6">
-      <div className="max-w-md mx-auto">
-        <Link href="/" className="inline-flex items-center gap-2 text-purple-300 mb-6 hover:text-purple-200">
-          <ArrowLeft className="w-4 h-4" />
-          Back to Home
-        </Link>
-
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
         <div className="text-center mb-8">
-          <div className="mb-4">
-            <img 
-              src="/mcp-logo.png" 
-              alt="Max Craic Poker Logo" 
-              style={{ width: '80px', height: '80px', objectFit: 'contain' }}
-              className="mx-auto"
-            />
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <Dice6 className="h-8 w-8 text-purple-300" />
+            <h1 className="text-3xl font-bold text-white">Max Craic Poker</h1>
           </div>
-          <h1 className="text-2xl font-bold mb-1">MAX CRAIC</h1>
-          <div className="text-red-400 font-bold text-lg mb-2">POKER</div>
-          <p className="text-purple-200 text-sm">Community-Backed Tournaments</p>
+          <p className="text-gray-300 text-lg">Community-backed tournament play</p>
         </div>
 
-        <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20 mb-6">
-          <div className="text-center">
-            <Clock className="h-8 w-8 mx-auto mb-2 text-purple-300" />
-            <h2 className="text-lg font-semibold mb-1">Draw in:</h2>
-            <div className="text-3xl font-bold text-purple-300 font-mono">
-              {formatTime(timeLeft)}
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-xl p-6 border border-purple-300/30 mb-6">
-          <div className="text-center mb-4">
-            <Users className="h-8 w-8 mx-auto mb-2 text-blue-300" />
-            <h3 className="text-lg font-bold">Join the Community Draw</h3>
-            <p className="text-sm text-gray-300 mt-1">
-              One winner gets 5% of tournament profits + 5% bonus for sharing!
-            </p>
-          </div>
-          
-          {error && (
-            <div className="bg-red-500/20 border border-red-300/30 rounded-lg p-3 mb-4 text-center">
-              <p className="text-red-300 text-sm">{error}</p>
-            </div>
-          )}
-          
-          {!walletConnected ? (
-            <button
-              onClick={handleConnectWallet}
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-colors disabled:opacity-50"
-            >
-              {loading ? 'Connecting...' : 'Connect Wallet to Enter'}
-            </button>
-          ) : isEntered ? (
+        {/* Countdown */}
+        {timeLeft && (
+          <div className="bg-gradient-to-r from-orange-500/20 to-red-500/20 rounded-xl p-4 mb-6 border border-orange-300/30">
             <div className="text-center">
-              <div className="bg-green-500/20 border border-green-300/30 rounded-lg p-4 mb-3">
-                <div className="text-green-300 font-semibold">You're entered!</div>
-                <div className="text-sm text-gray-300">Good luck! Winner drawn at countdown end.</div>
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Clock className="h-5 w-5 text-orange-300" />
+                <h3 className="text-lg font-semibold text-white">Draw in:</h3>
+              </div>
+              <div className="text-2xl font-bold text-orange-300">
+                {String(timeLeft.hours).padStart(2, '0')}:
+                {String(timeLeft.minutes).padStart(2, '0')}:
+                {String(timeLeft.seconds).padStart(2, '0')}
               </div>
             </div>
-          ) : (
-            <button
-              onClick={handleEnterRaffle}
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold py-3 px-4 rounded-lg transition-colors disabled:opacity-50"
-            >
-              {loading ? 'Entering...' : 'Enter Today\'s Draw'}
-            </button>
-          )}
-        </div>
+          </div>
+        )}
 
-        <div className="text-center mt-4">
-          <p className="text-sm text-gray-400 flex items-center justify-center gap-1">
-            <Users className="h-4 w-4" />
-            {totalEntries} entries • Draw at countdown end
-          </p>
+        {/* Entry Status */}
+        {hasEntered && userEntry ? (
+          <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 rounded-xl p-6 border border-green-300/30 mb-6">
+            <div className="text-center">
+              <CheckCircle className="h-8 w-8 mx-auto mb-3 text-green-400" />
+              <h3 className="text-xl font-bold text-green-400 mb-2">You're Entered!</h3>
+              <div className="bg-black/30 rounded-lg p-4">
+                <p className="text-gray-300 text-sm">Tournament: <span className="text-white font-semibold">{userEntry.tournament}</span></p>
+                <p className="text-gray-300 text-sm">Buy-in: <span className="text-purple-300 font-semibold">{userEntry.tournamentBuyIn}</span></p>
+                <p className="text-gray-300 text-sm mt-2">
+                  If this tournament cashes, you'll win 5% of profits + 5% bonus for sharing!
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Wallet Connection */}
+            {!isConnected ? (
+              <div className="bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-xl p-6 border border-purple-300/30 mb-6">
+                <div className="text-center">
+                  <Users className="h-8 w-8 mx-auto mb-3 text-blue-300" />
+                  <h3 className="text-xl font-bold text-white mb-2">Connect Wallet</h3>
+                  <p className="text-gray-300 text-sm mb-4">Connect your wallet to enter the community raffle</p>
+                  <button 
+                    onClick={connectWallet}
+                    disabled={isLoading}
+                    className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 disabled:opacity-50 text-white font-bold py-3 px-4 rounded-lg transition-colors"
+                  >
+                    {isLoading ? 'Connecting...' : 'Connect Wallet (Mock)'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              /* Entry Form */
+              <div className="bg-gradient-to-r from-purple-500/20 to-blue-500/20 rounded-xl p-6 border border-purple-300/30 mb-6">
+                <div className="text-center">
+                  <Trophy className="h-8 w-8 mx-auto mb-3 text-purple-300" />
+                  <h3 className="text-xl font-bold text-white mb-2">Enter Raffle</h3>
+                  <div className="bg-black/30 rounded-lg p-3 mb-4">
+                    <p className="text-gray-300 text-sm">Connected: <span className="text-purple-300 font-mono text-xs">{walletAddress}</span></p>
+                  </div>
+                  <p className="text-gray-300 text-sm mb-4">You'll be randomly assigned to one tournament. Winner gets 5% profit + 5% bonus for sharing!</p>
+                  <button 
+                    onClick={enterRaffle}
+                    disabled={isLoading}
+                    className="w-full bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 disabled:opacity-50 text-white font-bold py-3 px-4 rounded-lg transition-colors"
+                  >
+                    {isLoading ? 'Entering...' : 'Enter Community Raffle'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Tournaments Display */}
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 text-white">
+            <Trophy className="h-5 w-5" />
+            Today's Tournaments
+          </h3>
+          <div className="space-y-2">
+            {tournaments.slice(0, 6).map((tournament, index) => (
+              <div key={index} className="bg-white/5 rounded-lg p-3 border border-white/10">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="font-medium text-white">{tournament.name}</div>
+                  </div>
+                  <div className="text-purple-300 font-semibold">
+                    {tournament.buyIn}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </div>
-  )
+  );
 }
-
-export default MiniApp
