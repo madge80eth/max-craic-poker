@@ -64,7 +64,7 @@ export default function HomePage() {
           </p>
         </div>
 
-        {/* Feature Cards - Only 2 like in reference */}
+        {/* Feature Cards */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
@@ -131,11 +131,8 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* CTA Buttons */}
+        {/* CTA Button */}
         <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '1rem',
           width: '100%',
           maxWidth: '400px'
         }}>
@@ -157,7 +154,7 @@ export default function HomePage() {
               transition: 'all 0.2s ease',
               boxShadow: '0 4px 12px rgba(124, 58, 237, 0.4)'
             }}>
-              Launch Mini App
+              Enter Draw by Launching Mini App
               <ArrowRight size={18} />
             </button>
           </Link>

@@ -5,7 +5,6 @@ export const runtime = 'edge'
 
 export async function GET(request: NextRequest) {
   try {
-    // Get query parameters
     const { searchParams } = new URL(request.url)
     const winner = searchParams.get('winner')
     const tournament = searchParams.get('tournament') 
@@ -23,30 +22,11 @@ export async function GET(request: NextRequest) {
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              background: 'linear-gradient(135deg, #4c1d95 0%, #581c87 50%, #7c3aed 100%)',
               padding: '60px',
               fontFamily: 'system-ui'
             }}
           >
-            {/* Logo */}
-            <div
-              style={{
-                width: '80px',
-                height: '80px',
-                background: 'rgba(255, 255, 255, 0.9)',
-                borderRadius: '16px',
-                marginBottom: '40px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '32px',
-                fontWeight: '700',
-                color: '#764ba2'
-              }}
-            >
-              MCP
-            </div>
-
             {/* Header */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '50px' }}>
               <h1
@@ -56,7 +36,7 @@ export async function GET(request: NextRequest) {
                   color: 'white',
                   margin: '0 0 16px 0',
                   textAlign: 'center',
-                  textShadow: '0 4px 8px rgba(0,0,0,0.3)'
+                  textShadow: '0 4px 8px rgba(0,0,0,0.4)'
                 }}
               >
                 MAX CRAIC
@@ -86,13 +66,11 @@ export async function GET(request: NextRequest) {
             <div
               style={{
                 background: 'rgba(255, 255, 255, 0.15)',
-                backdropFilter: 'blur(20px)',
                 border: '2px solid rgba(255, 255, 255, 0.2)',
                 borderRadius: '24px',
                 padding: '50px',
                 width: '600px',
                 textAlign: 'center',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
                 marginBottom: '40px'
               }}
             >
@@ -124,57 +102,24 @@ export async function GET(request: NextRequest) {
               >
                 Join the raffle! Winner gets 5% of tournament profits + 5% bonus for sharing!
               </p>
-              
-              {/* Countdown if available */}
-              {timeLeft && (
-                <div
-                  style={{
-                    background: 'rgba(255, 255, 255, 0.1)',
-                    borderRadius: '16px',
-                    padding: '20px',
-                    marginBottom: '20px'
-                  }}
-                >
-                  <p
-                    style={{
-                      color: 'white',
-                      fontSize: '18px',
-                      margin: '0 0 10px 0'
-                    }}
-                  >
-                    Next Draw in:
-                  </p>
-                  <div
-                    style={{
-                      fontSize: '36px',
-                      fontWeight: '700',
-                      color: 'white',
-                      fontFamily: 'monospace'
-                    }}
-                  >
-                    {timeLeft}
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* CTA */}
             <div
               style={{
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                background: 'linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%)',
                 color: 'white',
                 borderRadius: '16px',
                 padding: '20px 40px',
                 fontSize: '24px',
                 fontWeight: '600',
                 border: '2px solid rgba(255, 255, 255, 0.3)',
-                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '12px'
               }}
             >
-              Enter Community Game →
+              Enter the Draw →
             </div>
           </div>
         ),
@@ -196,30 +141,11 @@ export async function GET(request: NextRequest) {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: 'linear-gradient(135deg, #4c1d95 0%, #581c87 50%, #7c3aed 100%)',
             padding: '60px',
             fontFamily: 'system-ui'
           }}
         >
-          {/* Logo */}
-          <div
-            style={{
-              width: '80px',
-              height: '80px',
-              background: 'rgba(255, 255, 255, 0.9)',
-              borderRadius: '16px',
-              marginBottom: '40px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '32px',
-              fontWeight: '700',
-              color: '#764ba2'
-            }}
-          >
-            MCP
-          </div>
-
           {/* Header */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '50px' }}>
             <h1
@@ -229,7 +155,7 @@ export async function GET(request: NextRequest) {
                 color: 'white',
                 margin: '0 0 16px 0',
                 textAlign: 'center',
-                textShadow: '0 4px 8px rgba(0,0,0,0.3)'
+                textShadow: '0 4px 8px rgba(0,0,0,0.4)'
               }}
             >
               WINNER DRAWN!
@@ -250,13 +176,11 @@ export async function GET(request: NextRequest) {
           <div
             style={{
               background: 'rgba(255, 255, 255, 0.15)',
-              backdropFilter: 'blur(20px)',
               border: '2px solid rgba(255, 255, 255, 0.2)',
               borderRadius: '24px',
               padding: '50px',
               width: '600px',
               textAlign: 'center',
-              boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
               marginBottom: '30px'
             }}
           >
@@ -308,7 +232,6 @@ export async function GET(request: NextRequest) {
               padding: '20px 40px',
               fontSize: '24px',
               fontWeight: '600',
-              boxShadow: '0 4px 12px rgba(255, 71, 87, 0.3)',
               display: 'flex',
               alignItems: 'center',
               gap: '12px'

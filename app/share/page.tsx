@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   other: {
     'fc:frame': 'vNext',
     'fc:frame:image': `${process.env.NEXT_PUBLIC_BASE_URL}/api/frame-image`,
-    'fc:frame:button:1': 'Enter Community Game',
+    'fc:frame:button:1': 'Enter the Draw',
     'fc:frame:button:1:action': 'link',
     'fc:frame:button:1:target': `${process.env.NEXT_PUBLIC_BASE_URL}/mini-app`,
     'fc:frame:button:2': 'View Results',
@@ -137,23 +137,8 @@ export default function SharePage() {
               transition: 'all 0.2s ease'
             }}
           >
-            Enter Community Game →
+            Enter the Draw →
           </a>
-        </div>
-
-        {/* Technical Info */}
-        <div style={{
-          color: 'rgba(255, 255, 255, 0.6)',
-          fontSize: '0.85rem',
-          textAlign: 'center',
-          lineHeight: '1.4'
-        }}>
-          <p style={{ margin: '0 0 0.5rem 0' }}>
-            Built on Farcaster Frame + Base Mini App architecture
-          </p>
-          <p style={{ margin: '0' }}>
-            Demonstrating practical Web3 utility beyond speculation
-          </p>
         </div>
       </div>
     </div>
