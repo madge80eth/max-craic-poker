@@ -1,144 +1,218 @@
-'use client';
+import Link from 'next/link'
+import { ArrowRight, Trophy, Users, Share2 } from 'lucide-react'
 
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { Dice6, Trophy, Clock, Users, DollarSign, ExternalLink, ArrowRight } from 'lucide-react';
-
-interface Tournament {
-  name: string;
-  buyIn: string;
-}
-
-export default function Homepage() {
-  const [tournaments, setTournaments] = useState<Tournament[]>([]);
-  const [timeLeft, setTimeLeft] = useState<{ hours: number; minutes: number; seconds: number } | null>(null);
-
-  useEffect(() => {
-    const fetchTournaments = async () => {
-      try {
-        const response = await fetch('/tournaments.json');
-        const data: Tournament[] = await response.json();
-        setTournaments(data);
-      } catch (error) {
-        console.error('Error loading tournaments:', error);
-      }
-    };
-
-    fetchTournaments();
-  }, []);
-
-  useEffect(() => {
-    const fetchCountdown = async () => {
-      try {
-        const response = await fetch('/api/countdown');
-        if (response.ok) {
-          const data = await response.json();
-          if (data.timeLeft > 0) {
-            const hours = Math.floor(data.timeLeft / 3600);
-            const minutes = Math.floor((data.timeLeft % 3600) / 60);
-            const seconds = data.timeLeft % 60;
-            setTimeLeft({ hours, minutes, seconds });
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching countdown:', error);
-      }
-    };
-
-    fetchCountdown();
-    const interval = setInterval(fetchCountdown, 1000);
-    return () => clearInterval(interval);
-  }, []);
-
+export default function HomePage() {
   return (
-    <div className="min-h-screen" style={{
-      background: 'linear-gradient(135deg, #663399 0%, #4c1d95 50%, #312e81 100%)'
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: '2rem',
+      fontFamily: 'system-ui, -apple-system, sans-serif'
     }}>
-      <div className="container mx-auto px-4 py-8">
+      <div style={{
+        maxWidth: '600px',
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        textAlign: 'center'
+      }}>
+        {/* Logo */}
+        <img 
+          src="/mcp-logo.png" 
+          alt="Max Craic Poker" 
+          style={{
+            width: '100px',
+            height: '100px',
+            marginBottom: '2rem',
+            borderRadius: '16px',
+            boxShadow: '0 8px 24px rgba(0,0,0,0.2)'
+          }}
+        />
+
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Dice6 className="h-8 w-8 text-purple-300" />
-            <h1 className="text-3xl font-bold text-white">Max Craic Poker</h1>
-          </div>
-          <p className="text-gray-300 text-lg">Community-backed tournament play</p>
-        </div>
-
-        {/* Countdown */}
-        {timeLeft && (
-          <div className="mb-6 rounded-xl p-4" style={{
-            background: 'linear-gradient(135deg, rgba(251, 146, 60, 0.2) 0%, rgba(239, 68, 68, 0.2) 100%)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(251, 146, 60, 0.3)'
+        <div style={{ marginBottom: '3rem' }}>
+          <h1 style={{
+            fontSize: '4rem',
+            fontWeight: '700',
+            color: 'white',
+            margin: '0 0 0.5rem 0',
+            textShadow: '0 4px 8px rgba(0,0,0,0.3)',
+            lineHeight: '1'
           }}>
-            <div className="text-center">
-              <div className="flex items-center justify-center gap-2 mb-2">
-                <Clock className="h-5 w-5 text-orange-300" />
-                <h3 className="text-lg font-semibold text-white">Draw in:</h3>
-              </div>
-              <div className="text-2xl font-bold text-orange-300">
-                {String(timeLeft.hours).padStart(2, '0')}:
-                {String(timeLeft.minutes).padStart(2, '0')}:
-                {String(timeLeft.seconds).padStart(2, '0')}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Tournaments */}
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold mb-3 flex items-center gap-2 text-white">
-            <Trophy className="h-5 w-5" />
-            Today's Tournaments
-          </h3>
-          <div className="space-y-2">
-            {tournaments.slice(0, 6).map((tournament, index) => (
-              <div key={index} style={{
-                background: 'rgba(255, 255, 255, 0.05)',
-                backdropFilter: 'blur(10px)',
-                border: '1px solid rgba(255, 255, 255, 0.1)'
-              }} className="rounded-lg p-3">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <div className="font-medium text-white">{tournament.name}</div>
-                  </div>
-                  <div className="text-purple-300 font-semibold">
-                    {tournament.buyIn}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+            MAX CRAIC
+          </h1>
+          <p style={{
+            fontSize: '2rem',
+            color: '#ff6b6b',
+            margin: '0 0 1.5rem 0',
+            fontWeight: '600'
+          }}>
+            POKER
+          </p>
+          <p style={{
+            color: 'rgba(255, 255, 255, 0.9)',
+            fontSize: '1.25rem',
+            margin: '0',
+            fontWeight: '400'
+          }}>
+            Community-Rewarded Poker
+          </p>
         </div>
 
-        {/* Call to Action */}
+        {/* Feature Cards */}
         <div style={{
-          background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%)',
-          backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(147, 51, 234, 0.3)'
-        }} className="rounded-xl p-6 mb-4">
-          <div className="text-center mb-4">
-            <Users className="h-8 w-8 mx-auto mb-2 text-blue-300" />
-            <h3 className="text-lg font-bold text-white">Community Game</h3>
-            <p className="text-sm text-gray-300 mt-1">
-              Join the raffle! Winner gets 5% of tournament profits + 5% bonus for sharing!
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+          gap: '1.5rem',
+          width: '100%',
+          marginBottom: '3rem'
+        }}>
+          {/* Feature 1 */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.15)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            borderRadius: '20px',
+            padding: '2rem',
+            textAlign: 'center',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
+          }}>
+            <Trophy size={40} color="#ffd700" style={{ marginBottom: '1rem' }} />
+            <h3 style={{
+              color: 'white',
+              fontSize: '1.1rem',
+              fontWeight: '600',
+              margin: '0 0 0.75rem 0'
+            }}>
+              Real Profit Sharing
+            </h3>
+            <p style={{
+              color: 'rgba(255, 255, 255, 0.8)',
+              fontSize: '0.9rem',
+              margin: '0',
+              lineHeight: '1.4'
+            }}>
+              Winners get 5% of tournament profits + 5% bonus for sharing
             </p>
           </div>
-          
-          <Link href="/mini-app">
-            <button style={{
-              background: 'linear-gradient(135deg, #7c3aed 0%, #2563eb 100%)'
-            }} className="w-full hover:opacity-90 text-white font-bold py-3 px-4 rounded-lg transition-opacity flex items-center justify-center gap-2">
-              Enter Community Game
-              <ArrowRight className="h-4 w-4" />
-            </button>
-          </Link>
+
+          {/* Feature 2 */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.15)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            borderRadius: '20px',
+            padding: '2rem',
+            textAlign: 'center',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
+          }}>
+            <Users size={40} color="#64b5f6" style={{ marginBottom: '1rem' }} />
+            <h3 style={{
+              color: 'white',
+              fontSize: '1.1rem',
+              fontWeight: '600',
+              margin: '0 0 0.75rem 0'
+            }}>
+              Community Driven
+            </h3>
+            <p style={{
+              color: 'rgba(255, 255, 255, 0.8)',
+              fontSize: '0.9rem',
+              margin: '0',
+              lineHeight: '1.4'
+            }}>
+              Audience becomes stakeholders, not just spectators
+            </p>
+          </div>
+
+          {/* Feature 3 */}
+          <div style={{
+            background: 'rgba(255, 255, 255, 0.15)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            borderRadius: '20px',
+            padding: '2rem',
+            textAlign: 'center',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.2)'
+          }}>
+            <Share2 size={40} color="#4ecdc4" style={{ marginBottom: '1rem' }} />
+            <h3 style={{
+              color: 'white',
+              fontSize: '1.1rem',
+              fontWeight: '600',
+              margin: '0 0 0.75rem 0'
+            }}>
+              Web3 Powered
+            </h3>
+            <p style={{
+              color: 'rgba(255, 255, 255, 0.8)',
+              fontSize: '0.9rem',
+              margin: '0',
+              lineHeight: '1.4'
+            }}>
+              Built on Farcaster Frame + Base Mini App for seamless interaction
+            </p>
+          </div>
         </div>
 
-        <div className="text-center">
-          <p className="text-sm text-gray-400">
-            Click above to join the community raffle in our Mini App!
-          </p>
+        {/* CTA Buttons */}
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '1rem',
+          width: '100%',
+          maxWidth: '400px'
+        }}>
+          <Link href="/mini-app" style={{ textDecoration: 'none' }}>
+            <button style={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: 'white',
+              border: '2px solid rgba(255, 255, 255, 0.3)',
+              borderRadius: '12px',
+              padding: '1rem 2rem',
+              fontSize: '1.1rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+              transition: 'all 0.2s ease',
+              boxShadow: '0 4px 12px rgba(102, 126, 234, 0.3)'
+            }}>
+              Launch Mini App
+              <ArrowRight size={18} />
+            </button>
+          </Link>
+
+          <Link href="/share" style={{ textDecoration: 'none' }}>
+            <button style={{
+              background: 'rgba(255, 255, 255, 0.1)',
+              color: 'white',
+              border: '2px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '12px',
+              padding: '1rem 2rem',
+              fontSize: '1rem',
+              fontWeight: '500',
+              cursor: 'pointer',
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+              transition: 'all 0.2s ease',
+              backdropFilter: 'blur(10px)'
+            }}>
+              <Share2 size={18} />
+              View Farcaster Frame
+            </button>
+          </Link>
         </div>
       </div>
     </div>
