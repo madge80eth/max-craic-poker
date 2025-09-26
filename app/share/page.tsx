@@ -1,107 +1,154 @@
-// /app/share/page.tsx - FIXED Base Mini App Frame Metadata
-
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: "Max Craic Poker - Community Game",
-  description: "Community-Rewarded Poker - one winner gets 5% of tournament profits + 5% bonus for sharing!!",
-  
-  // CRITICAL: Base Mini App requires this JSON structure
+  description: "Community-Rewarded Poker - one winner gets 5% of tournament profits + 5% bonus for sharing!",
+  openGraph: {
+    title: "Max Craic Poker - Community Game",
+    description: "Community-Rewarded Poker - one winner gets 5% of tournament profits + 5% bonus for sharing!",
+    images: ['https://max-craic-poker.vercel.app/api/frame-image'],
+    url: 'https://max-craic-poker.vercel.app/share',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Max Craic Poker - Community Game',
+    description: 'Community-Rewarded Poker - one winner gets 5% of tournament profits + 5% bonus for sharing!',
+    images: ['https://max-craic-poker.vercel.app/api/frame-image'],
+  },
   other: {
     'fc:frame': JSON.stringify({
-      version: 'next',
-      imageUrl: 'https://max-craic-poker.vercel.app/api/frame-image',
+      version: "next",
+      imageUrl: "https://max-craic-poker.vercel.app/api/frame-image",
       button: {
-        title: 'Launch Max Craic Poker',
+        title: "Launch Max Craic Poker",
         action: {
-          type: 'launch_frame',  // KEY: This launches Mini App
-          name: 'Max Craic Poker',
-          url: 'https://max-craic-poker.vercel.app/mini-app',
-          splashImageUrl: 'https://max-craic-poker.vercel.app/mcp-logo.png',
-          splashBackgroundColor: '#8b5cf6', // Purple theme
-        },
-      },
-    }),
-    
-    // Traditional social sharing (keep these)
-    'og:title': 'Max Craic Poker - Community Game',
-    'og:description': 'Community-Rewarded Poker - one winner gets 5% of tournament profits + 5% bonus for sharing!',
-    'og:image': 'https://max-craic-poker.vercel.app/api/frame-image',
-    'og:url': 'https://max-craic-poker.vercel.app/share',
+          type: "launch_frame",
+          name: "Max Craic Poker",
+          url: "https://max-craic-poker.vercel.app/mini-app",
+          splashImageUrl: "https://max-craic-poker.vercel.app/mcp-logo.png",
+          splashBackgroundColor: "#663399"
+        }
+      }
+    })
   }
 }
 
 export default function SharePage() {
   return (
-    <main className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-blue-900">
+    <div className="min-h-screen" style={{
+      background: 'linear-gradient(135deg, #663399 0%, #4c1d95 50%, #312e81 100%)'
+    }}>
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-            <img 
-              src="/mcp-logo.png" 
-              alt="Max Craic Poker Logo" 
-              className="w-20 h-20 object-contain"
-            />
-          </div>
-          <h1 className="text-4xl font-bold text-white mb-2">MAX CRAIC</h1>
-          <div className="text-red-400 font-bold text-2xl mb-4">POKER</div>
+        {/* Logo - Small and Centered */}
+        <div className="text-center mb-6">
+          <img 
+            src="/mcp-logo.png" 
+            alt="Max Craic Poker Logo" 
+            className="mx-auto mb-4"
+            style={{ width: '60px', height: '60px', objectFit: 'contain' }}
+          />
         </div>
-        
-        {/* Main Content */}
+
+        {/* Main Card - Professional Glassmorphic Design */}
         <div className="max-w-2xl mx-auto">
-          <h2 className="text-3xl font-bold text-white text-center mb-4">
-            Community-Rewarded Poker
-          </h2>
-          
-          <p className="text-xl text-purple-100 text-center mb-8">
-            One winner gets 5% of tournament profits + 5% bonus for sharing!
-          </p>
-          
-          {/* Tournament Cards */}
-          <div className="grid gap-4 mb-8">
-            <div className="bg-white/10 backdrop-blur-md rounded-xl p-6 border border-white/20">
-              <h3 className="text-lg font-semibold text-white mb-4">Today's Tournaments</h3>
-              
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-purple-600/30 rounded-lg p-3 text-center">
-                  <div className="text-purple-200 text-sm">Mystery Cash Game</div>
-                  <div className="text-white font-bold">$25</div>
-                </div>
-                <div className="bg-purple-600/30 rounded-lg p-3 text-center">
-                  <div className="text-purple-200 text-sm">High Stakes MTT</div>
-                  <div className="text-white font-bold">$109</div>
-                </div>
-                <div className="bg-purple-600/30 rounded-lg p-3 text-center">
-                  <div className="text-purple-200 text-sm">Bounty Builder</div>
-                  <div className="text-white font-bold">$55</div>
-                </div>
-                <div className="bg-purple-600/30 rounded-lg p-3 text-center">
-                  <div className="text-purple-200 text-sm">Turbo Satellite</div>
-                  <div className="text-white font-bold">$11</div>
-                </div>
-              </div>
+          <div style={{
+            background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%)',
+            backdropFilter: 'blur(20px)',
+            border: '1px solid rgba(147, 51, 234, 0.3)',
+            borderRadius: '20px',
+            padding: '2rem',
+            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
+          }}>
+            {/* Header */}
+            <div className="text-center mb-8">
+              <h1 className="text-4xl font-bold text-white mb-2">MAX CRAIC</h1>
+              <h2 className="text-2xl font-bold" style={{ color: '#ef4444' }}>POKER</h2>
+              <p className="text-gray-300 text-lg mt-4">Community-Rewarded Poker</p>
             </div>
-          </div>
-          
-          {/* Call to Action */}
-          <div className="text-center">
-            <div className="bg-gradient-to-r from-purple-600 to-pink-600 rounded-xl p-6 border border-white/20">
-              <h3 className="text-xl font-bold text-white mb-2">
-                Ready to Join the Action?
+
+            {/* Tournaments Section */}
+            <div className="mb-8">
+              <h3 className="text-xl font-semibold text-center mb-6" style={{ color: '#fbbf24' }}>
+                Today's Tournaments:
               </h3>
-              <p className="text-purple-100 mb-4">
-                Click 'Launch Max Craic Poker' to enter with the full Mini App experience!
+              
+              <div className="space-y-3">
+                <div className="flex justify-between items-center text-gray-300">
+                  <span>• The Bounty Hunter</span>
+                  <span className="text-purple-300 font-semibold">$44</span>
+                </div>
+                <div className="flex justify-between items-center text-gray-300">
+                  <span>• Midnight Madness</span>
+                  <span className="text-purple-300 font-semibold">$33</span>
+                </div>
+                <div className="flex justify-between items-center text-gray-300">
+                  <span>• Progressive KO</span>
+                  <span className="text-purple-300 font-semibold">$22</span>
+                </div>
+                <div className="flex justify-between items-center text-gray-300">
+                  <span>• Evening Flight</span>
+                  <span className="text-purple-300 font-semibold">$77</span>
+                </div>
+                <div className="flex justify-between items-center text-gray-300">
+                  <span>• Late Night Grind</span>
+                  <span className="text-purple-300 font-semibold">$55</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Profit Share Info */}
+            <div className="text-center mb-8">
+              <p className="text-gray-300 text-lg">
+                Winner gets 5% profit + 5% bonus for sharing!
               </p>
-              <div className="text-sm text-purple-200">
-                🎰 Random tournament assignment<br/>
-                💰 5% profit share for winner<br/>
-                🚀 Extra 5% bonus for sharing
+            </div>
+
+            {/* Launch Button */}
+            <div className="text-center">
+              <a 
+                href="/mini-app" 
+                style={{
+                  background: 'linear-gradient(135deg, #7c3aed 0%, #2563eb 100%)',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '12px 32px',
+                  color: 'white',
+                  fontSize: '18px',
+                  fontWeight: 'bold',
+                  textDecoration: 'none',
+                  display: 'inline-block',
+                  transition: 'opacity 0.2s'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
+                onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
+              >
+                Launch Max Craic Poker
+              </a>
+            </div>
+
+            {/* Features */}
+            <div className="mt-6 text-center">
+              <div className="flex justify-center space-x-8 text-sm">
+                <div className="text-gray-300">
+                  <span className="mr-1">💰</span>
+                  5% profit share for winner
+                </div>
+                <div className="text-gray-300">
+                  <span className="mr-1">🚀</span>
+                  Extra 5% bonus for sharing
+                </div>
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Footer */}
+        <div className="text-center mt-8">
+          <p className="text-gray-400 text-sm">
+            Click above to join the community raffle!
+          </p>
         </div>
       </div>
-    </main>
+    </div>
   )
 }
