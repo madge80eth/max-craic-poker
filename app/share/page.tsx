@@ -35,22 +35,20 @@ export const metadata: Metadata = {
 
 export default function SharePage() {
   return (
-    <div className="min-h-screen" style={{
+    <div style={{ 
+      minHeight: '100vh',
       background: 'linear-gradient(135deg, #663399 0%, #4c1d95 50%, #312e81 100%)'
     }}>
-      <div className="container mx-auto px-4 py-8">
-        {/* Logo - Small and Centered */}
-        <div className="text-center mb-6">
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '2rem' }}>
+        <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <img 
             src="/mcp-logo.png" 
             alt="Max Craic Poker Logo" 
-            className="mx-auto mb-4"
-            style={{ width: '60px', height: '60px', objectFit: 'contain' }}
+            style={{ width: '60px', height: '60px', margin: '0 auto 1rem' }}
           />
         </div>
 
-        {/* Main Card - Professional Glassmorphic Design */}
-        <div className="max-w-2xl mx-auto">
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
           <div style={{
             background: 'linear-gradient(135deg, rgba(147, 51, 234, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%)',
             backdropFilter: 'blur(20px)',
@@ -59,52 +57,60 @@ export default function SharePage() {
             padding: '2rem',
             boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
           }}>
-            {/* Header */}
-            <div className="text-center mb-8">
-              <h1 className="text-4xl font-bold text-white mb-2">MAX CRAIC</h1>
-              <h2 className="text-2xl font-bold" style={{ color: '#ef4444' }}>POKER</h2>
-              <p className="text-gray-300 text-lg mt-4">Community-Rewarded Poker</p>
+            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+              <h1 style={{ fontSize: '2.5rem', fontWeight: 'bold', color: 'white', margin: '0 0 0.5rem 0' }}>
+                MAX CRAIC
+              </h1>
+              <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#ef4444', margin: '0 0 1rem 0' }}>
+                POKER
+              </h2>
+              <p style={{ color: '#d1d5db', fontSize: '1.125rem', margin: '0' }}>
+                Community-Rewarded Poker
+              </p>
             </div>
 
-            {/* Tournaments Section */}
-            <div className="mb-8">
-              <h3 className="text-xl font-semibold text-center mb-6" style={{ color: '#fbbf24' }}>
+            <div style={{ marginBottom: '2rem' }}>
+              <h3 style={{ 
+                fontSize: '1.25rem', 
+                fontWeight: '600', 
+                textAlign: 'center', 
+                marginBottom: '1.5rem',
+                color: '#fbbf24' 
+              }}>
                 Today's Tournaments:
               </h3>
               
-              <div className="space-y-3">
-                <div className="flex justify-between items-center text-gray-300">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#d1d5db' }}>
                   <span>• The Bounty Hunter</span>
-                  <span className="text-purple-300 font-semibold">$44</span>
+                  <span style={{ color: '#a855f7', fontWeight: '600' }}>$44</span>
                 </div>
-                <div className="flex justify-between items-center text-gray-300">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#d1d5db' }}>
                   <span>• Midnight Madness</span>
-                  <span className="text-purple-300 font-semibold">$33</span>
+                  <span style={{ color: '#a855f7', fontWeight: '600' }}>$33</span>
                 </div>
-                <div className="flex justify-between items-center text-gray-300">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#d1d5db' }}>
                   <span>• Progressive KO</span>
-                  <span className="text-purple-300 font-semibold">$22</span>
+                  <span style={{ color: '#a855f7', fontWeight: '600' }}>$22</span>
                 </div>
-                <div className="flex justify-between items-center text-gray-300">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#d1d5db' }}>
                   <span>• Evening Flight</span>
-                  <span className="text-purple-300 font-semibold">$77</span>
+                  <span style={{ color: '#a855f7', fontWeight: '600' }}>$77</span>
                 </div>
-                <div className="flex justify-between items-center text-gray-300">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: '#d1d5db' }}>
                   <span>• Late Night Grind</span>
-                  <span className="text-purple-300 font-semibold">$55</span>
+                  <span style={{ color: '#a855f7', fontWeight: '600' }}>$55</span>
                 </div>
               </div>
             </div>
 
-            {/* Profit Share Info */}
-            <div className="text-center mb-8">
-              <p className="text-gray-300 text-lg">
+            <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
+              <p style={{ color: '#d1d5db', fontSize: '1.125rem' }}>
                 Winner gets 5% profit + 5% bonus for sharing!
               </p>
             </div>
 
-            {/* Launch Button */}
-            <div className="text-center">
+            <div style={{ textAlign: 'center' }}>
               <a 
                 href="/mini-app" 
                 style={{
@@ -116,37 +122,24 @@ export default function SharePage() {
                   fontSize: '18px',
                   fontWeight: 'bold',
                   textDecoration: 'none',
-                  display: 'inline-block',
-                  transition: 'opacity 0.2s'
+                  display: 'inline-block'
                 }}
-                onMouseOver={(e) => e.currentTarget.style.opacity = '0.9'}
-                onMouseOut={(e) => e.currentTarget.style.opacity = '1'}
               >
                 Launch Max Craic Poker
               </a>
             </div>
 
-            {/* Features */}
-            <div className="mt-6 text-center">
-              <div className="flex justify-center space-x-8 text-sm">
-                <div className="text-gray-300">
-                  <span className="mr-1">💰</span>
-                  5% profit share for winner
+            <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', fontSize: '0.875rem' }}>
+                <div style={{ color: '#d1d5db' }}>
+                  💰 5% profit share for winner
                 </div>
-                <div className="text-gray-300">
-                  <span className="mr-1">🚀</span>
-                  Extra 5% bonus for sharing
+                <div style={{ color: '#d1d5db' }}>
+                  🚀 Extra 5% bonus for sharing
                 </div>
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="text-center mt-8">
-          <p className="text-gray-400 text-sm">
-            Click above to join the community raffle!
-          </p>
         </div>
       </div>
     </div>
