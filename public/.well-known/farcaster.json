@@ -1,4 +1,8 @@
 {
+  "baseBuilder": {
+    "version": "1",
+    "verified": true
+  },
   "miniapp": {
     "version": "1",
     "name": "Max Craic Poker",
