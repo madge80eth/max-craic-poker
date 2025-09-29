@@ -17,6 +17,9 @@ export default function MiniApp() {
       try {
         const context: any = await sdk.context;
         
+        // Tell Farcaster the app is ready
+        sdk.actions.ready();
+        
         // Debug: Log what we actually get
         setDebugInfo(JSON.stringify(context, null, 2));
         
