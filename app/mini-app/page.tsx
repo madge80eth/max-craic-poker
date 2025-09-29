@@ -1,10 +1,12 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useAccount, useConnect } from 'wagmi';
 import sdk from '@farcaster/miniapp-sdk';
 
 export default function MiniApp() {
-  const [walletAddress, setWalletAddress] = useState<string | null>(null);
+  const { address, isConnected } = useAccount();
+  const { connect, connectors } = useConnect();
   const [hasEntered, setHasEntered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -22,6 +24,13 @@ export default function MiniApp() {
     }
     init();
   }, []);
+
+  // Check entry status when wallet connects
+  useEffect(() => {
+    if (address) {
+      checkEntryStatus(address);
+    }
+  }, [address]);
 
   // Timer countdown
   useEffect(() => {
@@ -45,9 +54,9 @@ export default function MiniApp() {
     return () => clearInterval(interval);
   }, []);
 
-  async function checkEntryStatus(address: string) {
+  async function checkEntryStatus(walletAddress: string) {
     try {
-      const response = await fetch(`/api/status?wallet=${address}`);
+      const response = await fetch(`/api/status?wallet=${walletAddress}`);
       const data = await response.json();
       if (data.hasEntered) {
         setHasEntered(true);
@@ -58,28 +67,18 @@ export default function MiniApp() {
   }
 
   async function handleConnectWallet() {
-    setIsLoading(true);
-    setError(null);
-
     try {
-      // Request wallet connection from user
-      const result: any = await sdk.actions.connectWallet();
-      
-      if (result?.address) {
-        setWalletAddress(result.address);
-        await checkEntryStatus(result.address);
-      } else {
-        throw new Error('No wallet address returned');
+      const coinbaseConnector = connectors.find(c => c.id === 'coinbaseWalletSDK');
+      if (coinbaseConnector) {
+        connect({ connector: coinbaseConnector });
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to connect wallet');
-    } finally {
-      setIsLoading(false);
     }
   }
 
   async function handleEnterRaffle() {
-    if (!walletAddress) return;
+    if (!address) return;
 
     setIsLoading(true);
     setError(null);
@@ -89,7 +88,7 @@ export default function MiniApp() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          walletAddress,
+          walletAddress: address,
           platform: 'farcaster',
           hasRecasted: false,
         }),
@@ -153,13 +152,13 @@ export default function MiniApp() {
               <p className="text-purple-200">
                 You're in the draw for tonight's tournament. Winner announced when timer hits zero!
               </p>
-              {walletAddress && (
+              {address && (
                 <div className="bg-white/5 rounded-lg p-4 mt-4">
-                  <p className="text-sm text-purple-300 font-mono break-all">{walletAddress}</p>
+                  <p className="text-sm text-purple-300 font-mono break-all">{address}</p>
                 </div>
               )}
             </div>
-          ) : walletAddress ? (
+          ) : isConnected && address ? (
             <div className="text-center space-y-6">
               <h2 className="text-2xl font-bold text-white">Enter the Draw</h2>
               <p className="text-purple-200">
@@ -173,7 +172,7 @@ export default function MiniApp() {
                 {isLoading ? 'Entering...' : '🎲 Enter Draw'}
               </button>
               <div className="bg-white/5 rounded-lg p-4">
-                <p className="text-sm text-purple-300 font-mono break-all">{walletAddress}</p>
+                <p className="text-sm text-purple-300 font-mono break-all">{address}</p>
               </div>
             </div>
           ) : (
@@ -184,15 +183,10 @@ export default function MiniApp() {
               </p>
               <button
                 onClick={handleConnectWallet}
-                disabled={isLoading}
-                className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 text-white font-semibold py-4 px-6 rounded-xl transition-colors text-lg flex items-center justify-center gap-2"
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-4 px-6 rounded-xl transition-colors text-lg flex items-center justify-center gap-2"
               >
-                {isLoading ? 'Connecting...' : (
-                  <>
-                    <span>🔗</span>
-                    <span>Connect & Play</span>
-                  </>
-                )}
+                <span>🔗</span>
+                <span>Connect & Play</span>
               </button>
               <p className="text-sm text-purple-300">
                 ...or don't have a wallet yet?
