@@ -1,49 +1,22 @@
-import { Metadata } from 'next'
+'use client'
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://max-craic-poker.vercel.app'
-
-export const metadata: Metadata = {
-  title: 'Max Craic Poker - Enter the Draw',
-  description: 'Enter the community draw to win 5% of tournament profits',
-  openGraph: {
-    title: 'Max Craic Poker - Enter the Draw',
-    description: 'Enter the community draw to win 5% of tournament profits',
-    images: [`${baseUrl}/mcp-frame.png`],
-  },
-  other: {
-    'fc:miniapp': JSON.stringify({
-      version: "1",
-      imageUrl: `${baseUrl}/mcp-frame.png`,
-      button: {
-        title: "Enter the Draw",
-        action: {
-          type: "launch_miniapp",
-          name: "Max Craic Poker",
-          url: `${baseUrl}/mini-app`,
-          splashImageUrl: `${baseUrl}/mcp-logo.png`,
-          splashBackgroundColor: "#6B46C1"
-        }
-      }
-    })
-  }
-}
+import { useEffect } from 'react'
 
 export default function SharePage() {
-  'use client'
-  
-  if (typeof window !== 'undefined') {
+  useEffect(() => {
+    // Auto-redirect to Mini App when opened in Base/Farcaster
     const url = new URL(window.location.href)
     const isMiniApp = 
       url.searchParams.get('miniApp') === 'true' ||
-      window.location !== window.parent.location ||
-      navigator.userAgent.includes('Farcaster') ||
-      navigator.userAgent.includes('Base')
+      window.self !== window.top || // Opened in iframe/webview
+      document.referrer.includes('farcaster') ||
+      document.referrer.includes('base') ||
+      document.referrer.includes('warpcast')
     
     if (isMiniApp) {
-      window.location.href = '/mini-app'
-      return null
+      window.location.replace('/mini-app')
     }
-  }
+  }, [])
 
   return (
     <div style={{
@@ -91,7 +64,7 @@ export default function SharePage() {
           marginBottom: '32px',
           lineHeight: '1.6'
         }}>
-          This page is optimized for sharing on Farcaster. Cast this URL to display the interactive frame, or visit the Mini App directly.
+          This page is optimized for sharing on Farcaster. Post this URL to display the interactive frame, or visit the Mini App directly.
         </p>
         
         <a 
