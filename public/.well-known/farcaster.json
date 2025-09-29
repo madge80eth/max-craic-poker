@@ -1,29 +1,16 @@
 {
-  "frame": {
-    "name": "Max Craic Poker",
+  "miniapp": {
     "version": "1",
-    "iconUrl": "https://max-craic-poker.vercel.app/icon.png",
-    "homeUrl": "https://max-craic-poker.vercel.app",
-    "imageUrl": "https://max-craic-poker.vercel.app/image.png",
-    "splashImageUrl": "https://max-craic-poker.vercel.app/splash.png",
-    "splashBackgroundColor": "#4B0082",
+    "name": "Max Craic Poker",
+    "homeUrl": "https://max-craic-poker.vercel.app/mini-app",
+    "iconUrl": "https://max-craic-poker.vercel.app/mcp-logo.png",
+    "splashImageUrl": "https://max-craic-poker.vercel.app/mcp-logo.png",
+    "splashBackgroundColor": "#6B46C1",
     "webhookUrl": "https://max-craic-poker.vercel.app/api/webhook",
     "subtitle": "Enter draw, get paid if I cash",
-    "primaryCategory": "social",
     "description": "Enter the daily draw from the Mini App. If I cash in a tournament, one entrant gets USDC automatically. I post a screenshot of the finish for transparency.",
-    "buttons": [
-      {
-        "title": "Enter Now",
-        "action": {
-          "type": "post",
-          "target": "https://max-craic-poker.vercel.app/api/enter"
-        }
-      }
-    ]
-  },
-  "developer": {
-    "name": "madge80",
-    "url": "https://max-craic-poker.vercel.app"
+    "primaryCategory": "social",
+    "tags": ["poker", "gambling", "crypto", "base", "tournament"]
   },
   "accountAssociation": {
     "header": "eyJmaWQiOjIzODE2OSwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweGEwMEFFZUZiZEJDNjY0NjMxNDdCZjFmZUIzMDU4NWZEZjRhNzgwODUifQ",
