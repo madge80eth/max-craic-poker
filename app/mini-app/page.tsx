@@ -8,6 +8,7 @@ export default function MiniApp() {
   const [hasEntered, setHasEntered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string>('');
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
 
   // Get wallet address from SDK context
@@ -15,13 +16,24 @@ export default function MiniApp() {
     async function loadWallet() {
       try {
         const context = await sdk.context;
-        const address = context.user?.walletAddress;
+        
+        // Debug: Log what we actually get
+        setDebugInfo(JSON.stringify(context, null, 2));
+        
+        // Try different possible property paths
+        const address = 
+          context.user?.custodyAddress || 
+          context.user?.verifiedAddresses?.[0] ||
+          context.user?.connectedAddress ||
+          null;
+          
         if (address) {
           setWalletAddress(address);
           checkEntryStatus(address);
         }
       } catch (err) {
         console.error('Failed to load wallet:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load context');
       }
     }
     loadWallet();
@@ -58,25 +70,6 @@ export default function MiniApp() {
       }
     } catch (err) {
       console.error('Error checking status:', err);
-    }
-  }
-
-  async function handleConnect() {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const context = await sdk.context;
-      const address = context.user?.walletAddress;
-      if (!address) {
-        throw new Error('No wallet found. Make sure you are logged into Farcaster.');
-      }
-      setWalletAddress(address);
-      await checkEntryStatus(address);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to connect wallet');
-    } finally {
-      setIsLoading(false);
     }
   }
 
@@ -125,6 +118,13 @@ export default function MiniApp() {
           <p className="text-purple-200">Community-Backed Tournament Draw</p>
         </div>
 
+        {/* Debug Info - Remove this later */}
+        {debugInfo && (
+          <div className="bg-black/50 rounded-lg p-4 overflow-auto max-h-40">
+            <pre className="text-xs text-green-400">{debugInfo}</pre>
+          </div>
+        )}
+
         {/* Timer */}
         <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
           <h2 className="text-xl font-semibold text-white text-center mb-4">Draw Countdown</h2>
@@ -148,32 +148,20 @@ export default function MiniApp() {
 
         {/* Main Action Card */}
         <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20">
-          {!walletAddress ? (
-            <div className="text-center space-y-6">
-              <h2 className="text-2xl font-bold text-white">Connect to Enter</h2>
-              <p className="text-purple-200">
-                Connect your wallet to enter the community draw and win 5% of tournament profits
-              </p>
-              <button
-                onClick={handleConnect}
-                disabled={isLoading}
-                className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 text-white font-semibold py-4 px-6 rounded-xl transition-colors text-lg"
-              >
-                {isLoading ? 'Connecting...' : '🔗 Connect & Play'}
-              </button>
-            </div>
-          ) : hasEntered ? (
+          {hasEntered ? (
             <div className="text-center space-y-4">
               <div className="text-6xl">🎉</div>
               <h2 className="text-2xl font-bold text-white">You're Entered!</h2>
               <p className="text-purple-200">
                 You're in the draw for tonight's tournament. Winner announced when timer hits zero!
               </p>
-              <div className="bg-white/5 rounded-lg p-4 mt-4">
-                <p className="text-sm text-purple-300 font-mono break-all">{walletAddress}</p>
-              </div>
+              {walletAddress && (
+                <div className="bg-white/5 rounded-lg p-4 mt-4">
+                  <p className="text-sm text-purple-300 font-mono break-all">{walletAddress}</p>
+                </div>
+              )}
             </div>
-          ) : (
+          ) : walletAddress ? (
             <div className="text-center space-y-6">
               <h2 className="text-2xl font-bold text-white">Enter the Draw</h2>
               <p className="text-purple-200">
@@ -189,6 +177,13 @@ export default function MiniApp() {
               <div className="bg-white/5 rounded-lg p-4">
                 <p className="text-sm text-purple-300 font-mono break-all">{walletAddress}</p>
               </div>
+            </div>
+          ) : (
+            <div className="text-center space-y-6">
+              <h2 className="text-2xl font-bold text-white">Wallet Required</h2>
+              <p className="text-purple-200">
+                We couldn't detect your wallet address. Make sure you're logged into Farcaster with a connected wallet.
+              </p>
             </div>
           )}
 
