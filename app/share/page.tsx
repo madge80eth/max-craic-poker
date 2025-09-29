@@ -1,6 +1,6 @@
-import { Metadata } from 'next';
+import { Metadata } from 'next'
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://max-craic-poker.vercel.app';
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://max-craic-poker.vercel.app'
 
 export const metadata: Metadata = {
   title: 'Max Craic Poker - Enter the Draw',
@@ -26,9 +26,25 @@ export const metadata: Metadata = {
       }
     })
   }
-};
+}
 
 export default function SharePage() {
+  'use client'
+  
+  if (typeof window !== 'undefined') {
+    const url = new URL(window.location.href)
+    const isMiniApp = 
+      url.searchParams.get('miniApp') === 'true' ||
+      window.location !== window.parent.location ||
+      navigator.userAgent.includes('Farcaster') ||
+      navigator.userAgent.includes('Base')
+    
+    if (isMiniApp) {
+      window.location.href = '/mini-app'
+      return null
+    }
+  }
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -96,5 +112,5 @@ export default function SharePage() {
         </a>
       </div>
     </div>
-  );
+  )
 }
