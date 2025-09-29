@@ -15,7 +15,7 @@ export default function MiniApp() {
   useEffect(() => {
     async function loadWallet() {
       try {
-        const context = await sdk.context;
+        const context: any = await sdk.context;
         
         // Debug: Log what we actually get
         setDebugInfo(JSON.stringify(context, null, 2));
@@ -25,6 +25,7 @@ export default function MiniApp() {
           context.user?.custodyAddress || 
           context.user?.verifiedAddresses?.[0] ||
           context.user?.connectedAddress ||
+          context.user?.walletAddress ||
           null;
           
         if (address) {
