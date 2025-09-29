@@ -4,30 +4,20 @@ import { useEffect, useState } from 'react';
 import sdk from '@farcaster/miniapp-sdk';
 
 export default function MiniApp() {
-  const [isSDKLoaded, setIsSDKLoaded] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
   const [hasEntered, setHasEntered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
 
-  // Initialize SDK
+  // Get wallet address from SDK context
   useEffect(() => {
-    sdk.ready().then(() => {
-      setIsSDKLoaded(true);
-    });
-  }, []);
-
-  // Get wallet address when SDK is ready
-  useEffect(() => {
-    if (isSDKLoaded) {
-      const address = sdk.context?.user?.walletAddress;
-      if (address) {
-        setWalletAddress(address);
-        checkEntryStatus(address);
-      }
+    const address = sdk.context?.user?.walletAddress;
+    if (address) {
+      setWalletAddress(address);
+      checkEntryStatus(address);
     }
-  }, [isSDKLoaded]);
+  }, []);
 
   // Timer countdown
   useEffect(() => {
@@ -110,14 +100,6 @@ export default function MiniApp() {
     } finally {
       setIsLoading(false);
     }
-  }
-
-  if (!isSDKLoaded) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading...</div>
-      </div>
-    );
   }
 
   return (
