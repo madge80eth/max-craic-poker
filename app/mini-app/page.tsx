@@ -8,39 +8,19 @@ export default function MiniApp() {
   const [hasEntered, setHasEntered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [debugInfo, setDebugInfo] = useState<string>('');
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
 
-  // Get wallet address from SDK context
+  // Initialize SDK
   useEffect(() => {
-    async function loadWallet() {
+    async function init() {
       try {
-        const context: any = await sdk.context;
-        
-        // Tell Farcaster the app is ready
+        await sdk.context;
         sdk.actions.ready();
-        
-        // Debug: Log what we actually get
-        setDebugInfo(JSON.stringify(context, null, 2));
-        
-        // Try different possible property paths
-        const address = 
-          context.user?.custodyAddress || 
-          context.user?.verifiedAddresses?.[0] ||
-          context.user?.connectedAddress ||
-          context.user?.walletAddress ||
-          null;
-          
-        if (address) {
-          setWalletAddress(address);
-          checkEntryStatus(address);
-        }
       } catch (err) {
-        console.error('Failed to load wallet:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load context');
+        console.error('SDK init failed:', err);
       }
     }
-    loadWallet();
+    init();
   }, []);
 
   // Timer countdown
@@ -74,6 +54,27 @@ export default function MiniApp() {
       }
     } catch (err) {
       console.error('Error checking status:', err);
+    }
+  }
+
+  async function handleConnectWallet() {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Request wallet connection from user
+      const result: any = await sdk.actions.connectWallet();
+      
+      if (result?.address) {
+        setWalletAddress(result.address);
+        await checkEntryStatus(result.address);
+      } else {
+        throw new Error('No wallet address returned');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to connect wallet');
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -121,13 +122,6 @@ export default function MiniApp() {
           <h1 className="text-4xl font-bold text-white">Max Craic Poker</h1>
           <p className="text-purple-200">Community-Backed Tournament Draw</p>
         </div>
-
-        {/* Debug Info - Remove this later */}
-        {debugInfo && (
-          <div className="bg-black/50 rounded-lg p-4 overflow-auto max-h-40">
-            <pre className="text-xs text-green-400">{debugInfo}</pre>
-          </div>
-        )}
 
         {/* Timer */}
         <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
@@ -184,9 +178,27 @@ export default function MiniApp() {
             </div>
           ) : (
             <div className="text-center space-y-6">
-              <h2 className="text-2xl font-bold text-white">Wallet Required</h2>
-              <p className="text-purple-200">
-                We couldn't detect your wallet address. Make sure you're logged into Farcaster with a connected wallet.
+              <h2 className="text-2xl font-bold text-white">Welcome to Max Craic Poker</h2>
+              <p className="text-purple-200 text-lg">
+                Your cozy onchain poker home!
+              </p>
+              <button
+                onClick={handleConnectWallet}
+                disabled={isLoading}
+                className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 text-white font-semibold py-4 px-6 rounded-xl transition-colors text-lg flex items-center justify-center gap-2"
+              >
+                {isLoading ? 'Connecting...' : (
+                  <>
+                    <span>🔗</span>
+                    <span>Connect & Play</span>
+                  </>
+                )}
+              </button>
+              <p className="text-sm text-purple-300">
+                ...or don't have a wallet yet?
+              </p>
+              <p className="text-xs text-purple-400">
+                We recommend using Coinbase Smart Wallet for lower transaction costs, convenience and stronger security!
               </p>
             </div>
           )}
