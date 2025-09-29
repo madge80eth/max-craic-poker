@@ -12,11 +12,19 @@ export default function MiniApp() {
 
   // Get wallet address from SDK context
   useEffect(() => {
-    const address = sdk.context?.user?.walletAddress;
-    if (address) {
-      setWalletAddress(address);
-      checkEntryStatus(address);
+    async function loadWallet() {
+      try {
+        const context = await sdk.context;
+        const address = context.user?.walletAddress;
+        if (address) {
+          setWalletAddress(address);
+          checkEntryStatus(address);
+        }
+      } catch (err) {
+        console.error('Failed to load wallet:', err);
+      }
     }
+    loadWallet();
   }, []);
 
   // Timer countdown
@@ -58,7 +66,8 @@ export default function MiniApp() {
     setError(null);
 
     try {
-      const address = sdk.context?.user?.walletAddress;
+      const context = await sdk.context;
+      const address = context.user?.walletAddress;
       if (!address) {
         throw new Error('No wallet found. Make sure you are logged into Farcaster.');
       }
