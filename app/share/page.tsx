@@ -1,22 +1,45 @@
 import { Metadata } from 'next'
 
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://max-craic-poker.vercel.app'
+
+// Mini App Embed JSON
+const miniAppEmbed = {
+  version: "1",
+  imageUrl: `${baseUrl}/api/frame-image`,
+  button: {
+    title: "🎲 Enter the Draw",
+    action: {
+      type: "launch_miniapp",
+      name: "Max Craic Poker",
+      url: `${baseUrl}/mini-app`,
+      splashImageUrl: `${baseUrl}/mcp-logo.png`,
+      splashBackgroundColor: "#4c1d95"
+    }
+  }
+}
+
 export const metadata: Metadata = {
   title: 'Max Craic Poker - Community Game',
   description: 'Join the community raffle! Winner gets 5% of tournament profits + 5% bonus for sharing!',
   openGraph: {
     title: 'Max Craic Poker - Community Game',
     description: 'Join the community raffle! Winner gets 5% of tournament profits + 5% bonus for sharing!',
-    images: ['/api/frame-image'],
+    images: [`${baseUrl}/api/frame-image`],
   },
   other: {
-    'fc:frame': 'vNext',
-    'fc:frame:image': `${process.env.NEXT_PUBLIC_BASE_URL}/api/frame-image`,
-    'fc:frame:button:1': 'Enter the Draw',
-    'fc:frame:button:1:action': 'link',
-    'fc:frame:button:1:target': `${process.env.NEXT_PUBLIC_BASE_URL}/mini-app`,
-    'fc:frame:button:2': 'View Results',
-    'fc:frame:button:2:action': 'link', 
-    'fc:frame:button:2:target': `${process.env.NEXT_PUBLIC_BASE_URL}/mini-app`,
+    // Modern Mini App format
+    'fc:miniapp': JSON.stringify(miniAppEmbed),
+    // Backward compatibility with Frames v2
+    'fc:frame': JSON.stringify({
+      ...miniAppEmbed,
+      button: {
+        ...miniAppEmbed.button,
+        action: {
+          ...miniAppEmbed.button.action,
+          type: "launch_frame" // Some clients expect this
+        }
+      }
+    }),
   },
 }
 
@@ -137,7 +160,7 @@ export default function SharePage() {
               transition: 'all 0.2s ease'
             }}
           >
-            Enter the Draw →
+            🎲 Enter the Draw
           </a>
         </div>
       </div>
