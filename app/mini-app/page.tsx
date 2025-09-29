@@ -1,9 +1,25 @@
 'use client'
 
-import React from 'react'
-import { Clock, Trophy, Users, ArrowRight } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { sdk } from '@farcaster/miniapp-sdk'
 
 export default function MiniApp() {
+  const [isSDKLoaded, setIsSDKLoaded] = useState(false)
+
+  useEffect(() => {
+    const initSDK = async () => {
+      try {
+        await sdk.actions.ready()
+        setIsSDKLoaded(true)
+      } catch (error) {
+        console.error('SDK initialization failed:', error)
+        setIsSDKLoaded(true) // Still show app even if SDK fails
+      }
+    }
+
+    initSDK()
+  }, [])
+
   return (
     <div 
       style={{
@@ -14,26 +30,25 @@ export default function MiniApp() {
       }}
     >
       <div style={{
-        maxWidth: '500px',
+        maxWidth: '600px',
         margin: '0 auto',
         display: 'flex',
         flexDirection: 'column',
-        alignItems: 'center'
+        gap: '2rem'
       }}>
-        {/* Logo */}
-        <img 
-          src="/mcp-logo.png" 
-          alt="Max Craic Poker" 
-          style={{
-            width: '80px',
-            height: '80px',
-            marginBottom: '2rem',
-            borderRadius: '12px'
-          }}
-        />
-
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
+        <div style={{ textAlign: 'center' }}>
+          <img 
+            src="/mcp-logo.png" 
+            alt="Max Craic Poker" 
+            style={{
+              width: '80px',
+              height: '80px',
+              margin: '0 auto 1rem',
+              borderRadius: '12px',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.3)'
+            }}
+          />
           <h1 style={{
             fontSize: '3rem',
             fontWeight: '700',
@@ -53,173 +68,106 @@ export default function MiniApp() {
           </p>
           <p style={{
             color: 'rgba(255, 255, 255, 0.9)',
-            margin: '0',
             fontSize: '1.1rem'
           }}>
             Community-Rewarded Poker
           </p>
         </div>
 
-        {/* Countdown Timer */}
+        {/* Countdown Card */}
         <div style={{
           background: 'rgba(255, 255, 255, 0.15)',
           backdropFilter: 'blur(20px)',
           border: '1px solid rgba(255, 255, 255, 0.2)',
-          borderRadius: '20px',
+          borderRadius: '24px',
           padding: '2rem',
-          width: '100%',
-          textAlign: 'center',
-          marginBottom: '2rem',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.3)'
-        }}>
-          <Clock size={32} color="white" style={{ marginBottom: '1rem' }} />
-          <p style={{
-            color: 'white',
-            fontSize: '1.1rem',
-            margin: '0 0 1rem 0',
-            fontWeight: '500'
-          }}>
-            Next Draw in:
-          </p>
-          <div style={{
-            fontSize: '2.5rem',
-            fontWeight: '700',
-            color: 'white',
-            fontFamily: 'monospace',
-            textShadow: '0 2px 4px rgba(0,0,0,0.4)'
-          }}>
-            12:00:00
-          </div>
-        </div>
-
-        {/* Tournaments List */}
-        <div style={{ width: '100%', marginBottom: '2rem' }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '0.5rem',
-            marginBottom: '1.5rem'
-          }}>
-            <Trophy size={24} color="white" />
-            <h2 style={{
-              color: 'white',
-              fontSize: '1.25rem',
-              fontWeight: '600',
-              margin: '0'
-            }}>
-              Today's Tournaments
-            </h2>
-          </div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              borderRadius: '12px',
-              padding: '1rem 1.25rem',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.2)'
-            }}>
-              <span style={{
-                color: 'white',
-                fontSize: '1rem',
-                fontWeight: '500'
-              }}>
-                The Bounty Hunter
-              </span>
-              <span style={{
-                color: '#64b5f6',
-                fontSize: '1rem',
-                fontWeight: '600'
-              }}>
-                $44
-              </span>
-            </div>
-            
-            <div style={{
-              background: 'rgba(255, 255, 255, 0.1)',
-              backdropFilter: 'blur(20px)',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              borderRadius: '12px',
-              padding: '1rem 1.25rem',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.2)'
-            }}>
-              <span style={{
-                color: 'white',
-                fontSize: '1rem',
-                fontWeight: '500'
-              }}>
-                Midnight Madness
-              </span>
-              <span style={{
-                color: '#64b5f6',
-                fontSize: '1rem',
-                fontWeight: '600'
-              }}>
-                $33
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Entry Button */}
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.15)',
-          backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-          borderRadius: '20px',
-          padding: '2rem',
-          width: '100%',
           textAlign: 'center',
           boxShadow: '0 8px 32px rgba(0,0,0,0.3)'
         }}>
-          <Users size={32} color="white" style={{ marginBottom: '1rem' }} />
-          <h3 style={{
+          <h2 style={{
             color: 'white',
-            fontSize: '1.25rem',
+            fontSize: '1.5rem',
             fontWeight: '600',
             margin: '0 0 1rem 0'
           }}>
-            Community Game
-          </h3>
+            Next Draw in:
+          </h2>
+          <div style={{
+            fontSize: '3rem',
+            fontWeight: '700',
+            color: '#ff6b6b',
+            marginBottom: '1rem'
+          }}>
+            00:00:00
+          </div>
+        </div>
+
+        {/* Info Card */}
+        <div style={{
+          background: 'rgba(255, 255, 255, 0.15)',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          borderRadius: '24px',
+          padding: '2rem',
+          textAlign: 'center',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.3)'
+        }}>
+          <div style={{
+            fontSize: '3rem',
+            marginBottom: '1rem'
+          }}>
+            🏆
+          </div>
           <p style={{
             color: 'rgba(255, 255, 255, 0.9)',
-            fontSize: '0.95rem',
-            margin: '0 0 2rem 0',
-            lineHeight: '1.4'
+            fontSize: '1.1rem',
+            lineHeight: '1.6',
+            margin: '0'
           }}>
             Join the raffle! Winner gets 5% of tournament profits + 5% bonus for sharing!
           </p>
-          <button
-            style={{
-              background: 'linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%)',
-              color: 'white',
-              border: '2px solid rgba(255, 255, 255, 0.3)',
-              borderRadius: '12px',
-              padding: '1rem 2rem',
-              fontSize: '1.1rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              width: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '0.5rem',
-              transition: 'all 0.2s ease',
-              boxShadow: '0 4px 12px rgba(124, 58, 237, 0.4)'
-            }}
-          >
-            Enter the Draw
-            <ArrowRight size={18} />
-          </button>
         </div>
+
+        {/* Entry Button */}
+        <button
+          style={{
+            background: 'linear-gradient(135deg, #4c1d95 0%, #7c3aed 100%)',
+            color: 'white',
+            fontSize: '1.25rem',
+            fontWeight: '600',
+            padding: '1.25rem 2rem',
+            borderRadius: '12px',
+            border: '2px solid rgba(255, 255, 255, 0.3)',
+            boxShadow: '0 4px 12px rgba(124, 58, 237, 0.4)',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease'
+          }}
+          onMouseOver={(e) => {
+            e.currentTarget.style.transform = 'translateY(-2px)'
+            e.currentTarget.style.boxShadow = '0 6px 16px rgba(124, 58, 237, 0.6)'
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.transform = 'translateY(0)'
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(124, 58, 237, 0.4)'
+          }}
+        >
+          Enter the Draw →
+        </button>
+
+        {/* SDK Status (for debugging) */}
+        {!isSDKLoaded && (
+          <div style={{
+            background: 'rgba(255, 193, 7, 0.15)',
+            border: '1px solid rgba(255, 193, 7, 0.3)',
+            borderRadius: '12px',
+            padding: '1rem',
+            textAlign: 'center',
+            color: 'rgba(255, 255, 255, 0.8)',
+            fontSize: '0.9rem'
+          }}>
+            Loading SDK...
+          </div>
+        )}
       </div>
     </div>
   )
