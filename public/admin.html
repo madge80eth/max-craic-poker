@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>MCP Admin</title>
+  <style>
+    body { font-family: sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+    button { padding: 15px 30px; font-size: 16px; margin: 10px; cursor: pointer; }
+    .reset { background: #dc2626; color: white; border: none; border-radius: 8px; }
+    .status { background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0; }
+    pre { background: #1f2937; color: #10b981; padding: 10px; border-radius: 4px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>Max Craic Poker Admin</h1>
+  
+  <button class="reset" onclick="resetDraw()">Reset Draw</button>
+  
+  <div class="status" id="status"></div>
+  
+  <script>
+    async function resetDraw() {
+      if (!confirm('Reset the draw? This clears all entries and winner data.')) return;
+      
+      const response = await fetch('/api/reset', { method: 'POST' });
+      const data = await response.json();
+      document.getElementById('status').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+    }
+    
+    async function checkStatus() {
+      const response = await fetch('/api/reset');
+      const data = await response.json();
+      document.getElementById('status').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+    }
+    
+    checkStatus();
+  </script>
+</body>
+</html>
