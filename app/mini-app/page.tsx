@@ -1,12 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useAccount, useConnect } from 'wagmi';
 import sdk from '@farcaster/miniapp-sdk';
 
 export default function MiniApp() {
-  const { address, isConnected } = useAccount();
-  const { connect, connectors } = useConnect();
+  const [address, setAddress] = useState<string | null>(null);
   const [hasEntered, setHasEntered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -14,12 +12,17 @@ export default function MiniApp() {
   const [winner, setWinner] = useState<any>(null);
   const [hasDrawn, setHasDrawn] = useState(false);
 
-  // Initialize SDK
+  // Initialize SDK and get wallet
   useEffect(() => {
     async function init() {
       try {
-        await sdk.context;
+        const context = await sdk.context;
         sdk.actions.ready();
+        
+        // Get connected wallet from MiniKit context
+        if (context.user?.wallet?.address) {
+          setAddress(context.user.wallet.address);
+        }
       } catch (err) {
         console.error('SDK init failed:', err);
       }
@@ -27,7 +30,7 @@ export default function MiniApp() {
     init();
   }, []);
 
-  // Check entry status and winner when wallet connects
+  // Check entry status when wallet loads
   useEffect(() => {
     if (address) {
       checkStatus(address);
@@ -51,7 +54,6 @@ export default function MiniApp() {
       } else {
         setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
         
-        // Auto-trigger draw when timer hits zero
         if (!hasDrawn) {
           triggerDraw();
         }
@@ -61,7 +63,7 @@ export default function MiniApp() {
     return () => clearInterval(interval);
   }, [hasDrawn]);
 
-  // Poll for winner updates every 10 seconds
+  // Poll for winner updates
   useEffect(() => {
     const interval = setInterval(() => {
       if (address) {
@@ -105,12 +107,22 @@ export default function MiniApp() {
 
   async function handleConnectWallet() {
     try {
-      const coinbaseConnector = connectors.find(c => c.id === 'coinbaseWalletSDK');
-      if (coinbaseConnector) {
-        connect({ connector: coinbaseConnector });
+      setIsLoading(true);
+      setError(null);
+
+      const result = await sdk.actions.openUrl('https://wallet.coinbase.com/');
+      
+      if (result) {
+        // Reinit to get new wallet context
+        const context = await sdk.context;
+        if (context.user?.wallet?.address) {
+          setAddress(context.user.wallet.address);
+        }
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to connect wallet');
+      setError('Please connect your wallet in the Base app settings');
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -145,7 +157,7 @@ export default function MiniApp() {
     }
   }
 
-  // Show winner announcement if draw has happened
+  // Winner announcement screen
   if (winner) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 p-6">
@@ -179,7 +191,7 @@ export default function MiniApp() {
               Join the stream to see how the community game unfolds! Chat participants get $MCP airdrops.
             </p>
             <a 
-              href="https://twitch.tv/your-channel"
+              href="https://restream.io/your-channel"
               target="_blank"
               rel="noopener noreferrer"
               className="block w-full bg-red-800 hover:bg-red-900 text-white font-bold py-4 px-6 rounded-xl transition-colors text-lg text-center"
@@ -257,7 +269,7 @@ export default function MiniApp() {
                 </div>
               )}
             </div>
-          ) : isConnected && address ? (
+          ) : address ? (
             <div className="text-center space-y-6">
               <h2 className="text-2xl font-bold text-white">Enter the Draw</h2>
               <p className="text-purple-200">
@@ -282,10 +294,11 @@ export default function MiniApp() {
               </p>
               <button
                 onClick={handleConnectWallet}
-                className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-4 px-6 rounded-xl transition-colors text-lg flex items-center justify-center gap-2"
+                disabled={isLoading}
+                className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 text-white font-semibold py-4 px-6 rounded-xl transition-colors text-lg flex items-center justify-center gap-2"
               >
                 <span>🔗</span>
-                <span>Connect & Play</span>
+                <span>{isLoading ? 'Connecting...' : 'Connect & Play'}</span>
               </button>
               <p className="text-sm text-purple-300">
                 ...or don't have a wallet yet?
