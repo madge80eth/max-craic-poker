@@ -4,6 +4,11 @@ import { useEffect, useState } from 'react';
 import { useAccount } from 'wagmi';
 import sdk from '@farcaster/miniapp-sdk';
 
+interface Tournament {
+  name: string;
+  buyIn: string;
+}
+
 export default function MiniApp() {
   const { address, isConnected } = useAccount();
   const [hasEntered, setHasEntered] = useState(false);
@@ -13,6 +18,7 @@ export default function MiniApp() {
   const [winner, setWinner] = useState<any>(null);
   const [hasDrawn, setHasDrawn] = useState(false);
   const [drawTime, setDrawTime] = useState<number | null>(null);
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
 
   // Initialize SDK
   useEffect(() => {
@@ -25,6 +31,20 @@ export default function MiniApp() {
       }
     }
     init();
+  }, []);
+
+  // Fetch tournaments
+  useEffect(() => {
+    async function fetchTournaments() {
+      try {
+        const response = await fetch('/tournaments.json');
+        const data = await response.json();
+        setTournaments(data);
+      } catch (err) {
+        console.error('Error loading tournaments:', err);
+      }
+    }
+    fetchTournaments();
   }, []);
 
   // Check entry status when wallet connects
@@ -195,21 +215,6 @@ export default function MiniApp() {
               🔴 Watch Live Stream
             </a>
           </div>
-
-          <div className="flex flex-wrap gap-3 justify-center">
-            <span className="bg-white/10 backdrop-blur-sm text-purple-100 px-4 py-2 rounded-full text-sm border border-white/20">
-              Enter Free
-            </span>
-            <span className="bg-white/10 backdrop-blur-sm text-purple-100 px-4 py-2 rounded-full text-sm border border-white/20">
-              Win Profits
-            </span>
-            <span className="bg-white/10 backdrop-blur-sm text-purple-100 px-4 py-2 rounded-full text-sm border border-white/20">
-              Watch Live
-            </span>
-            <span className="bg-white/10 backdrop-blur-sm text-purple-100 px-4 py-2 rounded-full text-sm border border-white/20">
-              Share for Bonus
-            </span>
-          </div>
         </div>
       </div>
     );
@@ -248,71 +253,91 @@ export default function MiniApp() {
           </div>
         </div>
 
-        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20">
-          {hasEntered ? (
-            <div className="text-center space-y-4">
-              <div className="text-6xl">🎉</div>
-              <h2 className="text-2xl font-bold text-white">You're Entered!</h2>
-              <p className="text-purple-200">
-                The winner will get a 5-10% share of the community game's profits as a thank you for supporting MCP.
+        {hasEntered ? (
+          <>
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20">
+              <div className="text-center space-y-4">
+                <div className="text-6xl">🎉</div>
+                <h2 className="text-2xl font-bold text-white">You're Entered!</h2>
+                <p className="text-purple-200">
+                  The winner will get a 5-10% share of the community game's profits as a thank you for supporting MCP.
+                </p>
+                {address && (
+                  <div className="bg-white/5 rounded-lg p-4 mt-4">
+                    <p className="text-sm text-purple-300 font-mono break-all">{address}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-red-600 to-red-700 backdrop-blur-md rounded-2xl p-8 border border-red-500/50">
+              <h2 className="text-2xl font-bold text-white text-center mb-4">LIVE ACTION</h2>
+              <p className="text-white text-center mb-6">
+                Join the stream to see how the community game unfolds! Chat participants get $MCP airdrops.
               </p>
-              <p className="text-purple-300 font-semibold">
-                Follow along on the live stream!
+              <a 
+                href="https://restream.io/your-channel"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full bg-red-800 hover:bg-red-900 text-white font-bold py-4 px-6 rounded-xl transition-colors text-lg text-center"
+              >
+                🔴 Watch Live Stream
+              </a>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+              <h2 className="text-xl font-semibold text-white text-center mb-4">Tonight's Tournaments</h2>
+              <div className="space-y-2">
+                {tournaments.map((tournament, index) => (
+                  <div key={index} className="bg-white/5 rounded-lg p-3 flex justify-between items-center">
+                    <span className="text-purple-100">{tournament.name}</span>
+                    <span className="text-green-400 font-semibold">{tournament.buyIn}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="text-purple-300 text-sm text-center mt-4">
+                You'll be randomly assigned to one tournament. If I cash, you win 5-10% of profits!
               </p>
-              {address && (
-                <div className="bg-white/5 rounded-lg p-4 mt-4">
-                  <p className="text-sm text-purple-300 font-mono break-all">{address}</p>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20">
+              {isConnected && address ? (
+                <div className="text-center space-y-6">
+                  <h2 className="text-2xl font-bold text-white">Enter the Draw</h2>
+                  <p className="text-purple-200">
+                    Enter free to win 5-10% of profits from tonight's tournament
+                  </p>
+                  <button
+                    onClick={handleEnterRaffle}
+                    disabled={isLoading}
+                    className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-800 text-white font-semibold py-4 px-6 rounded-xl transition-colors text-lg"
+                  >
+                    {isLoading ? 'Entering...' : '🎲 Enter Draw'}
+                  </button>
+                  <div className="bg-white/5 rounded-lg p-4">
+                    <p className="text-sm text-purple-300 font-mono break-all">{address}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center space-y-6">
+                  <h2 className="text-2xl font-bold text-white">Connecting Wallet...</h2>
+                  <p className="text-purple-200">
+                    Your wallet should connect automatically in the Base app
+                  </p>
+                  <div className="text-4xl">🔗</div>
+                </div>
+              )}
+
+              {error && (
+                <div className="mt-4 bg-red-500/20 border border-red-500/50 rounded-lg p-4">
+                  <p className="text-red-200 text-sm">{error}</p>
                 </div>
               )}
             </div>
-          ) : isConnected && address ? (
-            <div className="text-center space-y-6">
-              <h2 className="text-2xl font-bold text-white">Enter the Draw</h2>
-              <p className="text-purple-200">
-                Enter free to win 5-10% of profits from tonight's tournament
-              </p>
-              <button
-                onClick={handleEnterRaffle}
-                disabled={isLoading}
-                className="w-full bg-green-600 hover:bg-green-700 disabled:bg-green-800 text-white font-semibold py-4 px-6 rounded-xl transition-colors text-lg"
-              >
-                {isLoading ? 'Entering...' : '🎲 Enter Draw'}
-              </button>
-              <div className="bg-white/5 rounded-lg p-4">
-                <p className="text-sm text-purple-300 font-mono break-all">{address}</p>
-              </div>
-            </div>
-          ) : (
-            <div className="text-center space-y-6">
-              <h2 className="text-2xl font-bold text-white">Connecting Wallet...</h2>
-              <p className="text-purple-200">
-                Your wallet should connect automatically in the Base app
-              </p>
-              <div className="text-4xl">🔗</div>
-            </div>
-          )}
-
-          {error && (
-            <div className="mt-4 bg-red-500/20 border border-red-500/50 rounded-lg p-4">
-              <p className="text-red-200 text-sm">{error}</p>
-            </div>
-          )}
-        </div>
-
-        <div className="flex flex-wrap gap-3 justify-center">
-          <span className="bg-white/10 backdrop-blur-sm text-purple-100 px-4 py-2 rounded-full text-sm border border-white/20">
-            Enter Free
-          </span>
-          <span className="bg-white/10 backdrop-blur-sm text-purple-100 px-4 py-2 rounded-full text-sm border border-white/20">
-            Win Profits
-          </span>
-          <span className="bg-white/10 backdrop-blur-sm text-purple-100 px-4 py-2 rounded-full text-sm border border-white/20">
-            Watch Live
-          </span>
-          <span className="bg-white/10 backdrop-blur-sm text-purple-100 px-4 py-2 rounded-full text-sm border border-white/20">
-            Share for Bonus
-          </span>
-        </div>
+          </>
+        )}
       </div>
     </div>
   );
