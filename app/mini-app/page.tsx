@@ -12,6 +12,7 @@ export default function MiniApp() {
   const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
   const [winner, setWinner] = useState<any>(null);
   const [hasDrawn, setHasDrawn] = useState(false);
+  const [drawTime, setDrawTime] = useState<number | null>(null);
 
   // Initialize SDK
   useEffect(() => {
@@ -33,14 +34,34 @@ export default function MiniApp() {
     }
   }, [address]);
 
-  // Timer countdown and auto-draw
+  // Fetch draw time from Redis on mount
   useEffect(() => {
-    const targetTime = new Date();
-    targetTime.setHours(targetTime.getHours() + 12);
+    async function fetchDrawTime() {
+      try {
+        const response = await fetch('/api/reset');
+        const data = await response.json();
+        
+        if (data.drawTime) {
+          setDrawTime(data.drawTime);
+          if (data.hasWinner) {
+            setHasDrawn(true);
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching draw time:', err);
+      }
+    }
+    
+    fetchDrawTime();
+  }, []);
+
+  // Timer countdown using stored draw time
+  useEffect(() => {
+    if (!drawTime) return;
 
     const interval = setInterval(() => {
-      const now = new Date();
-      const difference = targetTime.getTime() - now.getTime();
+      const now = Date.now();
+      const difference = drawTime - now;
 
       if (difference > 0) {
         const hours = Math.floor(difference / (1000 * 60 * 60));
@@ -57,7 +78,7 @@ export default function MiniApp() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [hasDrawn]);
+  }, [drawTime, hasDrawn]);
 
   // Poll for winner updates
   useEffect(() => {
