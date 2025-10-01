@@ -31,10 +31,7 @@ export default function LaunchPage() {
           </p>
         </div>
         
-        
-          href="/mini-app"
-          className="block w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-colors"
-        >
+        <a href="/mini-app" className="block w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-xl transition-colors">
           Open Mini App
         </a>
       </div>
