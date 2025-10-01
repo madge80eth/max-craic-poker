@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useAccount } from 'wagmi';
 import sdk from '@farcaster/miniapp-sdk';
 
 export default function MiniApp() {
-  const [address, setAddress] = useState<string | null>(null);
+  const { address, isConnected } = useAccount();
   const [hasEntered, setHasEntered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -12,17 +13,12 @@ export default function MiniApp() {
   const [winner, setWinner] = useState<any>(null);
   const [hasDrawn, setHasDrawn] = useState(false);
 
-  // Initialize SDK and get wallet
+  // Initialize SDK
   useEffect(() => {
     async function init() {
       try {
-        const context = await sdk.context;
+        await sdk.context;
         sdk.actions.ready();
-        
-        // Get connected wallet from MiniKit context
-        if (context.user?.wallet?.address) {
-          setAddress(context.user.wallet.address);
-        }
       } catch (err) {
         console.error('SDK init failed:', err);
       }
@@ -30,7 +26,7 @@ export default function MiniApp() {
     init();
   }, []);
 
-  // Check entry status when wallet loads
+  // Check entry status when wallet connects
   useEffect(() => {
     if (address) {
       checkStatus(address);
@@ -102,27 +98,6 @@ export default function MiniApp() {
       }
     } catch (err) {
       console.error('Error triggering draw:', err);
-    }
-  }
-
-  async function handleConnectWallet() {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const result = await sdk.actions.openUrl('https://wallet.coinbase.com/');
-      
-      if (result) {
-        // Reinit to get new wallet context
-        const context = await sdk.context;
-        if (context.user?.wallet?.address) {
-          setAddress(context.user.wallet.address);
-        }
-      }
-    } catch (err) {
-      setError('Please connect your wallet in the Base app settings');
-    } finally {
-      setIsLoading(false);
     }
   }
 
@@ -269,7 +244,7 @@ export default function MiniApp() {
                 </div>
               )}
             </div>
-          ) : address ? (
+          ) : isConnected && address ? (
             <div className="text-center space-y-6">
               <h2 className="text-2xl font-bold text-white">Enter the Draw</h2>
               <p className="text-purple-200">
@@ -288,24 +263,11 @@ export default function MiniApp() {
             </div>
           ) : (
             <div className="text-center space-y-6">
-              <h2 className="text-2xl font-bold text-white">Welcome to Max Craic Poker</h2>
-              <p className="text-purple-200 text-lg">
-                Your cozy onchain poker home!
+              <h2 className="text-2xl font-bold text-white">Connecting Wallet...</h2>
+              <p className="text-purple-200">
+                Your wallet should connect automatically in the Base app
               </p>
-              <button
-                onClick={handleConnectWallet}
-                disabled={isLoading}
-                className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 text-white font-semibold py-4 px-6 rounded-xl transition-colors text-lg flex items-center justify-center gap-2"
-              >
-                <span>🔗</span>
-                <span>{isLoading ? 'Connecting...' : 'Connect & Play'}</span>
-              </button>
-              <p className="text-sm text-purple-300">
-                ...or don't have a wallet yet?
-              </p>
-              <p className="text-xs text-purple-400">
-                We recommend using Coinbase Smart Wallet for lower transaction costs, convenience and stronger security!
-              </p>
+              <div className="text-4xl">🔗</div>
             </div>
           )}
 
