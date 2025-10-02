@@ -145,7 +145,7 @@ export default function MiniApp() {
             <div className="text-center mb-6">
               <div className="text-6xl mb-4">🏆</div>
               <div className="text-2xl font-mono text-white mb-2">{winnerData.walletAddress.slice(0, 6)}...{winnerData.walletAddress.slice(-4)}</div>
-              <p className="text-xl text-blue-300">Assigned to: {winnerData.entry.tournament}</p>
+              <p className="text-xl text-blue-300">Assigned to: {winnerData.communityTournament}</p>
             </div>
             <p className="text-center text-white/80 text-sm">If I cash in this tournament, the winner gets 5% of the profit + 5% bonus for sharing the post!</p>
           </div>
