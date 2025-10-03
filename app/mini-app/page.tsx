@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAccount } from 'wagmi';
 import Image from 'next/image';
+import { sdk } from '@farcaster/miniapp-sdk';
 
 interface Tournament {
   name: string;
@@ -17,6 +18,18 @@ export default function MiniApp() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [drawTime, setDrawTime] = useState<number | null>(null);
+
+  // Call ready() to dismiss splash screen
+  useEffect(() => {
+    const initMiniApp = async () => {
+      try {
+        await sdk.actions.ready();
+      } catch (error) {
+        console.log('Not in miniapp context:', error);
+      }
+    };
+    initMiniApp();
+  }, []);
 
   useEffect(() => {
     async function fetchDrawTime() {
