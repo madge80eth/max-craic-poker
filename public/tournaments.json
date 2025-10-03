@@ -1,8 +1,8 @@
 [
-  { "name": "The Bounty Hunter", "buyIn": "$44" },
-  { "name": "Midnight Madness", "buyIn": "$33" },
+  { "name": "The Mystery Bounty Hunter", "buyIn": "$33" },
+  { "name": "MB 2k", "buyIn": "$8" },
   { "name": "Progressive KO", "buyIn": "$22" },
-  { "name": "Turbo Special", "buyIn": "$11" },
-  { "name": "Evening Flight", "buyIn": "$77" },
-  { "name": "Late Night Grind", "buyIn": "$55" }
+  { "name": "Turbo MB", "buyIn": "$11" },
+  { "name": "Morning Madness", "buyIn": "$77" },
+  { "name": "6k GT", "buyIn": "$16" }
 ]
