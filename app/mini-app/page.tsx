@@ -164,7 +164,7 @@ export default function MiniApp() {
           </div>
           <div className="bg-gradient-to-r from-pink-600 to-purple-600 rounded-lg p-6 border border-white/20">
             <h2 className="text-2xl font-bold text-white mb-4 text-center">LIVE ACTION</h2>
-            <p className="text-white/90 mb-4 text-center">Join the stream to see how the community game unfolds!</p>
+            <p className="text-white/90 mb-4 text-center">Come join us on the stream to see how the community game unfolds!</p>
             <a href="https://retake.tv/live/68b58fa755320f51930c9081" target="_blank" rel="noopener noreferrer" className="block w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 rounded-lg text-center transition-colors">Watch Live Stream</a>
           </div>
         </div>
@@ -223,7 +223,7 @@ export default function MiniApp() {
             </div>
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
               <h3 className="text-xl font-bold text-white mb-3 text-center">Join the Action</h3>
-              <p className="text-white/80 mb-4 text-center text-sm">Watch the stream to see how your tournament unfolds!</p>
+              <p className="text-white/80 mb-4 text-center text-sm">Come join us on the stream to see how the community game unfolds!</p>
               <a href="https://retake.tv/live/68b58fa755320f51930c9081" target="_blank" rel="noopener noreferrer" className="block w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg text-center transition-colors">Watch Live Stream</a>
             </div>
           </div>
