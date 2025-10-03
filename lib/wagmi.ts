@@ -1,14 +1,11 @@
 import { http, createConfig } from 'wagmi'
 import { base } from 'wagmi/chains'
-import { coinbaseWallet } from 'wagmi/connectors'
+import { farcasterMiniApp } from '@farcaster/miniapp-wagmi-connector'
 
 export const config = createConfig({
   chains: [base],
   connectors: [
-    coinbaseWallet({
-      appName: 'Max Craic Poker',
-      preference: 'smartWalletOnly',
-    }),
+    farcasterMiniApp()
   ],
   transports: {
     [base.id]: http(),

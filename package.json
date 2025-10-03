@@ -13,6 +13,7 @@
     "@coinbase/wallet-sdk": "^4.3.7",
     "@farcaster/core": "^0.18.4",
     "@farcaster/miniapp-sdk": "^0.1.10",
+    "@farcaster/miniapp-wagmi-connector": "^1.0.0",
     "@neynar/nodejs-sdk": "^3.34.0",
     "@tanstack/react-query": "^5.87.4",
     "@upstash/redis": "^1.35.3",
