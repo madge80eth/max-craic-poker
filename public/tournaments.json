@@ -1,8 +1,8 @@
 [
-  { "name": "The Mystery Bounty Hunter", "buyIn": "$33" },
-  { "name": "Mystery Bounty 2k", "buyIn": "$8" },
-  { "name": "Progressive KO", "buyIn": "$22" },
-  { "name": "Turbo Mystery Bounty", "buyIn": "$11" },
-  { "name": "Morning Madness", "buyIn": "$77" },
-  { "name": "6k Progressive GT", "buyIn": "$16" }
+  { "name": "The Mystery Bounty Hunter", "buyIn": "$39" },
+  { "name": "Mystery Bounty 2k", "buyIn": "998" },
+  { "name": "Progressive KO", "buyIn": "$33" },
+  { "name": "Turbo Mystery Bounty", "buyIn": "$111" },
+  { "name": "Morning Madness", "buyIn": "$55" },
+  { "name": "6k Progressive GT", "buyIn": "$76" }
 ]
