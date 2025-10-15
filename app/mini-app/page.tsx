@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAccount } from 'wagmi';
+import { useAccount, useConnect } from 'wagmi';
 import Image from 'next/image';
 import { sdk } from '@farcaster/miniapp-sdk';
 
@@ -12,6 +12,7 @@ interface Tournament {
 
 export default function MiniApp() {
   const { address, isConnected } = useAccount();
+  const { connect, connectors } = useConnect();
   const [hasEntered, setHasEntered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [winnerData, setWinnerData] = useState<any>(null);
@@ -30,6 +31,13 @@ export default function MiniApp() {
     };
     initMiniApp();
   }, []);
+
+  // Auto-connect wallet for Farcaster
+  useEffect(() => {
+    if (!isConnected && connectors.length > 0) {
+      connect({ connector: connectors[0] });
+    }
+  }, [isConnected, connect, connectors]);
 
   useEffect(() => {
     async function fetchDrawTime() {
