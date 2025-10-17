@@ -31,7 +31,10 @@ export default function MiniApp() {
   useEffect(() => {
     fetch('/tournaments.json')
       .then(res => res.json())
-      .then(data => setTournaments(data.tournaments || []));
+      .then(data => {
+        // Handle both array format and object format
+        setTournaments(Array.isArray(data) ? data : data.tournaments || []);
+      });
   }, []);
 
   useEffect(() => {
