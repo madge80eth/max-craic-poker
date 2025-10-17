@@ -83,6 +83,9 @@ export default function MiniApp() {
       const data = await res.json();
       if (data.success) {
         setHasEntered(true);
+        // Wait 2 seconds before allowing status checks to update
+        // This prevents race condition with Redis
+        await new Promise(resolve => setTimeout(resolve, 2000));
       }
     } catch (error) {
       console.error('Entry error:', error);
