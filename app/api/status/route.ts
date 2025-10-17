@@ -1,81 +1,73 @@
-// app/api/status/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { redis } from '@/lib/redis';
+import { Redis } from '@upstash/redis';
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
+    const searchParams = request.nextUrl.searchParams;
     const walletAddress = searchParams.get('wallet');
 
-    // Get basic stats
-    const entries = await redis.hgetall('entries');
-    const totalEntries = Object.keys(entries || {}).length;
-    
-    // Get draw time and calculate remaining
-    const drawTime = await redis.get('draw_time');
-    const timeRemaining = drawTime ? 
-      Math.max(0, Math.floor((parseInt(drawTime as string) - Date.now()) / 1000)) : 0;
-    
-    // Get current winner if exists
-    const winner = await redis.hgetall('current_winner');
-    const hasWinner = winner && Object.keys(winner).length > 0;
+    // Get total entries
+    const entries = await redis.hgetall('raffle_entries');
+    const totalEntries = entries ? Object.keys(entries).length : 0;
 
-    // Basic response without wallet
-    if (!walletAddress) {
+    // Get timer data
+    const timerData = await redis.get('raffle_timer');
+    const timer = timerData ? JSON.parse(timerData as string) : null;
+    
+    let timeRemaining = 0;
+    if (timer?.endTime) {
+      const now = Date.now();
+      const end = new Date(timer.endTime).getTime();
+      timeRemaining = Math.max(0, Math.floor((end - now) / 1000));
+    }
+
+    // Get winners data
+    const winnersData = await redis.get('raffle_winners');
+    const winners = winnersData ? JSON.parse(winnersData as string).winners : null;
+
+    // Check if specific wallet requested
+    if (walletAddress && entries) {
+      const userEntryData = await redis.hget('raffle_entries', walletAddress);
+      const userEntry = userEntryData ? JSON.parse(userEntryData as string) : null;
+
+      // Check if user is a winner
+      let userWinnerInfo = null;
+      if (winners) {
+        userWinnerInfo = winners.find((w: any) => 
+          w.walletAddress.toLowerCase() === walletAddress.toLowerCase()
+        );
+      }
+
       return NextResponse.json({
         success: true,
         totalEntries,
         timeRemaining,
-        hasWinner,
-        winner: hasWinner ? {
-          walletAddress: winner.walletAddress as string,
-          communityTournament: winner.communityTournament as string,
-          tournamentBuyIn: winner.tournamentBuyIn as string,
-          drawnAt: parseInt(winner.drawnAt as string),
-          totalEntries: parseInt(winner.totalEntries as string)
-        } : null
+        hasEntered: !!userEntry,
+        userEntry,
+        isWinner: !!userWinnerInfo,
+        winnerInfo: userWinnerInfo,
+        winners
       });
     }
 
-    // Check if specific wallet has entered
-    const userEntry = entries ? entries[walletAddress] : null;
-    const hasEntered = !!userEntry;
-
-    // Check if this wallet is the winner
-    const isWinner = hasWinner && winner.walletAddress === walletAddress;
-
-    // Parse user entry if exists
-    let parsedEntry = null;
-    if (hasEntered && userEntry) {
-      try {
-        parsedEntry = typeof userEntry === 'string' ? JSON.parse(userEntry) : userEntry;
-      } catch (e) {
-        console.error('Error parsing entry:', e);
-      }
-    }
-
+    // Return general status
     return NextResponse.json({
       success: true,
       totalEntries,
       timeRemaining,
-      hasWinner,
-      hasEntered,
-      isWinner,
-      userEntry: parsedEntry,
-      winner: hasWinner ? {
-        walletAddress: winner.walletAddress as string,
-        communityTournament: winner.communityTournament as string,
-        tournamentBuyIn: winner.tournamentBuyIn as string,
-        drawnAt: parseInt(winner.drawnAt as string),
-        totalEntries: parseInt(winner.totalEntries as string)
-      } : null
+      winners
     });
 
   } catch (error) {
-    console.error('Status check error:', error);
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Internal server error' 
-    }, { status: 500 });
+    console.error('Status error:', error);
+    return NextResponse.json(
+      { success: false, message: 'Failed to get status' },
+      { status: 500 }
+    );
   }
 }
