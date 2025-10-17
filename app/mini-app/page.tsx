@@ -45,7 +45,11 @@ export default function MiniApp() {
       const data = await res.json();
       
       if (data.success) {
-        setHasEntered(data.hasEntered);
+        // Only update hasEntered if we haven't already set it locally
+        // This prevents status checks from overriding successful entry
+        if (data.hasEntered) {
+          setHasEntered(true);
+        }
         setTimeRemaining(data.timeRemaining);
         setWinners(data.winners);
         setUserWinnerInfo(data.winnerInfo);
