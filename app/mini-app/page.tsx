@@ -1,206 +1,224 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useAccount, useConnect } from 'wagmi';
-import Image from 'next/image';
-import { sdk } from '@farcaster/miniapp-sdk';
+import { useEffect, useState } from 'react';
+import { useAccount } from 'wagmi';
+import { Trophy, Clock, ExternalLink } from 'lucide-react';
 
 interface Tournament {
   name: string;
   buyIn: string;
 }
 
+interface Winner {
+  place: number;
+  walletAddress: string;
+  tournament: string;
+  tournamentBuyIn: string;
+  baseShare: number;
+  bonusShare: number;
+  totalShare: number;
+}
+
 export default function MiniApp() {
   const { address, isConnected } = useAccount();
-  const { connect, connectors } = useConnect();
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [hasEntered, setHasEntered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [winnerData, setWinnerData] = useState<any>(null);
-  const [tournaments, setTournaments] = useState<Tournament[]>([]);
-  const [timeLeft, setTimeLeft] = useState<number | null>(null);
-  const [drawTime, setDrawTime] = useState<number | null>(null);
+  const [timeRemaining, setTimeRemaining] = useState(0);
+  const [winners, setWinners] = useState<Winner[] | null>(null);
+  const [userWinnerInfo, setUserWinnerInfo] = useState<Winner | null>(null);
 
-  // Call ready() to dismiss splash screen
   useEffect(() => {
-    const initMiniApp = async () => {
-      try {
-        await sdk.actions.ready();
-      } catch (error) {
-        console.log('Not in miniapp context:', error);
+    fetch('/tournaments.json')
+      .then(res => res.json())
+      .then(data => setTournaments(data.tournaments || []));
+  }, []);
+
+  useEffect(() => {
+    if (!address) return;
+
+    const checkStatus = async () => {
+      const res = await fetch(`/api/status?wallet=${address}`);
+      const data = await res.json();
+      
+      if (data.success) {
+        setHasEntered(data.hasEntered);
+        setTimeRemaining(data.timeRemaining);
+        setWinners(data.winners);
+        setUserWinnerInfo(data.winnerInfo);
       }
     };
-    initMiniApp();
-  }, []);
 
-  // Auto-connect wallet for Farcaster
-  useEffect(() => {
-    if (!isConnected && connectors.length > 0) {
-      connect({ connector: connectors[0] });
-    }
-  }, [isConnected, connect, connectors]);
+    checkStatus();
+    const interval = setInterval(checkStatus, 5000);
+    return () => clearInterval(interval);
+  }, [address]);
 
   useEffect(() => {
-    async function fetchDrawTime() {
-      try {
-        const response = await fetch('/api/reset');
-        const data = await response.json();
-        if (data.drawTime) {
-          setDrawTime(data.drawTime);
-        }
-      } catch (error) {
-        console.error('Error fetching draw time:', error);
-      }
-    }
-    fetchDrawTime();
-  }, []);
-
-  useEffect(() => {
-    async function fetchTournaments() {
-      try {
-        const response = await fetch('/tournaments.json');
-        const data = await response.json();
-        setTournaments(data);
-      } catch (error) {
-        console.error('Error fetching tournaments:', error);
-      }
-    }
-    fetchTournaments();
-  }, []);
-
-  useEffect(() => {
-    if (!drawTime) return;
-    const interval = setInterval(() => {
-      const now = Date.now();
-      const difference = drawTime - now;
-      if (difference <= 0) {
-        setTimeLeft(0);
-        clearInterval(interval);
-      } else {
-        setTimeLeft(Math.floor(difference / 1000));
-      }
+    if (timeRemaining <= 0) return;
+    const timer = setInterval(() => {
+      setTimeRemaining(prev => Math.max(0, prev - 1));
     }, 1000);
-    return () => clearInterval(interval);
-  }, [drawTime]);
-
-  useEffect(() => {
-    async function checkWinner() {
-      try {
-        const response = await fetch('/api/status');
-        const data = await response.json();
-        if (data.winner) {
-          setWinnerData(data.winner);
-        }
-      } catch (error) {
-        console.error('Error checking winner:', error);
-      }
-    }
-    checkWinner();
-    const interval = setInterval(checkWinner, 5000);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
-    if (timeLeft === 0 && !winnerData) {
-      handleDraw();
-    }
-  }, [timeLeft, winnerData]);
+    return () => clearInterval(timer);
+  }, [timeRemaining]);
 
   const handleEnter = async () => {
-    if (!address) {
-      alert('Please connect your wallet first');
-      return;
-    }
+    if (!address || isLoading) return;
+
     setIsLoading(true);
     try {
-      const response = await fetch('/api/enter', {
+      const res = await fetch('/api/enter', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           walletAddress: address,
-          platform: 'base',
-        }),
+          platform: 'farcaster',
+          hasRecasted: false
+        })
       });
-      const data = await response.json();
+
+      const data = await res.json();
       if (data.success) {
         setHasEntered(true);
-      } else {
-        alert(data.message || 'Entry failed');
       }
     } catch (error) {
-      console.error('Error entering raffle:', error);
-      alert('Entry failed');
+      console.error('Entry error:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleDraw = async () => {
-    try {
-      const response = await fetch('/api/draw', { method: 'POST' });
-      const data = await response.json();
-      if (data.winner) {
-        setWinnerData(data.winner);
-      }
-    } catch (error) {
-      console.error('Error drawing winner:', error);
-    }
-  };
-
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
+    const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    return `${hours}h ${minutes}m ${secs}s`;
+    return `${hours}h ${mins}m ${secs}s`;
   };
 
-  if (winnerData) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center p-4">
-        <div className="max-w-2xl w-full space-y-6">
-          <div className="text-center">
-            <Image src="/mcp-logo.png" alt="Max Craic Poker" width={80} height={80} className="mx-auto mb-4" />
-            <h1 className="text-4xl font-bold text-white mb-2">WINNER DRAWN!</h1>
-            <p className="text-red-400 text-xl font-semibold">MAX CRAIC POKER</p>
-          </div>
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-8 border border-white/20">
-            <div className="text-center mb-6">
-              <div className="text-6xl mb-4">🏆</div>
-              <div className="text-2xl font-mono text-white mb-2">{winnerData.walletAddress.slice(0, 6)}...{winnerData.walletAddress.slice(-4)}</div>
-              <p className="text-xl text-blue-300">Assigned to: {winnerData.communityTournament}</p>
-            </div>
-            <p className="text-center text-white/80 text-sm">If I cash in this tournament, the winner gets 5% of the profit + 5% bonus for sharing the post!</p>
-          </div>
-          <div className="bg-gradient-to-r from-pink-600 to-purple-600 rounded-lg p-6 border border-white/20">
-            <h2 className="text-2xl font-bold text-white mb-4 text-center">LIVE ACTION</h2>
-            <p className="text-white/90 mb-4 text-center">Come join us on the stream to see how the community game unfolds!</p>
-            <a href="https://retake.tv/live/68b58fa755320f51930c9081" target="_blank" rel="noopener noreferrer" className="block w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 rounded-lg text-center transition-colors">Watch Live Stream</a>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const getPlaceEmoji = (place: number) => {
+    if (place === 1) return '🥇';
+    if (place === 2) return '🥈';
+    if (place === 3) return '🥉';
+    return '🏆';
+  };
+
+  const getPlaceGradient = (place: number) => {
+    if (place === 1) return 'from-yellow-500 to-orange-500';
+    if (place === 2) return 'from-gray-400 to-gray-500';
+    if (place === 3) return 'from-amber-600 to-amber-700';
+    return 'from-blue-600 to-purple-600';
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
-      <div className="max-w-2xl mx-auto space-y-6 pt-8">
-        <div className="text-center">
-          <Image src="/mcp-logo.png" alt="Max Craic Poker" width={80} height={80} className="mx-auto mb-4" />
+      <div className="max-w-2xl mx-auto space-y-6">
+        
+        {/* Header */}
+        <div className="text-center py-6">
           <h1 className="text-4xl font-bold text-white mb-2">Max Craic Poker</h1>
-          <p className="text-blue-300 text-lg">Community-Backed Tournament Draw</p>
+          <p className="text-blue-200">Community-Backed Tournaments</p>
         </div>
-        {timeLeft !== null && timeLeft > 0 && (
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20 text-center">
-            <p className="text-white/80 mb-2">Draw happens in:</p>
-            <p className="text-4xl font-bold text-white">{formatTime(timeLeft)}</p>
+
+        {/* Timer */}
+        {timeRemaining > 0 && !winners && (
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20 text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Clock className="w-5 h-5 text-blue-300" />
+              <p className="text-white/80 text-sm">Draw in</p>
+            </div>
+            <p className="text-3xl font-bold text-white">{formatTime(timeRemaining)}</p>
           </div>
         )}
-        {!hasEntered && tournaments.length > 0 && (
+
+        {/* Winners Display */}
+        {winners && winners.length > 0 && (
+          <div className="space-y-4">
+            <div className="text-center">
+              <h2 className="text-3xl font-bold text-white mb-2">🎉 Winners Drawn! 🎉</h2>
+              <p className="text-blue-200">Congratulations to our community winners</p>
+            </div>
+
+            {winners.map((winner) => (
+              <div
+                key={winner.place}
+                className={`bg-gradient-to-r ${getPlaceGradient(winner.place)} rounded-lg p-6 border border-white/20`}
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <span className="text-4xl">{getPlaceEmoji(winner.place)}</span>
+                    <div>
+                      <h3 className="text-xl font-bold text-white">
+                        {winner.place === 1 ? '1st' : winner.place === 2 ? '2nd' : '3rd'} Place
+                      </h3>
+                      <p className="text-white/90 font-mono text-sm">
+                        {winner.walletAddress.slice(0, 6)}...{winner.walletAddress.slice(-4)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-2xl font-bold text-white">{winner.totalShare}%</p>
+                    <p className="text-white/80 text-xs">profit share</p>
+                  </div>
+                </div>
+
+                <div className="bg-white/10 rounded-lg p-3">
+                  <p className="text-white font-semibold mb-1">{winner.tournament}</p>
+                  <p className="text-white/80 text-sm">Buy-in: {winner.tournamentBuyIn}</p>
+                  {winner.bonusShare > 0 && (
+                    <p className="text-green-300 text-sm mt-1">
+                      ✨ +{winner.bonusShare}% sharing bonus applied!
+                    </p>
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {/* User-specific message */}
+            {userWinnerInfo && (
+              <div className="bg-green-600/20 backdrop-blur-sm rounded-lg p-6 border border-green-400/30">
+                <div className="text-center">
+                  <div className="text-5xl mb-3">🎊</div>
+                  <h3 className="text-2xl font-bold text-white mb-2">You Won!</h3>
+                  <p className="text-green-200 mb-4">
+                    You placed {userWinnerInfo.place === 1 ? '1st' : userWinnerInfo.place === 2 ? '2nd' : '3rd'} and 
+                    earned {userWinnerInfo.totalShare}% profit share
+                  </p>
+                  <p className="text-white/80 text-sm">
+                    If this tournament cashes, you'll receive your share via USDC
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Stream CTA */}
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+              <h3 className="text-xl font-bold text-white mb-3 text-center">Watch Live</h3>
+              <p className="text-white/80 mb-4 text-center text-sm">
+                Join the stream to see how the community tournaments unfold!
+              </p>
+              <a
+                href="https://retake.tv/live/68b58fa755320f51930c9081"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+              >
+                <ExternalLink className="w-5 h-5" />
+                Watch Live Stream
+              </a>
+            </div>
+          </div>
+        )}
+
+        {/* Tournaments Display - Only show before winners drawn */}
+        {!winners && tournaments.length > 0 && (
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
-            <h2 className="text-2xl font-bold text-white mb-4 text-center">Tonight's Tournaments</h2>
-            <p className="text-white/80 mb-4 text-center text-sm">Enter the draw and get randomly assigned to one of these tournaments. If I cash, you win 5% of profit + 5% bonus for sharing!</p>
-            <div className="grid grid-cols-2 gap-3">
+            <h2 className="text-2xl font-bold text-white mb-4 text-center">Upcoming Tournaments</h2>
+            <div className="space-y-3">
               {tournaments.map((tournament, index) => (
-                <div key={index} className="bg-white/5 border border-white/20 rounded-lg p-3 text-center">
+                <div
+                  key={index}
+                  className="bg-white/5 rounded-lg p-4 border border-white/10 flex items-center justify-between"
+                >
                   <p className="text-white font-semibold text-sm">{tournament.name}</p>
                   <p className="text-blue-300 text-lg font-bold">{tournament.buyIn}</p>
                 </div>
@@ -208,31 +226,60 @@ export default function MiniApp() {
             </div>
           </div>
         )}
-        {!hasEntered ? (
+
+        {/* Entry Section */}
+        {!winners && !hasEntered && (
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
             <div className="text-center mb-4">
               {isConnected && address ? (
                 <>
                   <p className="text-white/80 mb-2">Connected Wallet:</p>
-                  <p className="text-white font-mono text-sm">{address.slice(0, 6)}...{address.slice(-4)}</p>
+                  <p className="text-white font-mono text-sm">
+                    {address.slice(0, 6)}...{address.slice(-4)}
+                  </p>
                 </>
               ) : (
                 <p className="text-white/80">Connecting wallet...</p>
               )}
             </div>
-            <button onClick={handleEnter} disabled={isLoading || !isConnected} className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-bold py-4 px-6 rounded-lg transition-all">{isLoading ? 'Entering...' : 'Enter the Draw'}</button>
+            <button
+              onClick={handleEnter}
+              disabled={isLoading || !isConnected}
+              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-bold py-4 px-6 rounded-lg transition-all"
+            >
+              {isLoading ? 'Entering...' : 'Enter the Draw'}
+            </button>
+            <p className="text-white/60 text-xs text-center mt-3">
+              Winners earn 6%, 5%, or 4% profit share + bonus for sharing
+            </p>
           </div>
-        ) : (
+        )}
+
+        {/* Entered Confirmation */}
+        {!winners && hasEntered && (
           <div className="space-y-4">
             <div className="bg-gradient-to-r from-green-600 to-blue-600 rounded-lg p-6 border border-white/20 text-center">
               <div className="text-5xl mb-4">✅</div>
               <h2 className="text-2xl font-bold text-white mb-2">You're Entered!</h2>
-              <p className="text-white/90">You'll be randomly assigned to a tournament when the draw happens. Good luck!</p>
+              <p className="text-white/90">
+                You'll be randomly assigned to a tournament when winners are drawn.
+              </p>
             </div>
+
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
-              <h3 className="text-xl font-bold text-white mb-3 text-center">Join the Action</h3>
-              <p className="text-white/80 mb-4 text-center text-sm">Come join us on the stream to see how the community game unfolds!</p>
-              <a href="https://retake.tv/live/68b58fa755320f51930c9081" target="_blank" rel="noopener noreferrer" className="block w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg text-center transition-colors">Watch Live Stream</a>
+              <h3 className="text-xl font-bold text-white mb-3 text-center">Join the Stream</h3>
+              <p className="text-white/80 mb-4 text-center text-sm">
+                Come watch the community tournaments unfold live!
+              </p>
+              <a
+                href="https://retake.tv/live/68b58fa755320f51930c9081"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+              >
+                <ExternalLink className="w-5 h-5" />
+                Watch Live Stream
+              </a>
             </div>
           </div>
         )}
