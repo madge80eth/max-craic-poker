@@ -34,40 +34,51 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Shuffle array and pick first 3 as winners
+    // Load tournaments
+    const tournamentsResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/tournaments.json`);
+    const tournaments = await tournamentsResponse.json();
+    
+    if (!Array.isArray(tournaments) || tournaments.length === 0) {
+      return NextResponse.json({
+        success: false,
+        message: 'No tournaments available'
+      }, { status: 500 });
+    }
+
+    // Shuffle entries and pick first 3 as winners
     const shuffled = [...entryArray].sort(() => Math.random() - 0.5);
+    
+    // Assign random tournaments to winners at draw time
     const firstPlace = shuffled[0];
     const secondPlace = shuffled[1];
     const thirdPlace = shuffled[2];
 
-    // Calculate profit shares
+    const firstTournament = tournaments[Math.floor(Math.random() * tournaments.length)];
+    const secondTournament = tournaments[Math.floor(Math.random() * tournaments.length)];
+    const thirdTournament = tournaments[Math.floor(Math.random() * tournaments.length)];
+
+    // Create winners with flat profit shares (no bonuses)
     const winners = [
       {
         place: 1,
         walletAddress: firstPlace.walletAddress,
-        tournament: firstPlace.tournament,
-        tournamentBuyIn: firstPlace.tournamentBuyIn,
-        baseShare: 6,
-        bonusShare: firstPlace.hasRecasted ? 6 : 0,
-        totalShare: firstPlace.hasRecasted ? 12 : 6
+        tournament: firstTournament.name,
+        tournamentBuyIn: firstTournament.buyIn,
+        profitShare: 6
       },
       {
         place: 2,
         walletAddress: secondPlace.walletAddress,
-        tournament: secondPlace.tournament,
-        tournamentBuyIn: secondPlace.tournamentBuyIn,
-        baseShare: 5,
-        bonusShare: secondPlace.hasRecasted ? 5 : 0,
-        totalShare: secondPlace.hasRecasted ? 10 : 5
+        tournament: secondTournament.name,
+        tournamentBuyIn: secondTournament.buyIn,
+        profitShare: 5
       },
       {
         place: 3,
         walletAddress: thirdPlace.walletAddress,
-        tournament: thirdPlace.tournament,
-        tournamentBuyIn: thirdPlace.tournamentBuyIn,
-        baseShare: 4,
-        bonusShare: thirdPlace.hasRecasted ? 4 : 0,
-        totalShare: thirdPlace.hasRecasted ? 8 : 4
+        tournament: thirdTournament.name,
+        tournamentBuyIn: thirdTournament.buyIn,
+        profitShare: 4
       }
     ];
 

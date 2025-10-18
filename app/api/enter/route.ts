@@ -9,13 +9,12 @@ const redis = new Redis({
 interface EntryRequest {
   walletAddress: string;
   platform: 'farcaster' | 'base';
-  hasRecasted?: boolean;
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body: EntryRequest = await request.json();
-    const { walletAddress, platform, hasRecasted = false } = body;
+    const { walletAddress, platform } = body;
 
     if (!walletAddress) {
       return NextResponse.json({ 
@@ -24,7 +23,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Check if already entered (using correct key: raffle_entries)
+    // Check if already entered
     const existingEntry = await redis.hget('raffle_entries', walletAddress);
     if (existingEntry) {
       const entry = typeof existingEntry === 'string' 
@@ -39,30 +38,14 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Load tournaments and randomly assign one
-    const tournamentsResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/tournaments.json`);
-    const tournaments = await tournamentsResponse.json();
-    
-    if (!Array.isArray(tournaments) || tournaments.length === 0) {
-      return NextResponse.json({
-        success: false,
-        error: 'No tournaments available'
-      }, { status: 500 });
-    }
-
-    const randomTournament = tournaments[Math.floor(Math.random() * tournaments.length)];
-
-    // Create new entry with tournament assignment
+    // Create new entry - NO tournament assignment (happens at draw)
     const entry = {
       walletAddress,
       platform,
-      timestamp: Date.now(),
-      hasRecasted,
-      tournament: randomTournament.name,
-      tournamentBuyIn: randomTournament.buyIn
+      timestamp: Date.now()
     };
 
-    // Store entry (using correct key: raffle_entries)
+    // Store entry
     await redis.hset('raffle_entries', { [walletAddress]: JSON.stringify(entry) });
 
     // Get total entries count
@@ -79,7 +62,8 @@ export async function POST(request: NextRequest) {
     console.error('Entry error:', error);
     return NextResponse.json({ 
       success: false, 
-      error: 'Internal server error' 
+      error: 'Internal server error',
+      details: String(error)
     }, { status: 500 });
   }
 }
