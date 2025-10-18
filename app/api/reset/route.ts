@@ -1,59 +1,73 @@
-// app/api/reset/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { redis } from '@/lib/redis';
+import { Redis } from '@upstash/redis';
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
 export async function POST(request: NextRequest) {
   try {
-    // Clear all existing data
-    await redis.del('entries');
-    await redis.del('current_winner'); 
-    await redis.del('draw_time');
-    await redis.del('community_tournament');
-
-    // Set new 12-hour countdown (43200 seconds = 12 hours)
-    const drawTime = Date.now() + (12 * 60 * 60 * 1000);
-    await redis.set('draw_time', drawTime.toString());
+    // Clear all raffle data
+    await redis.del('raffle_entries');
+    await redis.del('raffle_winners');
+    await redis.del('raffle_timer');
 
     return NextResponse.json({
       success: true,
       message: 'System reset successfully. Ready for new raffle session.',
-      drawTime: drawTime,
-      countdown: '12:00:00'
+      cleared: ['raffle_entries', 'raffle_winners', 'raffle_timer']
     });
 
   } catch (error) {
     console.error('Reset error:', error);
     return NextResponse.json({ 
       success: false, 
-      error: 'Internal server error' 
+      error: 'Internal server error',
+      details: String(error)
     }, { status: 500 });
   }
 }
 
 export async function GET(request: NextRequest) {
   try {
-    // Just return current system status
-    const entries = await redis.hgetall('entries');
-    const winner = await redis.hgetall('current_winner');
-    const drawTime = await redis.get('draw_time');
+    // Return current system status
+    const entries = await redis.hgetall('raffle_entries');
+    const winnersData = await redis.get('raffle_winners');
+    const timerData = await redis.get('raffle_timer');
     
-    const totalEntries = Object.keys(entries || {}).length;
-    const hasWinner = winner && Object.keys(winner).length > 0;
-    const timeRemaining = drawTime ? Math.max(0, Math.floor((parseInt(drawTime as string) - Date.now()) / 1000)) : 0;
+    const totalEntries = entries ? Object.keys(entries).length : 0;
+    
+    let winners = null;
+    if (winnersData) {
+      const parsed = typeof winnersData === 'string' ? JSON.parse(winnersData) : winnersData;
+      winners = parsed.winners || null;
+    }
+
+    let timeRemaining = 0;
+    if (timerData) {
+      const timer = typeof timerData === 'string' ? JSON.parse(timerData) : timerData;
+      if (timer?.endTime) {
+        const now = Date.now();
+        const end = new Date(timer.endTime).getTime();
+        timeRemaining = Math.max(0, Math.floor((end - now) / 1000));
+      }
+    }
 
     return NextResponse.json({
       success: true,
       totalEntries,
-      hasWinner,
-      timeRemaining,
-      drawTime: drawTime ? parseInt(drawTime as string) : null
+      hasWinners: !!winners,
+      winnersCount: winners ? winners.length : 0,
+      timeRemaining
     });
 
   } catch (error) {
     console.error('Get reset status error:', error);
     return NextResponse.json({ 
       success: false, 
-      error: 'Internal server error' 
+      error: 'Internal server error',
+      details: String(error)
     }, { status: 500 });
   }
 }
