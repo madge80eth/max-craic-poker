@@ -18,15 +18,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Convert entries to array
-    const entryArray = Object.entries(entries).map(([address, data]) => ({
-      walletAddress: address,
-      ...JSON.parse(data as string)
-    }));
+    // Convert entries to array and parse JSON strings
+    const entryArray = Object.entries(entries).map(([address, data]) => {
+      const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+      return {
+        walletAddress: address,
+        ...parsed
+      };
+    });
 
     if (entryArray.length < 3) {
       return NextResponse.json(
-        { success: false, message: 'Need at least 3 entries for draw' },
+        { success: false, message: `Need at least 3 entries for draw. Currently have ${entryArray.length}` },
         { status: 400 }
       );
     }
@@ -85,7 +88,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error('Draw error:', error);
     return NextResponse.json(
-      { success: false, message: 'Draw failed' },
+      { success: false, message: 'Draw failed', error: String(error) },
       { status: 500 }
     );
   }
