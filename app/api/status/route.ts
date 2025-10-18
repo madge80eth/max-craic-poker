@@ -17,27 +17,38 @@ export async function GET(request: NextRequest) {
 
     // Get timer data
     const timerData = await redis.get('raffle_timer');
-    const timer = timerData ? JSON.parse(timerData as string) : null;
-    
     let timeRemaining = 0;
-    if (timer?.endTime) {
-      const now = Date.now();
-      const end = new Date(timer.endTime).getTime();
-      timeRemaining = Math.max(0, Math.floor((end - now) / 1000));
+    
+    if (timerData) {
+      const timer = typeof timerData === 'string' ? JSON.parse(timerData) : timerData;
+      if (timer?.endTime) {
+        const now = Date.now();
+        const end = new Date(timer.endTime).getTime();
+        timeRemaining = Math.max(0, Math.floor((end - now) / 1000));
+      }
     }
 
     // Get winners data
     const winnersData = await redis.get('raffle_winners');
-    const winners = winnersData ? JSON.parse(winnersData as string).winners : null;
+    let winners = null;
+    
+    if (winnersData) {
+      const parsed = typeof winnersData === 'string' ? JSON.parse(winnersData) : winnersData;
+      winners = parsed.winners || null;
+    }
 
     // Check if specific wallet requested
     if (walletAddress && entries) {
       const userEntryData = await redis.hget('raffle_entries', walletAddress);
-      const userEntry = userEntryData ? JSON.parse(userEntryData as string) : null;
+      let userEntry = null;
+      
+      if (userEntryData) {
+        userEntry = typeof userEntryData === 'string' ? JSON.parse(userEntryData) : userEntryData;
+      }
 
       // Check if user is a winner
       let userWinnerInfo = null;
-      if (winners) {
+      if (winners && Array.isArray(winners)) {
         userWinnerInfo = winners.find((w: any) => 
           w.walletAddress.toLowerCase() === walletAddress.toLowerCase()
         );
@@ -66,7 +77,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error('Status error:', error);
     return NextResponse.json(
-      { success: false, message: 'Failed to get status' },
+      { success: false, message: 'Failed to get status', error: String(error) },
       { status: 500 }
     );
   }
