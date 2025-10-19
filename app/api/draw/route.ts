@@ -48,14 +48,15 @@ export async function POST(request: NextRequest) {
     // Shuffle entries and pick first 3 as winners
     const shuffled = [...entryArray].sort(() => Math.random() - 0.5);
     
-    // Assign random tournaments to winners at draw time
     const firstPlace = shuffled[0];
     const secondPlace = shuffled[1];
     const thirdPlace = shuffled[2];
 
-    const firstTournament = tournaments[Math.floor(Math.random() * tournaments.length)];
-    const secondTournament = tournaments[Math.floor(Math.random() * tournaments.length)];
-    const thirdTournament = tournaments[Math.floor(Math.random() * tournaments.length)];
+    // Shuffle tournaments and assign UNIQUE ones to each winner
+    const shuffledTournaments = [...tournaments].sort(() => Math.random() - 0.5);
+    const firstTournament = shuffledTournaments[0];
+    const secondTournament = shuffledTournaments[1];
+    const thirdTournament = shuffledTournaments[2];
 
     // Create winners with flat profit shares (no bonuses)
     const winners = [
