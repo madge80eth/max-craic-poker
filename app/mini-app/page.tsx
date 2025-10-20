@@ -27,7 +27,7 @@ export default function MiniApp() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [totalEntries, setTotalEntries] = useState(0);
 
-  // Initialize SDK
+  // Initialize SDK - CRITICAL: Prevents Farcaster hang
   useEffect(() => {
     async function init() {
       try {
@@ -219,7 +219,7 @@ export default function MiniApp() {
           ))}
 
           <p className="text-center text-purple-200 text-sm mb-6 px-4">
-            If I cash in this tournament, the winner gets {winners[0]?.profitShare}% of the profit + {winners[1]?.profitShare}% + {winners[2]?.profitShare}% as a thank you for supporting MCP.
+            If I cash in these tournaments, the winners get their profit share as a thank you for supporting MCP.
           </p>
 
           <div className="bg-gradient-to-r from-red-600 to-red-700 rounded-xl p-6 text-center border-2 border-red-500 shadow-lg">
@@ -228,7 +228,7 @@ export default function MiniApp() {
               Join the stream to see how the community game unfolds! Chat participants get $MCP airdrops.
             </p>
             <a 
-              href="https://warpcast.com/maxcraic" 
+              href="https://retake.tv/live/68b58fa755320f51930c9081" 
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 bg-white text-red-600 px-6 py-3 rounded-lg font-bold hover:bg-red-50 transition-colors"
@@ -294,6 +294,67 @@ export default function MiniApp() {
           <h1 className="text-3xl font-bold text-white mb-2">Community Draw</h1>
           <p className="text-purple-200 text-sm uppercase tracking-wide">MAX CRAIC POKER</p>
         </div>
+
+        {tournaments.length > 0 && (
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 mb-6 border border-white/20">
+            <h2 className="text-white font-bold mb-3">Today's Tournaments:</h2>
+            <div className="space-y-2">
+              {tournaments.map((tournament, index) => (
+                <div key={index} className="bg-white/5 rounded-lg p-3 border border-white/10">
+                  <p className="text-white font-medium text-sm">{tournament.name}</p>
+                  <p className="text-purple-300 text-xs">Buy-in: {tournament.buyIn}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 mb-6 border border-white/20">
+          <div className="flex items-center gap-3 mb-4">
+            <Clock className="w-6 h-6 text-purple-300" />
+            <div>
+              <p className="text-white font-semibold">Stream starts:</p>
+              <p className="text-purple-200 text-sm">{formatStreamTime()}</p>
+            </div>
+          </div>
+          
+          <div className="text-center py-4">
+            <p className="text-5xl font-bold text-white mb-2">
+              {String(timeLeft.hours).padStart(2, '0')}:
+              {String(timeLeft.minutes).padStart(2, '0')}:
+              {String(timeLeft.seconds).padStart(2, '0')}
+            </p>
+            <p className="text-purple-300 text-sm">Winners announced 30 mins before</p>
+          </div>
+        </div>
+
+        {!isConnected ? (
+          <div className="text-center">
+            <p className="text-purple-200 mb-4">Connect your wallet to enter the community draw</p>
+          </div>
+        ) : (
+          <>
+            <button
+              onClick={handleEnter}
+              disabled={isLoading}
+              className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:from-purple-500 hover:to-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed mb-4"
+            >
+              {isLoading ? 'Entering...' : 'Enter Draw'}
+            </button>
+
+            {error && (
+              <p className="text-red-300 text-center text-sm">{error}</p>
+            )}
+
+            <p className="text-purple-200 text-xs text-center">
+              Winners randomly selected 30 minutes before stream start
+            </p>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}</div>
 
         {tournaments.length > 0 && (
           <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 mb-6 border border-white/20">

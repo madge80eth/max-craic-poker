@@ -15,7 +15,7 @@ interface TournamentsData {
 
 export async function POST(request: NextRequest) {
   try {
-    // Check if winner already exists
+    // Check if winners already exist
     const existingWinners = await redis.get('winners');
     if (existingWinners) {
       return NextResponse.json({
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Shuffle entries and tournaments
+    // Shuffle entries and tournaments to ensure randomness
     const shuffledEntries = [...entryArray].sort(() => Math.random() - 0.5);
     const shuffledTournaments = [...tournaments].sort(() => Math.random() - 0.5);
 
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
       streamStartTime: tournamentsData.streamStartTime
     };
 
-    // Store winners
+    // Store winners in Redis
     await redis.set('winners', JSON.stringify(drawData));
 
     return NextResponse.json({
