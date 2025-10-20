@@ -1,126 +1,132 @@
 import { NextRequest, NextResponse } from 'next/server';
-import redis from '@/lib/redis';
-import fs from 'fs';
-import path from 'path';
+import { Redis } from '@upstash/redis';
 
-interface Tournament {
-  name: string;
-  buyIn: string;
-}
-
-interface TournamentsData {
-  streamStartTime: string;
-  tournaments: Tournament[];
-}
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
 export async function POST(request: NextRequest) {
   try {
-    // Check if winners already exist
-    const existingWinners = await redis.get('winners');
-    if (existingWinners) {
-      return NextResponse.json({
-        success: false,
-        message: 'Winners already drawn for this session'
-      });
-    }
-
     // Get all entries
-    const entries = await redis.hgetall('entries');
+    const entries = await redis.hgetall('raffle_entries');
     
     if (!entries || Object.keys(entries).length === 0) {
-      return NextResponse.json({
-        success: false,
-        message: 'No entries to draw from'
-      });
+      return NextResponse.json(
+        { success: false, message: 'No entries found' },
+        { status: 400 }
+      );
     }
 
-    const entryArray = Object.values(entries).map((entry: any) => 
-      typeof entry === 'string' ? JSON.parse(entry) : entry
-    );
+    // Convert entries to array and parse JSON strings
+    const entryArray = Object.entries(entries).map(([address, data]) => {
+      const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+      return {
+        walletAddress: address,
+        ...parsed
+      };
+    });
 
     if (entryArray.length < 3) {
-      return NextResponse.json({
-        success: false,
-        message: `Need at least 3 entries. Currently have ${entryArray.length}`
-      });
+      return NextResponse.json(
+        { success: false, message: `Need at least 3 entries for draw. Currently have ${entryArray.length}` },
+        { status: 400 }
+      );
     }
 
     // Load tournaments
-    const tournamentsPath = path.join(process.cwd(), 'public', 'tournaments.json');
-    const tournamentsFile = fs.readFileSync(tournamentsPath, 'utf-8');
-    const tournamentsData: TournamentsData = JSON.parse(tournamentsFile);
-    const tournaments = tournamentsData.tournaments;
-
-    if (tournaments.length < 3) {
+    const tournamentsResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/tournaments.json`);
+    const tournaments = await tournamentsResponse.json();
+    
+    if (!Array.isArray(tournaments) || tournaments.length === 0) {
       return NextResponse.json({
         success: false,
-        message: 'Need at least 3 tournaments defined'
-      });
+        message: 'No tournaments available'
+      }, { status: 500 });
     }
 
-    // Shuffle entries and tournaments to ensure randomness
-    const shuffledEntries = [...entryArray].sort(() => Math.random() - 0.5);
+    // Shuffle entries and pick first 3 as winners
+    const shuffled = [...entryArray].sort(() => Math.random() - 0.5);
+    
+    const firstPlace = shuffled[0];
+    const secondPlace = shuffled[1];
+    const thirdPlace = shuffled[2];
+
+    // Shuffle tournaments and assign UNIQUE ones to each winner
     const shuffledTournaments = [...tournaments].sort(() => Math.random() - 0.5);
+    const firstTournament = shuffledTournaments[0];
+    const secondTournament = shuffledTournaments[1];
+    const thirdTournament = shuffledTournaments[2];
 
-    // Select 3 unique winners with 3 unique tournaments
-    const profitShares = [6, 5, 4];
-    const winners = shuffledEntries.slice(0, 3).map((entry, index) => ({
-      place: index + 1,
-      walletAddress: entry.walletAddress,
-      tournament: shuffledTournaments[index].name,
-      tournamentBuyIn: shuffledTournaments[index].buyIn,
-      profitShare: profitShares[index]
-    }));
+    // Create winners with flat profit shares (no bonuses)
+    const winners = [
+      {
+        place: 1,
+        walletAddress: firstPlace.walletAddress,
+        tournament: firstTournament.name,
+        tournamentBuyIn: firstTournament.buyIn,
+        profitShare: 6
+      },
+      {
+        place: 2,
+        walletAddress: secondPlace.walletAddress,
+        tournament: secondTournament.name,
+        tournamentBuyIn: secondTournament.buyIn,
+        profitShare: 5
+      },
+      {
+        place: 3,
+        walletAddress: thirdPlace.walletAddress,
+        tournament: thirdTournament.name,
+        tournamentBuyIn: thirdTournament.buyIn,
+        profitShare: 4
+      }
+    ];
 
-    const drawData = {
+    // Store winners
+    await redis.set('raffle_winners', JSON.stringify({
       winners,
       drawnAt: new Date().toISOString(),
-      totalEntries: entryArray.length,
-      streamStartTime: tournamentsData.streamStartTime
-    };
-
-    // Store winners in Redis
-    await redis.set('winners', JSON.stringify(drawData));
+      totalEntries: entryArray.length
+    }));
 
     return NextResponse.json({
       success: true,
-      ...drawData
+      winners,
+      totalEntries: entryArray.length,
+      message: 'Winners drawn successfully!'
     });
 
   } catch (error) {
     console.error('Draw error:', error);
-    return NextResponse.json({
-      success: false,
-      message: 'Failed to draw winners'
-    }, { status: 500 });
+    return NextResponse.json(
+      { success: false, message: 'Draw failed', error: String(error) },
+      { status: 500 }
+    );
   }
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const winners = await redis.get('winners');
+    const winnersData = await redis.get('raffle_winners');
     
-    if (!winners) {
-      return NextResponse.json({
-        success: true,
-        hasWinner: false,
-        message: 'No winner drawn yet'
-      });
+    if (!winnersData) {
+      return NextResponse.json(
+        { success: false, message: 'No winners drawn yet' },
+        { status: 404 }
+      );
     }
-
-    const drawData = typeof winners === 'string' ? JSON.parse(winners) : winners;
 
     return NextResponse.json({
       success: true,
-      hasWinner: true,
-      ...drawData
+      ...JSON.parse(winnersData as string)
     });
 
   } catch (error) {
-    console.error('Get draw error:', error);
-    return NextResponse.json({
-      success: false,
-      message: 'Failed to fetch draw data'
-    }, { status: 500 });
+    console.error('Get winners error:', error);
+    return NextResponse.json(
+      { success: false, message: 'Failed to get winners' },
+      { status: 500 }
+    );
   }
 }

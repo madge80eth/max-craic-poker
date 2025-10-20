@@ -1,16 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
-import redis from '@/lib/redis';
+import { Redis } from '@upstash/redis';
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
 export async function POST(request: NextRequest) {
   try {
-    // Clear all data using consistent keys
-    await redis.del('entries');
-    await redis.del('winners');
+    // Clear all raffle data
+    await redis.del('raffle_entries');
+    await redis.del('raffle_winners');
+    await redis.del('raffle_timer');
 
     return NextResponse.json({
       success: true,
       message: 'System reset successfully. Ready for new raffle session.',
-      cleared: ['entries', 'winners']
+      cleared: ['raffle_entries', 'raffle_winners', 'raffle_timer']
     });
 
   } catch (error) {
@@ -26,8 +32,9 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     // Return current system status
-    const entries = await redis.hgetall('entries');
-    const winnersData = await redis.get('winners');
+    const entries = await redis.hgetall('raffle_entries');
+    const winnersData = await redis.get('raffle_winners');
+    const timerData = await redis.get('raffle_timer');
     
     const totalEntries = entries ? Object.keys(entries).length : 0;
     
@@ -37,11 +44,22 @@ export async function GET(request: NextRequest) {
       winners = parsed.winners || null;
     }
 
+    let timeRemaining = 0;
+    if (timerData) {
+      const timer = typeof timerData === 'string' ? JSON.parse(timerData) : timerData;
+      if (timer?.endTime) {
+        const now = Date.now();
+        const end = new Date(timer.endTime).getTime();
+        timeRemaining = Math.max(0, Math.floor((end - now) / 1000));
+      }
+    }
+
     return NextResponse.json({
       success: true,
       totalEntries,
-      hasWinner: !!winners,
-      winnersCount: winners ? winners.length : 0
+      hasWinners: !!winners,
+      winnersCount: winners ? winners.length : 0,
+      timeRemaining
     });
 
   } catch (error) {
