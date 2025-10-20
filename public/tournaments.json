@@ -1,11 +1,8 @@
-{
-  "streamStartTime": "2025-10-23T11:00:00Z",
-  "tournaments": [
-    { "name": "Sunday Warm-Up $10K Gtd", "buyIn": "$22" },
-    { "name": "Progressive KO 6-Max $1.5K Gtd", "buyIn": "$16.50" },
-    { "name": "Bounty Builder $5K Gtd", "buyIn": "$11" },
-    { "name": "Mystery Bounty $3K Gtd", "buyIn": "$11" },
-    { "name": "Turbo Rebuy $2K Gtd", "buyIn": "$8.80" },
-    { "name": "Deep Stack PKO $1K Gtd", "buyIn": "$5.50" }
-  ]
-}
+[
+  { "name": "Mini Sunday Starter $8K Gtd", "buyIn": "$11" },
+  { "name": "Progressive KO 6-Max $750 Gtd", "buyIn": "$11" },
+  { "name": "Bounty Builder $3K Gtd", "buyIn": "$4.40" },
+  { "name": "Early Mystery Bounty $2,000 Gtd", "buyIn": "$8.80" },
+  { "name": "€1,000 GTD Rebuy", "buyIn": "€5" },
+  { "name": "€10 Bounty Hunter Prime €1,500 Gtd", "buyIn": "€10" }
+]
