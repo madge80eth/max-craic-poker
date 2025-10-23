@@ -2,7 +2,7 @@
   "frame": {
     "version": "1",
     "name": "Max Craic Poker",
-    "homeUrl": "https://max-craic-poker.vercel.app/mini-app",
+    "homeUrl": "https://max-craic-poker.vercel.app",
     "iconUrl": "https://max-craic-poker.vercel.app/mcp-logo.png",
     "splashImageUrl": "https://max-craic-poker.vercel.app/mcp-logo.png",
     "splashBackgroundColor": "#6B46C1",
