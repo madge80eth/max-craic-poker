@@ -2,12 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import { useAccount } from 'wagmi';
-import { Trophy, Clock, ExternalLink } from 'lucide-react';
+import { Trophy, Clock, ExternalLink, Share2 } from 'lucide-react';
 import { sdk } from '@farcaster/frame-sdk';
 
 interface Tournament {
   name: string;
   buyIn: string;
+}
+
+interface TournamentsData {
+  streamStartTime: string;
+  tournaments: Tournament[];
 }
 
 interface Winner {
@@ -23,11 +28,13 @@ export default function MiniApp() {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [hasEntered, setHasEntered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [timeRemaining, setTimeRemaining] = useState(0);
   const [winners, setWinners] = useState<Winner[] | null>(null);
   const [userWinnerInfo, setUserWinnerInfo] = useState<Winner | null>(null);
+  const [streamStartTime, setStreamStartTime] = useState<Date | null>(null);
+  const [timeUntilStream, setTimeUntilStream] = useState<string>('');
 
-  // Call sdk.actions.ready() to dismiss Farcaster splash screen
+  // CRITICAL: Call sdk.actions.ready() to dismiss Farcaster splash screen
+  // DO NOT REMOVE - Prevents purple screen hang on Farcaster
   useEffect(() => {
     const initSDK = async () => {
       try {
@@ -39,14 +46,62 @@ export default function MiniApp() {
     initSDK();
   }, []);
 
+  // Load tournaments and stream start time
   useEffect(() => {
     fetch('/tournaments.json')
       .then(res => res.json())
-      .then(data => {
-        setTournaments(Array.isArray(data) ? data : data.tournaments || []);
+      .then((data: TournamentsData | Tournament[]) => {
+        if (Array.isArray(data)) {
+          // Old format - just tournaments array
+          setTournaments(data);
+        } else {
+          // New format - object with streamStartTime and tournaments
+          setTournaments(data.tournaments || []);
+          if (data.streamStartTime) {
+            setStreamStartTime(new Date(data.streamStartTime));
+          }
+        }
       });
   }, []);
 
+  // Stream countdown timer
+  useEffect(() => {
+    if (!streamStartTime) return;
+
+    const updateCountdown = () => {
+      const now = new Date().getTime();
+      const streamTime = streamStartTime.getTime();
+      const difference = streamTime - now;
+
+      if (difference > 0) {
+        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+        
+        if (days > 0) {
+          setTimeUntilStream(`${days}d ${hours}h ${minutes}m`);
+        } else if (hours > 0) {
+          setTimeUntilStream(`${hours}h ${minutes}m`);
+        } else {
+          setTimeUntilStream(`${minutes}m`);
+        }
+
+        // Auto-trigger draw 30 minutes before stream
+        const thirtyMinsInMs = 30 * 60 * 1000;
+        if (difference <= thirtyMinsInMs && difference > (thirtyMinsInMs - 60000) && !winners) {
+          triggerAutoDraw();
+        }
+      } else {
+        setTimeUntilStream('Stream is live!');
+      }
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 60000); // Update every minute
+    return () => clearInterval(interval);
+  }, [streamStartTime, winners]);
+
+  // Check user status
   useEffect(() => {
     if (!address) return;
 
@@ -58,24 +113,24 @@ export default function MiniApp() {
         if (data.hasEntered) {
           setHasEntered(true);
         }
-        setTimeRemaining(data.timeRemaining);
         setWinners(data.winners);
         setUserWinnerInfo(data.winnerInfo);
       }
     };
 
     checkStatus();
-    const interval = setInterval(checkStatus, 5000);
+    const interval = setInterval(checkStatus, 10000); // Check every 10 seconds
     return () => clearInterval(interval);
   }, [address]);
 
-  useEffect(() => {
-    if (timeRemaining <= 0) return;
-    const timer = setInterval(() => {
-      setTimeRemaining(prev => Math.max(0, prev - 1));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, [timeRemaining]);
+  const triggerAutoDraw = async () => {
+    try {
+      console.log('Auto-triggering draw 30 mins before stream...');
+      await fetch('/api/draw', { method: 'POST' });
+    } catch (error) {
+      console.error('Auto-draw error:', error);
+    }
+  };
 
   const handleEnter = async () => {
     if (!address || isLoading) return;
@@ -102,13 +157,6 @@ export default function MiniApp() {
     }
   };
 
-  const formatTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600);
-    const mins = Math.floor((seconds % 3600) / 60);
-    const secs = seconds % 60;
-    return `${hours}h ${mins}m ${secs}s`;
-  };
-
   const getPlaceEmoji = (place: number) => {
     if (place === 1) return '🥇';
     if (place === 2) return '🥈';
@@ -123,6 +171,18 @@ export default function MiniApp() {
     return 'from-blue-600 to-purple-600';
   };
 
+  const formatStreamTime = () => {
+    if (!streamStartTime) return '';
+    return streamStartTime.toLocaleString('en-GB', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZoneName: 'short'
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
       <div className="max-w-2xl mx-auto space-y-6">
@@ -133,14 +193,18 @@ export default function MiniApp() {
           <p className="text-blue-200">Community-Backed Tournaments</p>
         </div>
 
-        {/* Timer */}
-        {timeRemaining > 0 && !winners && (
-          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20 text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Clock className="w-5 h-5 text-blue-300" />
-              <p className="text-white/80 text-sm">Draw in</p>
+        {/* Stream Countdown - Always Visible */}
+        {streamStartTime && !winners && (
+          <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-3">
+                <Clock className="w-6 h-6 text-blue-300" />
+                <h3 className="text-xl font-bold text-white">Next Live Stream</h3>
+              </div>
+              <p className="text-3xl font-bold text-white mb-2">{timeUntilStream}</p>
+              <p className="text-blue-200 text-sm">{formatStreamTime()}</p>
+              <p className="text-white/60 text-xs mt-3">Winners announced 30 mins before stream</p>
             </div>
-            <p className="text-3xl font-bold text-white">{formatTime(timeRemaining)}</p>
           </div>
         )}
 
@@ -182,7 +246,7 @@ export default function MiniApp() {
               </div>
             ))}
 
-            {/* User-specific message */}
+            {/* User-specific winner message */}
             {userWinnerInfo && (
               <div className="bg-green-600/20 backdrop-blur-sm rounded-lg p-6 border border-green-400/30">
                 <div className="text-center">
@@ -199,7 +263,7 @@ export default function MiniApp() {
               </div>
             )}
 
-            {/* Stream CTA */}
+            {/* Stream CTA for Winners */}
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
               <h3 className="text-xl font-bold text-white mb-3 text-center">Watch Live</h3>
               <p className="text-white/80 mb-4 text-center text-sm">
@@ -264,17 +328,42 @@ export default function MiniApp() {
           </div>
         )}
 
-        {/* Entered Confirmation */}
+        {/* Entered Confirmation with Sharing Reminder */}
         {!winners && hasEntered && (
           <div className="space-y-4">
+            {/* Entry Confirmation */}
             <div className="bg-gradient-to-r from-green-600 to-blue-600 rounded-lg p-6 border border-white/20 text-center">
               <div className="text-5xl mb-4">✅</div>
               <h2 className="text-2xl font-bold text-white mb-2">You're Entered!</h2>
-              <p className="text-white/90">
+              <p className="text-white/90 mb-4">
                 You'll be randomly assigned to a tournament when winners are drawn.
               </p>
+              <div className="bg-white/10 rounded-lg p-4">
+                <p className="text-white/80 text-sm">
+                  Winners earn <span className="font-bold text-white">6%, 5%, or 4%</span> profit share
+                </p>
+              </div>
             </div>
 
+            {/* Sharing Reminder - DOUBLE REWARDS */}
+            <div className="bg-gradient-to-r from-yellow-600 to-orange-600 rounded-lg p-6 border border-yellow-400/30">
+              <div className="flex items-start gap-3 mb-3">
+                <Share2 className="w-6 h-6 text-white flex-shrink-0 mt-1" />
+                <div>
+                  <h3 className="text-xl font-bold text-white mb-2">Share to DOUBLE Your Rewards!</h3>
+                  <p className="text-white/90 text-sm mb-3">
+                    Share this post and if you win, your profit share doubles:
+                  </p>
+                  <div className="bg-white/20 rounded-lg p-3 space-y-1">
+                    <p className="text-white font-bold">🥇 1st Place: 6% → <span className="text-yellow-200">12%</span></p>
+                    <p className="text-white font-bold">🥈 2nd Place: 5% → <span className="text-yellow-200">10%</span></p>
+                    <p className="text-white font-bold">🥉 3rd Place: 4% → <span className="text-yellow-200">8%</span></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Stream CTA */}
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
               <h3 className="text-xl font-bold text-white mb-3 text-center">Join the Stream</h3>
               <p className="text-white/80 mb-4 text-center text-sm">
