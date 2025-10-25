@@ -233,14 +233,20 @@ export default function MiniApp() {
           </div>
         )}
 
-        {/* Stream is LIVE banner - Past stream time, no winners yet */}
+        {/* Stream is LIVE banner - Past stream time, no winners yet (clickable) */}
         {streamStartTime && !isStreamInFuture && !winners && timeUntilStream && (
-          <div className="bg-gradient-to-r from-red-600 to-pink-600 rounded-lg p-6 border border-white/20 animate-pulse">
+          <a
+            href="https://retake.tv/live/68b58fa755320f51930c9081"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20 hover:bg-white/15 transition-colors cursor-pointer"
+          >
             <div className="text-center">
-              <p className="text-3xl font-bold text-white">{timeUntilStream}</p>
-              <p className="text-white/90 text-sm mt-2">{formatStreamTime()}</p>
+              <p className="text-3xl font-bold text-white mb-2">{timeUntilStream}</p>
+              <p className="text-blue-200 text-sm mb-2">{formatStreamTime()}</p>
+              <p className="text-white/80 text-sm">👉 Click to watch live</p>
             </div>
-          </div>
+          </a>
         )}
 
         {/* Winners Display */}
@@ -317,8 +323,8 @@ export default function MiniApp() {
           </div>
         )}
 
-        {/* Tournaments Display - Only show before winners drawn */}
-        {!winners && tournaments.length > 0 && (
+        {/* Tournaments Display - Only show for FUTURE streams (before winners drawn) */}
+        {!winners && isStreamInFuture && tournaments.length > 0 && (
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
             <h2 className="text-2xl font-bold text-white mb-4 text-center">Upcoming Tournaments</h2>
             <div className="space-y-3">
@@ -335,8 +341,8 @@ export default function MiniApp() {
           </div>
         )}
 
-        {/* Entry Section */}
-        {!winners && !hasEntered && (
+        {/* Entry Section - Only show for FUTURE streams */}
+        {!winners && !hasEntered && isStreamInFuture && (
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
             <div className="text-center mb-4">
               {isConnected && address ? (
@@ -363,8 +369,8 @@ export default function MiniApp() {
           </div>
         )}
 
-        {/* Entered Confirmation with Sharing Reminder */}
-        {!winners && hasEntered && (
+        {/* Entered Confirmation with Sharing Reminder - Only for FUTURE streams */}
+        {!winners && hasEntered && isStreamInFuture && (
           <div className="space-y-4">
             {/* Entry Confirmation */}
             <div className="bg-gradient-to-r from-green-600 to-blue-600 rounded-lg p-6 border border-white/20 text-center">
