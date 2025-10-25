@@ -160,9 +160,6 @@ export default function MiniApp() {
       const data = await res.json();
       if (data.success) {
         setHasEntered(true);
-
-        // Trigger native share prompt after successful entry
-        setTimeout(() => handleShare(), 1000);
       }
     } catch (error) {
       console.error('Entry error:', error);
