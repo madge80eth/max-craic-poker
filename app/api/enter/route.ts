@@ -45,10 +45,34 @@ export async function POST(request: NextRequest) {
       timestamp: Date.now()
     };
 
-    // Store entry
+    // Store entry in current draw pool
     await redis.hset('raffle_entries', { [walletAddress]: JSON.stringify(entry) });
 
-    // Get total entries count
+    // Update persistent entry history (never cleared by reset)
+    const historyKey = 'entry_history';
+    const existingHistory = await redis.hget(historyKey, walletAddress);
+
+    let historyData;
+    if (existingHistory) {
+      const parsed = typeof existingHistory === 'string' ? JSON.parse(existingHistory) : existingHistory;
+      historyData = {
+        totalEntries: parsed.totalEntries + 1,
+        lastEntry: new Date().toISOString(),
+        firstEntry: parsed.firstEntry,
+        sessions: [...(parsed.sessions || []), new Date().toISOString()]
+      };
+    } else {
+      historyData = {
+        totalEntries: 1,
+        lastEntry: new Date().toISOString(),
+        firstEntry: new Date().toISOString(),
+        sessions: [new Date().toISOString()]
+      };
+    }
+
+    await redis.hset(historyKey, { [walletAddress]: JSON.stringify(historyData) });
+
+    // Get total entries count for current draw
     const totalEntries = await redis.hlen('raffle_entries');
 
     return NextResponse.json({

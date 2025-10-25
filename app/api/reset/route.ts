@@ -8,15 +8,20 @@ const redis = new Redis({
 
 export async function POST(request: NextRequest) {
   try {
-    // Clear all raffle data
-    await redis.del('raffle_entries');
-    await redis.del('raffle_winners');
-    await redis.del('raffle_timer');
+    // Clear current session data only
+    await redis.del('raffle_entries');  // Current draw pool
+    await redis.del('raffle_winners');  // Last session winners
+    await redis.del('raffle_timer');    // Session timer
+
+    // IMPORTANT: entry_history is NEVER cleared
+    // This key tracks all-time participation stats for leaderboard
+    // Only manual database maintenance should touch this
 
     return NextResponse.json({
       success: true,
-      message: 'System reset successfully. Ready for new raffle session.',
-      cleared: ['raffle_entries', 'raffle_winners', 'raffle_timer']
+      message: 'Session reset successfully. Ready for new raffle session.',
+      cleared: ['raffle_entries', 'raffle_winners', 'raffle_timer'],
+      preserved: ['entry_history']
     });
 
   } catch (error) {

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAccount } from 'wagmi';
-import { Trophy, Clock, ExternalLink, Share2 } from 'lucide-react';
+import { Trophy, Clock, ExternalLink, Share2, Home, BarChart3, Video, Info } from 'lucide-react';
 import { sdk } from '@farcaster/frame-sdk';
 import { useComposeCast } from '@coinbase/onchainkit/minikit';
 
@@ -24,9 +24,19 @@ interface Winner {
   profitShare: number;
 }
 
+interface LeaderboardEntry {
+  walletAddress: string;
+  totalEntries: number;
+  lastEntry: string;
+  rank: number;
+}
+
+type TabType = 'home' | 'leaderboard' | 'media' | 'info';
+
 export default function MiniApp() {
   const { address, isConnected } = useAccount();
   const { composeCast } = useComposeCast();
+  const [activeTab, setActiveTab] = useState<TabType>('home');
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [hasEntered, setHasEntered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -35,6 +45,9 @@ export default function MiniApp() {
   const [streamStartTime, setStreamStartTime] = useState<Date | null>(null);
   const [timeUntilStream, setTimeUntilStream] = useState<string>('');
   const [isStreamInFuture, setIsStreamInFuture] = useState(true);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [userRank, setUserRank] = useState<any>(null);
+  const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(false);
 
   // CRITICAL: Call sdk.actions.ready() to dismiss Farcaster splash screen
   // DO NOT REMOVE - Prevents purple screen hang on Farcaster
@@ -179,6 +192,31 @@ export default function MiniApp() {
     }
   };
 
+  // Fetch leaderboard when tab switches to leaderboard
+  useEffect(() => {
+    if (activeTab === 'leaderboard' && leaderboard.length === 0) {
+      fetchLeaderboard();
+    }
+  }, [activeTab]);
+
+  const fetchLeaderboard = async () => {
+    setIsLoadingLeaderboard(true);
+    try {
+      const url = address ? `/api/leaderboard?wallet=${address}` : '/api/leaderboard';
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (data.success) {
+        setLeaderboard(data.leaderboard);
+        setUserRank(data.userRank);
+      }
+    } catch (error) {
+      console.error('Leaderboard fetch error:', error);
+    } finally {
+      setIsLoadingLeaderboard(false);
+    }
+  };
+
   const getPlaceEmoji = (place: number) => {
     if (place === 1) return '🥇';
     if (place === 2) return '🥈';
@@ -205,15 +243,28 @@ export default function MiniApp() {
     });
   };
 
+  const formatWalletAddress = (wallet: string) => {
+    return `${wallet.slice(0, 6)}...${wallet.slice(-4)}`;
+  };
+
+  const formatDate = (isoString: string) => {
+    const date = new Date(isoString);
+    return date.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' });
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4">
+    <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 p-4 pb-24">
       <div className="max-w-2xl mx-auto space-y-6">
-        
+
         {/* Header */}
         <div className="text-center py-6">
           <h1 className="text-4xl font-bold text-white mb-2">Max Craic Poker</h1>
           <p className="text-blue-200">Community-Backed Tournaments</p>
         </div>
+
+        {/* HOME TAB CONTENT */}
+        {activeTab === 'home' && (
+          <>
 
         {/* Stream Countdown - Only show for FUTURE streams when no winners yet */}
         {streamStartTime && isStreamInFuture && !winners && (
@@ -272,14 +323,23 @@ export default function MiniApp() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-bold text-white">{winner.profitShare}%</p>
-                    <p className="text-white/80 text-xs">profit share</p>
+                    <Trophy className="w-8 h-8 text-white mx-auto mb-1" />
                   </div>
                 </div>
 
-                <div className="bg-white/10 rounded-lg p-3">
+                <div className="bg-white/10 rounded-lg p-3 mb-3">
                   <p className="text-white font-semibold mb-1">{winner.tournament}</p>
                   <p className="text-white/80 text-sm">Buy-in: {winner.tournamentBuyIn}</p>
+                </div>
+
+                <div className="bg-white/20 rounded-lg p-3">
+                  <p className="text-white/90 text-sm font-medium mb-1">Profit Share:</p>
+                  <p className="text-white text-lg font-bold">
+                    {winner.profitShare}% base + {winner.profitShare}% share bonus
+                  </p>
+                  <p className="text-yellow-200 text-sm mt-1">
+                    = {winner.profitShare * 2}% total if you shared!
+                  </p>
                 </div>
               </div>
             ))}
@@ -426,6 +486,192 @@ export default function MiniApp() {
             </div>
           </div>
         )}
+          </>
+        )}
+
+        {/* LEADERBOARD TAB CONTENT */}
+        {activeTab === 'leaderboard' && (
+          <div className="space-y-6">
+            <h2 className="text-3xl font-bold text-white text-center">Community Leaderboard</h2>
+            <p className="text-blue-200 text-center text-sm">Top participants in Max Craic Poker draws</p>
+
+            {isLoadingLeaderboard ? (
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-12 border border-white/20 text-center">
+                <p className="text-white">Loading leaderboard...</p>
+              </div>
+            ) : leaderboard.length === 0 ? (
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-12 border border-white/20 text-center">
+                <Trophy className="w-16 h-16 text-purple-400 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-white mb-2">No Entries Yet</h3>
+                <p className="text-blue-200">Be the first to enter and claim the top spot!</p>
+              </div>
+            ) : (
+              <>
+                {leaderboard.map((entry) => (
+                  <div
+                    key={entry.walletAddress}
+                    className={`rounded-lg p-5 border ${
+                      entry.rank <= 3
+                        ? 'bg-gradient-to-r from-purple-600/20 to-blue-600/20 border-purple-400/30'
+                        : address?.toLowerCase() === entry.walletAddress.toLowerCase()
+                        ? 'bg-blue-600/20 border-blue-400/30'
+                        : 'bg-white/10 border-white/20'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="text-2xl font-bold text-white w-8">
+                          {entry.rank <= 3 ? (
+                            <span>{entry.rank === 1 ? '🏆' : entry.rank === 2 ? '🥈' : '🥉'}</span>
+                          ) : (
+                            <span className="text-purple-300">#{entry.rank}</span>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-white font-mono text-sm">
+                            {formatWalletAddress(entry.walletAddress)}
+                          </p>
+                          <p className="text-blue-300 text-xs">
+                            Last entry: {formatDate(entry.lastEntry)}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-2xl font-bold text-white">{entry.totalEntries}</p>
+                        <p className="text-blue-300 text-xs">entries</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {userRank && !userRank.isInTop20 && (
+                  <div className="bg-blue-600/20 rounded-lg p-5 border border-blue-400/30 mt-4">
+                    <div className="text-center">
+                      <p className="text-white font-semibold mb-1">Your Rank</p>
+                      <p className="text-3xl font-bold text-blue-300">#{userRank.rank}</p>
+                      <p className="text-blue-200 text-sm">{userRank.totalEntries} entries</p>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* MEDIA TAB CONTENT */}
+        {activeTab === 'media' && (
+          <div className="space-y-6">
+            <h2 className="text-3xl font-bold text-white text-center">Media Hub</h2>
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-12 border border-white/20 text-center">
+              <Video className="w-16 h-16 text-purple-400 mx-auto mb-4" />
+              <h3 className="text-2xl font-bold text-white mb-3">Coming Soon</h3>
+              <p className="text-blue-200 mb-2">Stream VODs and tournament highlights</p>
+              <p className="text-white/60 text-sm">Watch past sessions and big moments!</p>
+            </div>
+          </div>
+        )}
+
+        {/* INFO TAB CONTENT */}
+        {activeTab === 'info' && (
+          <div className="space-y-6">
+            <h2 className="text-3xl font-bold text-white text-center">How It Works</h2>
+
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+              <h3 className="text-xl font-bold text-white mb-3">🎰 The Draw</h3>
+              <p className="text-blue-200 text-sm leading-relaxed">
+                Enter the community draw for free. 3 winners are randomly selected and each assigned to a poker tournament. If that tournament cashes, you earn a share of the profit paid in USDC onchain.
+              </p>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+              <h3 className="text-xl font-bold text-white mb-4">💰 Profit Shares</h3>
+              <div className="space-y-3">
+                <div className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-lg p-4 border border-yellow-500/20">
+                  <p className="text-white font-bold mb-1">🏆 1st Place</p>
+                  <p className="text-blue-200 text-sm">6% profit share (12% if you share!)</p>
+                </div>
+                <div className="bg-gradient-to-r from-gray-400/10 to-gray-500/10 rounded-lg p-4 border border-gray-400/20">
+                  <p className="text-white font-bold mb-1">🥈 2nd Place</p>
+                  <p className="text-blue-200 text-sm">5% profit share (10% if you share!)</p>
+                </div>
+                <div className="bg-gradient-to-r from-amber-600/10 to-amber-700/10 rounded-lg p-4 border border-amber-600/20">
+                  <p className="text-white font-bold mb-1">🥉 3rd Place</p>
+                  <p className="text-blue-200 text-sm">4% profit share (8% if you share!)</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+              <h3 className="text-xl font-bold text-white mb-3">📊 Past Payouts</h3>
+              <p className="text-blue-200 text-sm text-center py-4">
+                Payout history will appear here after first session
+              </p>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+              <h3 className="text-xl font-bold text-white mb-3">🔗 On Base</h3>
+              <p className="text-blue-200 text-sm leading-relaxed">
+                Built on Base - low fees, instant payouts, and fully onchain. Your profit shares are sent directly to your wallet via USDC when tournaments cash.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* BOTTOM NAVIGATION */}
+        <div className="fixed bottom-0 left-0 right-0 bg-gradient-to-t from-purple-900 via-purple-900/95 to-transparent backdrop-blur-md border-t border-white/10">
+          <div className="max-w-2xl mx-auto px-4 py-3">
+            <div className="flex items-center justify-around">
+              <button
+                onClick={() => setActiveTab('home')}
+                className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
+                  activeTab === 'home'
+                    ? 'bg-purple-600 text-white'
+                    : 'text-blue-300 hover:text-white'
+                }`}
+              >
+                <Home className="w-5 h-5" />
+                <span className="text-xs font-medium">Home</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('leaderboard')}
+                className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
+                  activeTab === 'leaderboard'
+                    ? 'bg-purple-600 text-white'
+                    : 'text-blue-300 hover:text-white'
+                }`}
+              >
+                <BarChart3 className="w-5 h-5" />
+                <span className="text-xs font-medium">Leaderboard</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('media')}
+                className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
+                  activeTab === 'media'
+                    ? 'bg-purple-600 text-white'
+                    : 'text-blue-300 hover:text-white'
+                }`}
+              >
+                <Video className="w-5 h-5" />
+                <span className="text-xs font-medium">Media</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab('info')}
+                className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
+                  activeTab === 'info'
+                    ? 'bg-purple-600 text-white'
+                    : 'text-blue-300 hover:text-white'
+                }`}
+              >
+                <Info className="w-5 h-5" />
+                <span className="text-xs font-medium">Info</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   );
