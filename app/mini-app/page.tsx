@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useAccount } from 'wagmi';
 import { Trophy, Clock, ExternalLink, Share2 } from 'lucide-react';
 import { sdk } from '@farcaster/frame-sdk';
+import { useComposeCast } from '@coinbase/onchainkit/minikit';
 
 interface Tournament {
   name: string;
@@ -25,6 +26,7 @@ interface Winner {
 
 export default function MiniApp() {
   const { address, isConnected } = useAccount();
+  const { composeCast } = useComposeCast();
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [hasEntered, setHasEntered] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -32,6 +34,7 @@ export default function MiniApp() {
   const [userWinnerInfo, setUserWinnerInfo] = useState<Winner | null>(null);
   const [streamStartTime, setStreamStartTime] = useState<Date | null>(null);
   const [timeUntilStream, setTimeUntilStream] = useState<string>('');
+  const [isStreamInFuture, setIsStreamInFuture] = useState(true);
 
   // CRITICAL: Call sdk.actions.ready() to dismiss Farcaster splash screen
   // DO NOT REMOVE - Prevents purple screen hang on Farcaster
@@ -64,7 +67,7 @@ export default function MiniApp() {
       });
   }, []);
 
-  // Stream countdown timer
+  // Stream countdown timer with session state detection
   useEffect(() => {
     if (!streamStartTime) return;
 
@@ -73,11 +76,15 @@ export default function MiniApp() {
       const streamTime = streamStartTime.getTime();
       const difference = streamTime - now;
 
+      // STATE DETECTION: Is this a NEW future session or a PAST session?
       if (difference > 0) {
+        // FUTURE SESSION - Show countdown, stream is upcoming
+        setIsStreamInFuture(true);
+
         const days = Math.floor(difference / (1000 * 60 * 60 * 24));
         const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-        
+
         if (days > 0) {
           setTimeUntilStream(`${days}d ${hours}h ${minutes}m`);
         } else if (hours > 0) {
@@ -92,7 +99,11 @@ export default function MiniApp() {
           triggerAutoDraw();
         }
       } else {
-        setTimeUntilStream('Stream is live!');
+        // PAST SESSION - Stream time has passed
+        setIsStreamInFuture(false);
+        // If winners exist, show them (session completed)
+        // If no winners yet, stream is happening now
+        setTimeUntilStream(winners ? '' : 'Stream is live!');
       }
     };
 
@@ -149,11 +160,25 @@ export default function MiniApp() {
       const data = await res.json();
       if (data.success) {
         setHasEntered(true);
+
+        // Trigger native share prompt after successful entry
+        setTimeout(() => handleShare(), 1000);
       }
     } catch (error) {
       console.error('Entry error:', error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleShare = () => {
+    try {
+      composeCast({
+        text: "I just entered the Max Craic Poker community draw! 🎰\n\nWin poker tournament profit shares - paid in USDC onchain 💰",
+        embeds: ['https://max-craic-poker.vercel.app/share']
+      });
+    } catch (error) {
+      console.error('Share error:', error);
     }
   };
 
@@ -193,8 +218,8 @@ export default function MiniApp() {
           <p className="text-blue-200">Community-Backed Tournaments</p>
         </div>
 
-        {/* Stream Countdown - Always Visible */}
-        {streamStartTime && !winners && (
+        {/* Stream Countdown - Only show for FUTURE streams when no winners yet */}
+        {streamStartTime && isStreamInFuture && !winners && (
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-3">
@@ -204,6 +229,16 @@ export default function MiniApp() {
               <p className="text-3xl font-bold text-white mb-2">{timeUntilStream}</p>
               <p className="text-blue-200 text-sm">{formatStreamTime()}</p>
               <p className="text-white/60 text-xs mt-3">Winners announced 30 mins before stream</p>
+            </div>
+          </div>
+        )}
+
+        {/* Stream is LIVE banner - Past stream time, no winners yet */}
+        {streamStartTime && !isStreamInFuture && !winners && timeUntilStream && (
+          <div className="bg-gradient-to-r from-red-600 to-pink-600 rounded-lg p-6 border border-white/20 animate-pulse">
+            <div className="text-center">
+              <p className="text-3xl font-bold text-white">{timeUntilStream}</p>
+              <p className="text-white/90 text-sm mt-2">{formatStreamTime()}</p>
             </div>
           </div>
         )}
@@ -349,16 +384,23 @@ export default function MiniApp() {
             <div className="bg-gradient-to-r from-yellow-600 to-orange-600 rounded-lg p-6 border border-yellow-400/30">
               <div className="flex items-start gap-3 mb-3">
                 <Share2 className="w-6 h-6 text-white flex-shrink-0 mt-1" />
-                <div>
+                <div className="flex-1">
                   <h3 className="text-xl font-bold text-white mb-2">Share to DOUBLE Your Rewards!</h3>
                   <p className="text-white/90 text-sm mb-3">
                     Share this post and if you win, your profit share doubles:
                   </p>
-                  <div className="bg-white/20 rounded-lg p-3 space-y-1">
+                  <div className="bg-white/20 rounded-lg p-3 space-y-1 mb-4">
                     <p className="text-white font-bold">🥇 1st Place: 6% → <span className="text-yellow-200">12%</span></p>
                     <p className="text-white font-bold">🥈 2nd Place: 5% → <span className="text-yellow-200">10%</span></p>
                     <p className="text-white font-bold">🥉 3rd Place: 4% → <span className="text-yellow-200">8%</span></p>
                   </div>
+                  <button
+                    onClick={handleShare}
+                    className="w-full bg-white/20 hover:bg-white/30 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Share2 className="w-5 h-5" />
+                    Share Now
+                  </button>
                 </div>
               </div>
             </div>
