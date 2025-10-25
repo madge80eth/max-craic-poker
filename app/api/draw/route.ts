@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
+import { readFileSync } from 'fs';
+import { join } from 'path';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -34,10 +36,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Load tournaments
-    const tournamentsResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/tournaments.json`);
-    const tournaments = await tournamentsResponse.json();
-    
+    // Load tournaments from filesystem
+    const tournamentsPath = join(process.cwd(), 'public', 'tournaments.json');
+    const tournamentsFile = readFileSync(tournamentsPath, 'utf-8');
+    const tournamentsData = JSON.parse(tournamentsFile);
+    const tournaments = tournamentsData.tournaments;
+
     if (!Array.isArray(tournaments) || tournaments.length === 0) {
       return NextResponse.json({
         success: false,
