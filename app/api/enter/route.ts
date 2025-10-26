@@ -42,7 +42,8 @@ export async function POST(request: NextRequest) {
     const entry = {
       walletAddress,
       platform,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      hasShared: false  // Track if user shared for bonus calculation
     };
 
     // Store entry in current draw pool

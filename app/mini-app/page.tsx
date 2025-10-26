@@ -22,6 +22,7 @@ interface Winner {
   tournament: string;
   tournamentBuyIn: string;
   profitShare: number;
+  hasShared?: boolean;
 }
 
 interface LeaderboardEntry {
@@ -181,12 +182,22 @@ export default function MiniApp() {
     }
   };
 
-  const handleShare = () => {
+  const handleShare = async () => {
     try {
+      // Open native share dialog
       composeCast({
         text: "I just entered the Max Craic Poker community draw! 🎰\n\nWin poker tournament profit shares - paid in USDC onchain 💰",
         embeds: ['https://max-craic-poker.vercel.app/share']
       });
+
+      // Record that user shared (for bonus calculation)
+      if (address) {
+        await fetch('/api/share', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ walletAddress: address })
+        });
+      }
     } catch (error) {
       console.error('Share error:', error);
     }
@@ -312,34 +323,28 @@ export default function MiniApp() {
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <span className="text-4xl">{getPlaceEmoji(winner.place)}</span>
+                    <span className="text-5xl">{getPlaceEmoji(winner.place)}</span>
                     <div>
-                      <h3 className="text-xl font-bold text-white">
+                      <h3 className="text-xl font-bold text-white mb-1">
                         {winner.place === 1 ? '1st' : winner.place === 2 ? '2nd' : '3rd'} Place
                       </h3>
                       <p className="text-white/90 font-mono text-sm">
-                        {winner.walletAddress.slice(0, 6)}...{winner.walletAddress.slice(-4)}
+                        {formatWalletAddress(winner.walletAddress)}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <Trophy className="w-8 h-8 text-white mx-auto mb-1" />
+                    <p className="text-4xl font-bold text-white mb-0">{winner.profitShare}%</p>
+                    <p className="text-white/80 text-xs">profit share</p>
+                    {winner.hasShared && (
+                      <p className="text-green-300 text-xs mt-1 font-bold">+Share Bonus!</p>
+                    )}
                   </div>
                 </div>
 
-                <div className="bg-white/10 rounded-lg p-3 mb-3">
+                <div className="bg-white/10 rounded-lg p-4">
                   <p className="text-white font-semibold mb-1">{winner.tournament}</p>
                   <p className="text-white/80 text-sm">Buy-in: {winner.tournamentBuyIn}</p>
-                </div>
-
-                <div className="bg-white/20 rounded-lg p-3">
-                  <p className="text-white/90 text-sm font-medium mb-1">Profit Share:</p>
-                  <p className="text-white text-lg font-bold">
-                    {winner.profitShare}% base + {winner.profitShare}% share bonus
-                  </p>
-                  <p className="text-yellow-200 text-sm mt-1">
-                    = {winner.profitShare * 2}% total if you shared!
-                  </p>
                 </div>
               </div>
             ))}

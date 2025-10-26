@@ -62,28 +62,31 @@ export async function POST(request: NextRequest) {
     const secondTournament = shuffledTournaments[1];
     const thirdTournament = shuffledTournaments[2];
 
-    // Create winners with flat profit shares (no bonuses)
+    // Create winners with profit shares (doubled if they shared)
     const winners = [
       {
         place: 1,
         walletAddress: firstPlace.walletAddress,
         tournament: firstTournament.name,
         tournamentBuyIn: firstTournament.buyIn,
-        profitShare: 6
+        profitShare: firstPlace.hasShared ? 12 : 6,
+        hasShared: firstPlace.hasShared || false
       },
       {
         place: 2,
         walletAddress: secondPlace.walletAddress,
         tournament: secondTournament.name,
         tournamentBuyIn: secondTournament.buyIn,
-        profitShare: 5
+        profitShare: secondPlace.hasShared ? 10 : 5,
+        hasShared: secondPlace.hasShared || false
       },
       {
         place: 3,
         walletAddress: thirdPlace.walletAddress,
         tournament: thirdTournament.name,
         tournamentBuyIn: thirdTournament.buyIn,
-        profitShare: 4
+        profitShare: thirdPlace.hasShared ? 8 : 4,
+        hasShared: thirdPlace.hasShared || false
       }
     ];
 
