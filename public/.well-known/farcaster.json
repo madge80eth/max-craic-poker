@@ -2,9 +2,9 @@
   "frame": {
     "version": "1",
     "name": "Max Craic Poker",
-    "homeUrl": "https://max-craic-poker.vercel.app",
-    "iconUrl": "https://max-craic-poker.vercel.app/mcp-logo.png",
-    "splashImageUrl": "https://max-craic-poker.vercel.app/mcp-logo.png",
+    "homeUrl": "https://max-craic-poker.vercel.app/mini-app",
+    "iconUrl": "https://max-craic-poker.vercel.app/icon.png",
+    "splashImageUrl": "https://max-craic-poker.vercel.app/splash.png",
     "splashBackgroundColor": "#6B46C1",
     "webhookUrl": "https://max-craic-poker.vercel.app/api/webhook",
     "subtitle": "Enter draw, get paid if I cash",
