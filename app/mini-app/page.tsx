@@ -383,7 +383,8 @@ export default function MiniApp() {
         {/* Tournaments Display - Only show for FUTURE streams (before winners drawn) */}
         {!winners && isStreamInFuture && tournaments.length > 0 && (
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
-            <h2 className="text-2xl font-bold text-white mb-4 text-center">Upcoming Tournaments</h2>
+            <h2 className="text-2xl font-bold text-white mb-4 text-center">What I'm Playing</h2>
+            <p className="text-blue-200 text-center text-sm mb-4">Winners get assigned to one of these tournaments</p>
             <div className="space-y-3">
               {tournaments.map((tournament, index) => (
                 <div

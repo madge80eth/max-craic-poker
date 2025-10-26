@@ -1,7 +1,16 @@
-import Link from 'next/link'
-import { ArrowRight, Trophy, Users } from 'lucide-react'
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function HomePage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // Auto-redirect root to Mini App
+    router.push('/mini-app');
+  }, [router]);
+
   return (
     <div style={{
       minHeight: '100vh',
