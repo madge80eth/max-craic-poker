@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
+import { checkAndResetSession } from '@/lib/session';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -17,11 +18,14 @@ export async function POST(request: NextRequest) {
     const { walletAddress, platform } = body;
 
     if (!walletAddress) {
-      return NextResponse.json({ 
-        success: false, 
-        error: 'Wallet address required' 
+      return NextResponse.json({
+        success: false,
+        error: 'Wallet address required'
       }, { status: 400 });
     }
+
+    // Auto-reset if session changed in tournaments.json
+    await checkAndResetSession();
 
     // Check if already entered
     const existingEntry = await redis.hget('raffle_entries', walletAddress);

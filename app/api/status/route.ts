@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
+import { checkAndResetSession } from '@/lib/session';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -8,6 +9,9 @@ const redis = new Redis({
 
 export async function GET(request: NextRequest) {
   try {
+    // Auto-reset if session changed in tournaments.json
+    await checkAndResetSession();
+
     const searchParams = request.nextUrl.searchParams;
     const walletAddress = searchParams.get('wallet');
 
