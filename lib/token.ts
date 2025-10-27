@@ -1,5 +1,4 @@
-// Token constants (ready for when deployed via Clanker)
-// Do not deploy until grant funding secured (0.5 ETH minimum for liquidity)
+// Token constants (ready for when deployed)
 
 export const TOKEN_CONFIG = {
   name: "Max Craic Poker",
@@ -7,7 +6,7 @@ export const TOKEN_CONFIG = {
   decimals: 18,
   totalSupply: "1000000000", // 1 billion tokens
 
-  // TO BE FILLED AFTER CLANKER DEPLOYMENT:
+  // TO BE FILLED AFTER DEPLOYMENT:
   contractAddress: "", // Base mainnet contract address
   chainId: 8453, // Base
   uniswapPoolUrl: "", // Uniswap V3 pool URL
@@ -16,7 +15,6 @@ export const TOKEN_CONFIG = {
   // Launch info
   deployed: false,
   launchPlanned: true,
-  fundingRequired: "0.5 ETH for liquidity pool",
 };
 
 export const TOKENOMICS = {
@@ -39,28 +37,28 @@ export const TOKENOMICS = {
 };
 
 export const AIRDROP_MECHANICS = {
-  retroactiveRewards: {
-    enabled: true,
-    description: "Early raffle participants get rewarded based on historical entries",
-    formula: "Total entries × multiplier = airdrop allocation",
-  },
-
   liveStreamRewards: {
     enabled: true,
     description: "Active stream chat participants earn tokens during tournaments",
     mechanism: "Real-time distribution during live streams",
   },
 
+  raffleParticipation: {
+    enabled: true,
+    description: "Community draw participants earn rewards",
+    mechanism: "Token rewards for active participation",
+  },
+
   leaderboardRewards: {
     enabled: true,
-    description: "Top participants on leaderboards receive bonus allocations",
+    description: "Monthly leaderboard rankings receive bonus allocations",
     tiers: ["Top 3: Premium rewards", "Top 10: Standard rewards", "Top 20: Base rewards"],
   },
 
   homeGameAccess: {
     enabled: true,
     description: "Top token holders get exclusive access to private home games",
-    requirement: "Top 10 holders by balance",
+    requirement: "Top holders by balance",
   },
 };
 

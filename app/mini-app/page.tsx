@@ -514,7 +514,7 @@ export default function MiniApp() {
                 <p className="text-blue-200 text-sm mt-1">
                   {activeLeaderboard === 'participants'
                     ? 'Most active community members'
-                    : 'Top $MCP token holders'}
+                    : 'Monthly leaderboard'}
                 </p>
               </div>
               <button
@@ -597,21 +597,18 @@ export default function MiniApp() {
               /* Community Champions - Coming Soon */
               <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-sm rounded-lg p-12 border border-purple-400/30 text-center">
                 <Coins className="w-16 h-16 text-purple-400 mx-auto mb-4" />
-                <h3 className="text-2xl font-bold text-white mb-3">Token Rewards Launching Soon</h3>
+                <h3 className="text-2xl font-bold text-white mb-3">Monthly Leaderboard</h3>
                 <p className="text-blue-200 mb-4">
-                  Early participants will be retroactively rewarded with $MCP tokens
+                  Track your monthly rankings and compete for rewards
                 </p>
                 <div className="bg-white/10 rounded-lg p-4 max-w-md mx-auto">
                   <p className="text-white text-sm font-semibold mb-2">Coming Soon:</p>
                   <ul className="text-blue-200 text-sm space-y-1 text-left">
-                    <li>• Top $MCP holders displayed here</li>
-                    <li>• Priority access to exclusive home games</li>
-                    <li>• Community profit-sharing rewards</li>
+                    <li>• Monthly rankings reset</li>
+                    <li>• Exclusive rewards for top performers</li>
+                    <li>• Community recognition</li>
                   </ul>
                 </div>
-                <p className="text-white/60 text-xs mt-4 italic">
-                  Launching after grant funding secured
-                </p>
               </div>
             )}
           </div>
@@ -634,41 +631,6 @@ export default function MiniApp() {
         {activeTab === 'info' && (
           <div className="space-y-6">
             <h2 className="text-3xl font-bold text-white text-center">How It Works</h2>
-
-            {/* Token Info Card - Coming Soon */}
-            <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-sm rounded-lg p-6 border border-purple-400/30">
-              <div className="flex items-start gap-4">
-                <div className="text-4xl">🪙</div>
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="text-xl font-bold text-white">$MCP Token</h3>
-                    <span className="px-2 py-1 bg-yellow-500/20 border border-yellow-500/30 rounded text-yellow-200 text-xs font-bold">
-                      COMING SOON
-                    </span>
-                  </div>
-                  <p className="text-blue-200 text-sm leading-relaxed mb-3">
-                    Community profit-sharing token that rewards active participants. Earn $MCP by engaging in live chat during streams and participating in the community.
-                  </p>
-                  <div className="bg-white/10 rounded-lg p-3 mb-3">
-                    <p className="text-white text-sm font-semibold mb-1">Token Airdrop Program:</p>
-                    <ul className="text-blue-200 text-xs space-y-1 ml-4">
-                      <li>• Live chat participants get airdropped $MCP</li>
-                      <li>• Retroactive rewards for early supporters</li>
-                      <li>• Exclusive home game access for holders</li>
-                    </ul>
-                  </div>
-                  <Link
-                    href="/token"
-                    className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold text-sm py-2 px-4 rounded-lg transition-colors mb-2"
-                  >
-                    Learn More About $MCP →
-                  </Link>
-                  <p className="text-white/60 text-xs italic">
-                    Launching after grant funding secured
-                  </p>
-                </div>
-              </div>
-            </div>
 
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
               <h3 className="text-xl font-bold text-white mb-3">🎰 The Draw</h3>
@@ -706,6 +668,13 @@ export default function MiniApp() {
               <h3 className="text-xl font-bold text-white mb-3">🔗 On Base</h3>
               <p className="text-blue-200 text-sm leading-relaxed">
                 Built on Base - low fees, instant payouts, and fully onchain. Your profit shares are sent directly to your wallet via USDC when tournaments cash.
+              </p>
+            </div>
+
+            <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
+              <h3 className="text-xl font-bold text-white mb-3">🪙 $MCP Token</h3>
+              <p className="text-blue-200 text-sm leading-relaxed">
+                Community token rewarding active stream participants. Coming soon.
               </p>
             </div>
           </div>

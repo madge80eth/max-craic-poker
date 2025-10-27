@@ -1,6 +1,6 @@
 'use client';
 
-import { Coins, Users, Trophy, Home as HomeIcon, TrendingUp, Gift } from 'lucide-react';
+import { Coins, Users, Trophy, Home as HomeIcon, Gift } from 'lucide-react';
 import Link from 'next/link';
 
 export default function TokenPage() {
@@ -16,20 +16,7 @@ export default function TokenPage() {
           </div>
           <p className="text-2xl text-blue-200 mb-2">Max Craic Poker Community Token</p>
           <div className="inline-block px-4 py-2 bg-yellow-500/20 border border-yellow-500/30 rounded-lg">
-            <p className="text-yellow-200 font-bold">🚀 Launching Soon - Pending Grant Funding</p>
-          </div>
-        </div>
-
-        {/* Status Banner */}
-        <div className="bg-gradient-to-r from-blue-600/20 to-purple-600/20 backdrop-blur-sm rounded-lg p-6 border border-blue-400/30">
-          <div className="flex items-start gap-4">
-            <TrendingUp className="w-8 h-8 text-blue-300 flex-shrink-0 mt-1" />
-            <div>
-              <h2 className="text-xl font-bold text-white mb-2">Why We're Waiting</h2>
-              <p className="text-blue-200 text-sm leading-relaxed">
-                We're building responsibly. Token launch requires 0.5 ETH minimum for liquidity pool to ensure fair pricing and prevent manipulation. We're securing grant funding first—family financial responsibility comes before token speculation.
-              </p>
-            </div>
+            <p className="text-yellow-200 font-bold">🚀 Coming Soon</p>
           </div>
         </div>
 
@@ -43,22 +30,22 @@ export default function TokenPage() {
             <div className="flex items-start gap-3">
               <span className="text-xl">🎰</span>
               <div>
-                <p className="font-semibold text-white mb-1">Community Profit-Sharing</p>
-                <p className="text-sm">Token holders receive additional profit share rewards from tournament winnings</p>
+                <p className="font-semibold text-white mb-1">Community Rewards</p>
+                <p className="text-sm">Earn tokens by participating in streams and engaging with the community</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <span className="text-xl">💬</span>
               <div>
-                <p className="font-semibold text-white mb-1">Live Chat Rewards</p>
-                <p className="text-sm">Earn $MCP by participating in live stream chat during tournaments</p>
+                <p className="font-semibold text-white mb-1">Live Chat Engagement</p>
+                <p className="text-sm">Active stream participants earn rewards during tournaments</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
               <span className="text-xl">🏠</span>
               <div>
-                <p className="font-semibold text-white mb-1">Exclusive Home Games</p>
-                <p className="text-sm">Top token holders get priority access to private home game tournaments</p>
+                <p className="font-semibold text-white mb-1">Exclusive Access</p>
+                <p className="text-sm">Token holders get priority access to special events and home games</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -75,7 +62,7 @@ export default function TokenPage() {
         <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
           <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
             <Trophy className="w-6 h-6 text-yellow-400" />
-            Tokenomics (Planned)
+            Tokenomics
           </h2>
           <div className="space-y-4">
             <div className="bg-purple-600/20 rounded-lg p-4 border border-purple-400/30">
@@ -99,77 +86,45 @@ export default function TokenPage() {
                 <p className="text-white/60 text-xs mt-1">Fair launch pool</p>
               </div>
             </div>
-
-            <div className="bg-green-600/20 rounded-lg p-4 border border-green-400/30">
-              <p className="text-white font-semibold mb-2">Creator Revenue Share</p>
-              <p className="text-green-200 text-sm">
-                40% of 1% Uniswap trading fees go to Max Craic Poker treasury for platform development
-              </p>
-            </div>
           </div>
         </div>
 
-        {/* Airdrop Mechanics */}
+        {/* Distribution */}
         <div className="bg-gradient-to-r from-yellow-600/20 to-orange-600/20 backdrop-blur-sm rounded-lg p-6 border border-yellow-400/30">
           <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
             <Gift className="w-6 h-6 text-yellow-400" />
-            Airdrop Program: Creator-to-Audience Rewards
+            How to Earn $MCP
           </h2>
-          <p className="text-yellow-100 mb-4">
-            Unlike traditional airdrops, $MCP rewards flow directly from creator to active community members.
-          </p>
 
           <div className="space-y-3">
             <div className="bg-white/10 rounded-lg p-4">
-              <p className="text-white font-semibold mb-2">🎁 Retroactive Rewards</p>
+              <p className="text-white font-semibold mb-2">💬 Stream Chat Participation</p>
               <p className="text-blue-200 text-sm">
-                Early raffle participants get airdropped tokens based on historical entries
+                Engage in live chat during tournament streams to earn tokens
               </p>
             </div>
 
             <div className="bg-white/10 rounded-lg p-4">
-              <p className="text-white font-semibold mb-2">💬 Live Chat Engagement</p>
+              <p className="text-white font-semibold mb-2">🎰 Raffle Entries</p>
               <p className="text-blue-200 text-sm">
-                Active stream chat participants earn tokens during live tournaments
+                Enter community draws and participate in tournament profit sharing
               </p>
             </div>
 
             <div className="bg-white/10 rounded-lg p-4">
-              <p className="text-white font-semibold mb-2">🏆 Leaderboard Access</p>
+              <p className="text-white font-semibold mb-2">🏆 Leaderboard Rankings</p>
               <p className="text-blue-200 text-sm">
-                Top token holders displayed on "Community Champions" leaderboard
+                Climb the monthly leaderboards for bonus token rewards
               </p>
             </div>
 
             <div className="bg-white/10 rounded-lg p-4">
-              <p className="text-white font-semibold mb-2">🏠 Home Game Priority</p>
+              <p className="text-white font-semibold mb-2">🏠 Exclusive Events</p>
               <p className="text-blue-200 text-sm">
-                Exclusive access to private home game tournaments for top holders
+                Top holders get access to private home game tournaments
               </p>
             </div>
           </div>
-        </div>
-
-        {/* Grant Funding Status */}
-        <div className="bg-blue-600/20 backdrop-blur-sm rounded-lg p-6 border border-blue-400/30">
-          <h2 className="text-xl font-bold text-white mb-3">📋 Funding Status</h2>
-          <div className="space-y-2 text-blue-200 text-sm">
-            <div className="flex items-center gap-2">
-              <span className="text-green-400">✓</span>
-              <p>Base Batches 002 application submitted (Oct 25, 2025)</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-yellow-400">⏳</span>
-              <p>0.5 ETH ad hoc grant incoming from Base Ireland lead</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-yellow-400">⏳</span>
-              <p>Token launch immediately after grant funding secured</p>
-            </div>
-          </div>
-          <p className="text-white/60 text-xs mt-4 italic">
-            Building responsibly—platform first, speculation never.
-          </p>
         </div>
 
         {/* Technical Details */}
@@ -190,7 +145,7 @@ export default function TokenPage() {
             </div>
             <div className="flex justify-between items-center py-2 border-b border-white/10">
               <span className="text-blue-200">Launch Method</span>
-              <span className="text-white font-semibold">Clanker (Farcaster-native)</span>
+              <span className="text-white font-semibold">Fair Launch</span>
             </div>
             <div className="flex justify-between items-center py-2">
               <span className="text-blue-200">Liquidity Pool</span>
@@ -209,7 +164,7 @@ export default function TokenPage() {
             Back to Mini App
           </Link>
           <p className="text-blue-200 text-sm mt-4">
-            Keep entering raffles—early participants will be rewarded!
+            Keep participating—active community members will be rewarded!
           </p>
         </div>
 
