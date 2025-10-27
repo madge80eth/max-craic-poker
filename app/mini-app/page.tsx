@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useAccount } from 'wagmi';
-import { Trophy, Clock, ExternalLink, Share2, Home, BarChart3, Video, Info } from 'lucide-react';
+import { Trophy, Clock, ExternalLink, Share2, Home, BarChart3, Video, Info, ArrowRight, ArrowLeft, Coins } from 'lucide-react';
 import { sdk } from '@farcaster/frame-sdk';
 import { useComposeCast } from '@coinbase/onchainkit/minikit';
+import Link from 'next/link';
 
 interface Tournament {
   name: string;
@@ -12,6 +13,7 @@ interface Tournament {
 }
 
 interface TournamentsData {
+  sessionId: string;
   streamStartTime: string;
   tournaments: Tournament[];
 }
@@ -46,9 +48,11 @@ export default function MiniApp() {
   const [streamStartTime, setStreamStartTime] = useState<Date | null>(null);
   const [timeUntilStream, setTimeUntilStream] = useState<string>('');
   const [isStreamInFuture, setIsStreamInFuture] = useState(true);
+  const [sessionId, setSessionId] = useState<string>('');
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [userRank, setUserRank] = useState<any>(null);
   const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(false);
+  const [activeLeaderboard, setActiveLeaderboard] = useState<'participants' | 'champions'>('participants');
 
   // CRITICAL: Call sdk.actions.ready() to dismiss Farcaster splash screen
   // DO NOT REMOVE - Prevents purple screen hang on Farcaster
@@ -63,7 +67,7 @@ export default function MiniApp() {
     initSDK();
   }, []);
 
-  // Load tournaments and stream start time
+  // Load tournaments, stream start time, and session ID
   useEffect(() => {
     fetch('/tournaments.json')
       .then(res => res.json())
@@ -72,8 +76,9 @@ export default function MiniApp() {
           // Old format - just tournaments array
           setTournaments(data);
         } else {
-          // New format - object with streamStartTime and tournaments
+          // New format - object with sessionId, streamStartTime and tournaments
           setTournaments(data.tournaments || []);
+          setSessionId(data.sessionId || '');
           if (data.streamStartTime) {
             setStreamStartTime(new Date(data.streamStartTime));
           }
@@ -190,12 +195,15 @@ export default function MiniApp() {
         embeds: ['https://max-craic-poker.vercel.app/share']
       });
 
-      // Record that user shared (for bonus calculation)
-      if (address) {
+      // Record that user shared THIS SESSION (for bonus calculation)
+      if (address && sessionId) {
         await fetch('/api/share', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ walletAddress: address })
+          body: JSON.stringify({
+            walletAddress: address,
+            sessionId: sessionId  // Track WHICH session they shared
+          })
         });
       }
     } catch (error) {
@@ -498,21 +506,44 @@ export default function MiniApp() {
         {/* LEADERBOARD TAB CONTENT */}
         {activeTab === 'leaderboard' && (
           <div className="space-y-6">
-            <h2 className="text-3xl font-bold text-white text-center">Community Leaderboard</h2>
-            <p className="text-blue-200 text-center text-sm">Top participants in Max Craic Poker draws</p>
+            <div className="flex items-center justify-between">
+              <div className="flex-1 text-center">
+                <h2 className="text-3xl font-bold text-white">
+                  {activeLeaderboard === 'participants' ? 'Top Participants' : 'Community Champions'}
+                </h2>
+                <p className="text-blue-200 text-sm mt-1">
+                  {activeLeaderboard === 'participants'
+                    ? 'Most active community members'
+                    : 'Top $MCP token holders'}
+                </p>
+              </div>
+              <button
+                onClick={() => setActiveLeaderboard(activeLeaderboard === 'participants' ? 'champions' : 'participants')}
+                className="flex-shrink-0 p-3 bg-purple-600 hover:bg-purple-700 rounded-lg transition-all ml-4"
+                aria-label="Toggle leaderboard"
+              >
+                {activeLeaderboard === 'participants' ? (
+                  <ArrowRight className="w-5 h-5 text-white" />
+                ) : (
+                  <ArrowLeft className="w-5 h-5 text-white" />
+                )}
+              </button>
+            </div>
 
-            {isLoadingLeaderboard ? (
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-12 border border-white/20 text-center">
-                <p className="text-white">Loading leaderboard...</p>
-              </div>
-            ) : leaderboard.length === 0 ? (
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-12 border border-white/20 text-center">
-                <Trophy className="w-16 h-16 text-purple-400 mx-auto mb-4" />
-                <h3 className="text-xl font-bold text-white mb-2">No Entries Yet</h3>
-                <p className="text-blue-200">Be the first to enter and claim the top spot!</p>
-              </div>
-            ) : (
+            {activeLeaderboard === 'participants' ? (
               <>
+                {isLoadingLeaderboard ? (
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-12 border border-white/20 text-center">
+                    <p className="text-white">Loading leaderboard...</p>
+                  </div>
+                ) : leaderboard.length === 0 ? (
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-12 border border-white/20 text-center">
+                    <Trophy className="w-16 h-16 text-purple-400 mx-auto mb-4" />
+                    <h3 className="text-xl font-bold text-white mb-2">No Entries Yet</h3>
+                    <p className="text-blue-200">Be the first to enter and claim the top spot!</p>
+                  </div>
+                ) : (
+                  <>
                 {leaderboard.map((entry) => (
                   <div
                     key={entry.walletAddress}
@@ -560,6 +591,28 @@ export default function MiniApp() {
                   </div>
                 )}
               </>
+                )}
+              </>
+            ) : (
+              /* Community Champions - Coming Soon */
+              <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-sm rounded-lg p-12 border border-purple-400/30 text-center">
+                <Coins className="w-16 h-16 text-purple-400 mx-auto mb-4" />
+                <h3 className="text-2xl font-bold text-white mb-3">Token Rewards Launching Soon</h3>
+                <p className="text-blue-200 mb-4">
+                  Early participants will be retroactively rewarded with $MCP tokens
+                </p>
+                <div className="bg-white/10 rounded-lg p-4 max-w-md mx-auto">
+                  <p className="text-white text-sm font-semibold mb-2">Coming Soon:</p>
+                  <ul className="text-blue-200 text-sm space-y-1 text-left">
+                    <li>• Top $MCP holders displayed here</li>
+                    <li>• Priority access to exclusive home games</li>
+                    <li>• Community profit-sharing rewards</li>
+                  </ul>
+                </div>
+                <p className="text-white/60 text-xs mt-4 italic">
+                  Launching after grant funding secured
+                </p>
+              </div>
             )}
           </div>
         )}
@@ -581,6 +634,41 @@ export default function MiniApp() {
         {activeTab === 'info' && (
           <div className="space-y-6">
             <h2 className="text-3xl font-bold text-white text-center">How It Works</h2>
+
+            {/* Token Info Card - Coming Soon */}
+            <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-sm rounded-lg p-6 border border-purple-400/30">
+              <div className="flex items-start gap-4">
+                <div className="text-4xl">🪙</div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="text-xl font-bold text-white">$MCP Token</h3>
+                    <span className="px-2 py-1 bg-yellow-500/20 border border-yellow-500/30 rounded text-yellow-200 text-xs font-bold">
+                      COMING SOON
+                    </span>
+                  </div>
+                  <p className="text-blue-200 text-sm leading-relaxed mb-3">
+                    Community profit-sharing token that rewards active participants. Earn $MCP by engaging in live chat during streams and participating in the community.
+                  </p>
+                  <div className="bg-white/10 rounded-lg p-3 mb-3">
+                    <p className="text-white text-sm font-semibold mb-1">Token Airdrop Program:</p>
+                    <ul className="text-blue-200 text-xs space-y-1 ml-4">
+                      <li>• Live chat participants get airdropped $MCP</li>
+                      <li>• Retroactive rewards for early supporters</li>
+                      <li>• Exclusive home game access for holders</li>
+                    </ul>
+                  </div>
+                  <Link
+                    href="/token"
+                    className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold text-sm py-2 px-4 rounded-lg transition-colors mb-2"
+                  >
+                    Learn More About $MCP →
+                  </Link>
+                  <p className="text-white/60 text-xs italic">
+                    Launching after grant funding secured
+                  </p>
+                </div>
+              </div>
+            </div>
 
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
               <h3 className="text-xl font-bold text-white mb-3">🎰 The Draw</h3>

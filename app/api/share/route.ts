@@ -8,7 +8,7 @@ const redis = new Redis({
 
 export async function POST(request: NextRequest) {
   try {
-    const { walletAddress } = await request.json();
+    const { walletAddress, sessionId } = await request.json();
 
     if (!walletAddress) {
       return NextResponse.json({
@@ -27,9 +27,10 @@ export async function POST(request: NextRequest) {
       }, { status: 404 });
     }
 
-    // Parse and update entry with shared status
+    // Parse and update entry with shared status FOR THIS SESSION
     const entry = typeof existingEntry === 'string' ? JSON.parse(existingEntry) : existingEntry;
     entry.hasShared = true;
+    entry.sharedSessionId = sessionId; // Track which session they shared
 
     // Store updated entry
     await redis.hset('raffle_entries', { [walletAddress]: JSON.stringify(entry) });
