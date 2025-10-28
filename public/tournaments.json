@@ -1,12 +1,12 @@
 {
-  "sessionId": "2025-11-01",
-  "streamStartTime": "2025-11-01T12:00:00Z",
+  "sessionId": "2025-11-05",
+  "streamStartTime": "2025-11-05T19:00:00Z",
   "tournaments": [
-    { "name": "Bounty Builder $16.50, $3K Gtd", "buyIn": "$16.50" },
-    { "name": "$800 Early PKO Rumble 11", "buyIn": "$11" },
-    { "name": "$2,000 Early Mystery Bounty", "buyIn": "$8.80" },
-    { "name": "$5.50 Mini Pacific Cooldown [8-Max, Turbo, PKO], $1.5K Gtd", "buyIn": "$5.50" },
-    { "name": "Bounty Builder $11, $4K Gtd", "buyIn": "$11" },
-    { "name": "€10 KNOCKOUT [8-MAX], €1K Gtd", "buyIn": "€10" }
+    { "name": "Bounty Builder $22, $5K Gtd", "buyIn": "$22" },
+    { "name": "$1,200 Mystery Bounty Special", "buyIn": "$12" },
+    { "name": "$3,000 Early PKO Crusher", "buyIn": "$15.50" },
+    { "name": "$8.80 Mini Turbo Knockout [6-Max]", "buyIn": "$8.80" },
+    { "name": "Bounty Builder $16.50, $4K Gtd", "buyIn": "$16.50" },
+    { "name": "€15 MEGA KNOCKOUT [8-MAX], €2K Gtd", "buyIn": "€15" }
   ]
 }
