@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "nft:setup": "tsx scripts/setup-test-nft-data.ts",
+    "nft:test": "bash scripts/test-nft-api.sh",
+    "nft:snapshot": "bash scripts/create-snapshot.sh"
   },
   "dependencies": {
     "@coinbase/onchainkit": "^0.38.19",
@@ -39,6 +42,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.4.1",
     "tailwindcss": "^4",
+    "tsx": "^4.20.6",
     "typescript": "^5"
   }
 }

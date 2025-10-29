@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAccount } from 'wagmi';
-import { Trophy, Clock, ExternalLink, Share2, Home, BarChart3, Video, Info, ArrowRight, ArrowLeft, Coins } from 'lucide-react';
+import { Trophy, Clock, ExternalLink, Share2, Home, BarChart3, Video, Info, ArrowRight, ArrowLeft, Coins, Gift } from 'lucide-react';
 import { sdk } from '@farcaster/frame-sdk';
 import { useComposeCast } from '@coinbase/onchainkit/minikit';
 import Link from 'next/link';
@@ -36,6 +36,15 @@ interface LeaderboardEntry {
   rank: number;
 }
 
+interface EligibleClaim {
+  month: string;
+  rank: number;
+  totalEntries: number;
+  claimed: boolean;
+  claimDeadline: string;
+  withinWindow: boolean;
+}
+
 type TabType = 'home' | 'leaderboard' | 'media' | 'info';
 
 export default function MiniApp() {
@@ -56,6 +65,9 @@ export default function MiniApp() {
   const [userRank, setUserRank] = useState<any>(null);
   const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(false);
   const [activeLeaderboard, setActiveLeaderboard] = useState<'participants' | 'champions'>('participants');
+  const [eligibleClaims, setEligibleClaims] = useState<EligibleClaim[]>([]);
+  const [isLoadingEligibility, setIsLoadingEligibility] = useState(false);
+  const [isClaimingNFT, setIsClaimingNFT] = useState(false);
 
   // CRITICAL: Call sdk.actions.ready() to dismiss Farcaster splash screen
   // DO NOT REMOVE - Prevents purple screen hang on Farcaster
@@ -219,7 +231,11 @@ export default function MiniApp() {
     if (activeTab === 'leaderboard' && leaderboard.length === 0) {
       fetchLeaderboard();
     }
-  }, [activeTab]);
+    // Also fetch NFT eligibility if user is connected
+    if (activeTab === 'leaderboard' && address && eligibleClaims.length === 0) {
+      fetchNFTEligibility();
+    }
+  }, [activeTab, address]);
 
   const fetchLeaderboard = async () => {
     setIsLoadingLeaderboard(true);
@@ -236,6 +252,57 @@ export default function MiniApp() {
       console.error('Leaderboard fetch error:', error);
     } finally {
       setIsLoadingLeaderboard(false);
+    }
+  };
+
+  const fetchNFTEligibility = async () => {
+    if (!address) return;
+
+    setIsLoadingEligibility(true);
+    try {
+      const res = await fetch(`/api/nft/eligibility?wallet=${address}`);
+      const data = await res.json();
+
+      if (data.success) {
+        setEligibleClaims(data.eligibleClaims || []);
+      }
+    } catch (error) {
+      console.error('NFT eligibility fetch error:', error);
+    } finally {
+      setIsLoadingEligibility(false);
+    }
+  };
+
+  const handleClaimNFT = async (month: string, rank: number) => {
+    if (!address) return;
+
+    setIsClaimingNFT(true);
+    try {
+      // First, prepare the claim on backend
+      const res = await fetch('/api/nft/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          walletAddress: address,
+          month,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        alert(`NFT claim prepared for ${month}! Rank: ${rank}\n\nIn production, this would trigger a smart contract transaction to mint your NFT. For now, your claim has been recorded.`);
+
+        // Refresh eligibility to show updated claimed status
+        await fetchNFTEligibility();
+      } else {
+        alert(`Failed to claim NFT: ${data.error}`);
+      }
+    } catch (error) {
+      console.error('NFT claim error:', error);
+      alert('Failed to claim NFT. Please try again.');
+    } finally {
+      setIsClaimingNFT(false);
     }
   };
 
@@ -590,6 +657,56 @@ export default function MiniApp() {
                       <p className="text-white font-semibold mb-1">Your Rank</p>
                       <p className="text-3xl font-bold text-blue-300">#{userRank.rank}</p>
                       <p className="text-blue-200 text-sm">{userRank.totalEntries} entries</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* NFT Claims Section */}
+                {address && eligibleClaims.length > 0 && (
+                  <div className="mt-6 bg-gradient-to-r from-purple-600/30 to-pink-600/30 backdrop-blur-sm rounded-lg p-6 border border-purple-400/40">
+                    <div className="flex items-center gap-2 mb-4">
+                      <Gift className="w-6 h-6 text-purple-300" />
+                      <h3 className="text-xl font-bold text-white">Claim Your NFT Rewards</h3>
+                    </div>
+                    <p className="text-blue-200 text-sm mb-4">
+                      Top 5 finishers can claim a coaching voucher NFT - one free hour with Max Craic!
+                    </p>
+                    <div className="space-y-3">
+                      {eligibleClaims.map((claim) => (
+                        <div
+                          key={claim.month}
+                          className="bg-white/10 rounded-lg p-4 border border-white/20"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="text-white font-semibold">
+                                {claim.rank === 1 ? '🥇' : claim.rank === 2 ? '🥈' : claim.rank === 3 ? '🥉' : '🏆'} Rank #{claim.rank} - {claim.month}
+                              </p>
+                              <p className="text-blue-300 text-xs mt-1">
+                                {claim.claimed ? (
+                                  <span className="text-green-400">✓ Claimed</span>
+                                ) : claim.withinWindow ? (
+                                  `Claim by ${claim.claimDeadline}`
+                                ) : (
+                                  <span className="text-red-400">Expired</span>
+                                )}
+                              </p>
+                            </div>
+                            {!claim.claimed && claim.withinWindow && (
+                              <button
+                                onClick={() => handleClaimNFT(claim.month, claim.rank)}
+                                disabled={isClaimingNFT}
+                                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold py-2 px-4 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                              >
+                                {isClaimingNFT ? 'Claiming...' : 'Claim NFT'}
+                              </button>
+                            )}
+                            {claim.claimed && (
+                              <span className="text-green-400 font-semibold text-sm">Claimed ✓</span>
+                            )}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
