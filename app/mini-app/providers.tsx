@@ -2,13 +2,17 @@
 'use client'
 
 import { WagmiProvider, createConfig, http } from 'wagmi'
-import { base } from 'wagmi/chains'
+import { base, baseSepolia } from 'wagmi/chains'
 import { coinbaseWallet } from 'wagmi/connectors'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState, useEffect } from 'react'
 
+// Enable testnet mode via environment variable
+const isTestnet = process.env.NEXT_PUBLIC_TESTNET === 'true'
+const activeChain = isTestnet ? baseSepolia : base
+
 const config = createConfig({
-  chains: [base],
+  chains: [base, baseSepolia], // Support both mainnet and testnet
   connectors: [
     coinbaseWallet({
       appName: 'Max Craic Poker',
@@ -18,6 +22,7 @@ const config = createConfig({
   ],
   transports: {
     [base.id]: http(),
+    [baseSepolia.id]: http(),
   },
 })
 

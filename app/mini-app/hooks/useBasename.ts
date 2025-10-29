@@ -3,11 +3,15 @@
 
 import { useState, useEffect } from 'react';
 import { createPublicClient, http } from 'viem';
-import { base } from 'viem/chains';
+import { base, baseSepolia } from 'viem/chains';
+
+// Determine which chain to use based on environment
+const isTestnet = process.env.NEXT_PUBLIC_TESTNET === 'true';
+const activeChain = isTestnet ? baseSepolia : base;
 
 // Basename text records follow ENS standard
 const client = createPublicClient({
-  chain: base,
+  chain: activeChain,
   transport: http(),
 });
 
