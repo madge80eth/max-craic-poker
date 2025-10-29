@@ -7,10 +7,10 @@ import { redis } from '@/lib/redis';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { wallet: string; month: string } }
+  { params }: { params: Promise<{ wallet: string; month: string }> }
 ) {
   try {
-    const { wallet, month } = params;
+    const { wallet, month } = await params;
 
     if (!wallet || !month) {
       return NextResponse.json(
