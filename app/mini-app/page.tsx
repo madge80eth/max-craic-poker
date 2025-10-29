@@ -6,6 +6,8 @@ import { Trophy, Clock, ExternalLink, Share2, Home, BarChart3, Video, Info, Arro
 import { sdk } from '@farcaster/frame-sdk';
 import { useComposeCast } from '@coinbase/onchainkit/minikit';
 import Link from 'next/link';
+import { WalletDisplay } from './components/WalletDisplay';
+import { useBasename, formatAddressOrBasename } from './hooks/useBasename';
 
 interface Tournament {
   name: string;
@@ -38,6 +40,7 @@ type TabType = 'home' | 'leaderboard' | 'media' | 'info';
 
 export default function MiniApp() {
   const { address, isConnected } = useAccount();
+  const { basename: userBasename } = useBasename(address);
   const { composeCast } = useComposeCast();
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
@@ -337,7 +340,7 @@ export default function MiniApp() {
                         {winner.place === 1 ? '1st' : winner.place === 2 ? '2nd' : '3rd'} Place
                       </h3>
                       <p className="text-white/90 font-mono text-sm">
-                        {formatWalletAddress(winner.walletAddress)}
+                        <WalletDisplay address={winner.walletAddress} showFullOnHover={true} />
                       </p>
                     </div>
                   </div>
@@ -420,7 +423,7 @@ export default function MiniApp() {
                 <>
                   <p className="text-white/80 mb-2">Connected Wallet:</p>
                   <p className="text-white font-mono text-sm">
-                    {address.slice(0, 6)}...{address.slice(-4)}
+                    <WalletDisplay address={address} showFullOnHover={true} />
                   </p>
                 </>
               ) : (
@@ -566,7 +569,7 @@ export default function MiniApp() {
                         </div>
                         <div>
                           <p className="text-white font-mono text-sm">
-                            {formatWalletAddress(entry.walletAddress)}
+                            <WalletDisplay address={entry.walletAddress} showFullOnHover={true} />
                           </p>
                           <p className="text-blue-300 text-xs">
                             Last entry: {formatDate(entry.lastEntry)}

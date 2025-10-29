@@ -13,6 +13,7 @@ const config = createConfig({
     coinbaseWallet({
       appName: 'Max Craic Poker',
       appLogoUrl: '/mcp-logo.png',
+      preference: 'smartWalletOnly', // Enable Base Account (Smart Wallet) support
     }),
   ],
   transports: {
