@@ -11,7 +11,6 @@ export async function POST(request: NextRequest) {
     // Clear current session data only
     await redis.del('raffle_entries');  // Current draw pool
     await redis.del('raffle_winners');  // Last session winners
-    await redis.del('raffle_timer');    // Session timer
 
     // IMPORTANT: entry_history is NEVER cleared
     // This key tracks all-time participation stats for leaderboard
@@ -20,7 +19,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Session reset successfully. Ready for new raffle session.',
-      cleared: ['raffle_entries', 'raffle_winners', 'raffle_timer'],
+      cleared: ['raffle_entries', 'raffle_winners'],
       preserved: ['entry_history']
     });
 
@@ -39,32 +38,20 @@ export async function GET(request: NextRequest) {
     // Return current system status
     const entries = await redis.hgetall('raffle_entries');
     const winnersData = await redis.get('raffle_winners');
-    const timerData = await redis.get('raffle_timer');
-    
+
     const totalEntries = entries ? Object.keys(entries).length : 0;
-    
+
     let winners = null;
     if (winnersData) {
       const parsed = typeof winnersData === 'string' ? JSON.parse(winnersData) : winnersData;
       winners = parsed.winners || null;
     }
 
-    let timeRemaining = 0;
-    if (timerData) {
-      const timer = typeof timerData === 'string' ? JSON.parse(timerData) : timerData;
-      if (timer?.endTime) {
-        const now = Date.now();
-        const end = new Date(timer.endTime).getTime();
-        timeRemaining = Math.max(0, Math.floor((end - now) / 1000));
-      }
-    }
-
     return NextResponse.json({
       success: true,
       totalEntries,
       hasWinners: !!winners,
-      winnersCount: winners ? winners.length : 0,
-      timeRemaining
+      winnersCount: winners ? winners.length : 0
     });
 
   } catch (error) {

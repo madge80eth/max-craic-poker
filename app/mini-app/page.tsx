@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useAccount } from 'wagmi';
-import { Trophy, Clock, ExternalLink, Share2, Home, BarChart3, Video, Info, ArrowRight, ArrowLeft, Coins } from 'lucide-react';
+import { useAccount, useConnect, useDisconnect } from 'wagmi';
+import { Trophy, Clock, ExternalLink, Share2, Home, BarChart3, Video, Info, ArrowRight, ArrowLeft, Coins, Wallet } from 'lucide-react';
 import { sdk } from '@farcaster/frame-sdk';
 import { useComposeCast } from '@coinbase/onchainkit/minikit';
 import Link from 'next/link';
@@ -42,6 +42,8 @@ export default function MiniApp() {
   const { address, isConnected } = useAccount();
   const { basename: userBasename } = useBasename(address);
   const { composeCast } = useComposeCast();
+  const { connect, connectors } = useConnect();
+  const { disconnect } = useDisconnect();
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [hasEntered, setHasEntered] = useState(false);
@@ -427,19 +429,35 @@ export default function MiniApp() {
                   </p>
                 </>
               ) : (
-                <p className="text-white/80">Connecting wallet...</p>
+                <div className="space-y-3">
+                  <p className="text-white/80">Connect your wallet to enter</p>
+                  {connectors.map((connector) => (
+                    <button
+                      key={connector.id}
+                      onClick={() => connect({ connector })}
+                      className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-all flex items-center justify-center gap-2"
+                    >
+                      <Wallet className="w-5 h-5" />
+                      Connect {connector.name}
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
-            <button
-              onClick={handleEnter}
-              disabled={isLoading || !isConnected}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-bold py-4 px-6 rounded-lg transition-all"
-            >
-              {isLoading ? 'Entering...' : 'Enter the Draw'}
-            </button>
-            <p className="text-white/60 text-xs text-center mt-3">
-              Winners earn 6%, 5%, or 4% profit share
-            </p>
+            {isConnected && (
+              <>
+                <button
+                  onClick={handleEnter}
+                  disabled={isLoading || !isConnected}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-700 text-white font-bold py-4 px-6 rounded-lg transition-all"
+                >
+                  {isLoading ? 'Entering...' : 'Enter the Draw'}
+                </button>
+                <p className="text-white/60 text-xs text-center mt-3">
+                  Winners earn 6%, 5%, or 4% profit share
+                </p>
+              </>
+            )}
           </div>
         )}
 
