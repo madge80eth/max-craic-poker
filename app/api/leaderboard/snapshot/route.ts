@@ -79,7 +79,11 @@ export async function POST(request: NextRequest) {
     };
 
     // Store snapshot in Redis
-    await redis.hset(`leaderboard_snapshot:${snapshotMonth}`, snapshot);
+    await redis.hset(`leaderboard_snapshot:${snapshotMonth}`, {
+      month: snapshot.month,
+      snapshotDate: snapshot.snapshotDate,
+      topWallets: JSON.stringify(snapshot.topWallets)
+    });
 
     // Also store in a list of all snapshots for easy retrieval
     const existingSnapshots = await redis.get('leaderboard_snapshots') as string[] || [];
