@@ -19,19 +19,6 @@ export async function GET(request: NextRequest) {
     const entries = await redis.hgetall('raffle_entries');
     const totalEntries = entries ? Object.keys(entries).length : 0;
 
-    // Get timer data
-    const timerData = await redis.get('raffle_timer');
-    let timeRemaining = 0;
-    
-    if (timerData) {
-      const timer = typeof timerData === 'string' ? JSON.parse(timerData) : timerData;
-      if (timer?.endTime) {
-        const now = Date.now();
-        const end = new Date(timer.endTime).getTime();
-        timeRemaining = Math.max(0, Math.floor((end - now) / 1000));
-      }
-    }
-
     // Get winners data
     const winnersData = await redis.get('raffle_winners');
     let winners = null;
@@ -61,7 +48,6 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         success: true,
         totalEntries,
-        timeRemaining,
         hasEntered: !!userEntry,
         userEntry,
         isWinner: !!userWinnerInfo,
@@ -74,7 +60,6 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       totalEntries,
-      timeRemaining,
       winners
     });
 

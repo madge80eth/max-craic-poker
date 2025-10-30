@@ -34,7 +34,6 @@ export async function checkAndResetSession(): Promise<void> {
       // Clear current draw data (but preserve entry_history for leaderboard)
       await redis.del('raffle_entries');
       await redis.del('raffle_winners');
-      await redis.del('raffle_timer');
 
       // Update stored session ID
       await redis.set('current_session_id', currentSessionId);
