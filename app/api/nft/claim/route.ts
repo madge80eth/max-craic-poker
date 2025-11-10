@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Check if wallet has already claimed
+// Check if wallet has already claimed for current month
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -145,7 +145,10 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const claimedKey = `nft_claimed:${walletAddress.toLowerCase()}`;
+    // Check for current month claim
+    const now = new Date();
+    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const claimedKey = `nft_claimed:${walletAddress.toLowerCase()}:${currentMonthKey}`;
     const claimData = await redis.get(claimedKey);
 
     return NextResponse.json({
