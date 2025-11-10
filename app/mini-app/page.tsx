@@ -196,22 +196,33 @@ export default function MiniApp() {
 
   const handleShare = async () => {
     try {
-      // Open native share dialog
+      // Open native share dialog FIRST
       composeCast({
         text: "I just entered the Max Craic Poker community draw! 🎰\n\nWin poker tournament profit shares - paid in USDC onchain 💰",
         embeds: ['https://max-craic-poker.vercel.app/share']
       });
 
-      // Record that user shared THIS SESSION (for bonus calculation)
+      // After user casts, verify and record
       if (address && sessionId) {
-        await fetch('/api/share', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            walletAddress: address,
-            sessionId: sessionId  // Track WHICH session they shared
-          })
-        });
+        // Wait a few seconds for cast to propagate to Neynar
+        setTimeout(async () => {
+          const res = await fetch('/api/share', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              walletAddress: address,
+              sessionId: sessionId
+            })
+          });
+
+          const data = await res.json();
+
+          if (data.success && data.verified) {
+            alert('✅ Share verified! Your rewards will be doubled if you win.');
+          } else if (!data.verified) {
+            alert('⏳ Share not verified yet. It may take a minute for your cast to propagate. Try the Share button again in a moment.');
+          }
+        }, 5000); // Wait 5 seconds for cast to propagate
       }
     } catch (error) {
       console.error('Share error:', error);
