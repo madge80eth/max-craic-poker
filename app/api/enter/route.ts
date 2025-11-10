@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 import { checkAndResetSession } from '@/lib/session';
+import { checkAndResetMonthly } from '@/lib/monthly-reset';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -26,6 +27,9 @@ export async function POST(request: NextRequest) {
 
     // Auto-reset if session changed in tournaments.json
     await checkAndResetSession();
+
+    // Auto-check and reset monthly leaderboard if new month
+    await checkAndResetMonthly();
 
     // Check if already entered
     const existingEntry = await redis.hget('raffle_entries', walletAddress);

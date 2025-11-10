@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
+import { checkAndResetMonthly } from '@/lib/monthly-reset';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -22,6 +23,9 @@ interface LeaderboardEntry {
 
 export async function GET(request: NextRequest) {
   try {
+    // Auto-check and reset monthly leaderboard if new month
+    await checkAndResetMonthly();
+
     const { searchParams } = new URL(request.url);
     const userWallet = searchParams.get('wallet');
 
