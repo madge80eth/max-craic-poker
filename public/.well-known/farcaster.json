@@ -18,7 +18,7 @@
     "signature": "MHhmYjQ5NTlhMjZkMjc5MzE5NDkxYTc5ZjgzYjI0ZDc1OWY2MTAxYTNmZDBkNzQzOGYxODRjMGVhYjQ5Y2I0ZTVmM2JjNDYwOWExYTMzMjBjY2Q2Y2JjYmNmY2FkYjAwODIwODMxNTUyMDkwMGY4NjU3NDE0ZWRkZTliOTAwMDIzZTFi"
   },
   "baseBuilder": {
-    "ownerAddress": "0x849c78D6b6C41fB87d152d2Da384c353712E4b1c1C5",
+    "ownerAddress": "0x849c78D6C4fB87d152d1Da384c353712E4b1c1C5",
     "imageUrl": "https://max-craic-poker.vercel.app/mcp-frame.png"
   }
 }
