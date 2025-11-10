@@ -756,6 +756,26 @@ export default function MiniApp() {
               </p>
             </div>
 
+            <div className="bg-gradient-to-r from-yellow-600/20 to-orange-600/20 backdrop-blur-sm rounded-lg p-6 border border-yellow-400/30">
+              <h3 className="text-xl font-bold text-white mb-3">🎓 Monthly Group Coaching NFT</h3>
+              <p className="text-blue-200 text-sm leading-relaxed mb-4">
+                The top 3 community supporters each month receive a special NFT that grants access to an exclusive group coaching session with Max Craic.
+              </p>
+              <div className="bg-white/10 rounded-lg p-4 space-y-2">
+                <p className="text-white text-sm font-semibold">How It Works:</p>
+                <ul className="text-blue-200 text-sm space-y-1">
+                  <li>• Support the channel throughout the month by entering draws</li>
+                  <li>• Top 3 most active supporters win each month</li>
+                  <li>• Claim your NFT from the Leaderboard tab</li>
+                  <li>• NFT grants access to monthly group coaching session</li>
+                  <li>• Previous months' winners can claim their NFTs anytime</li>
+                </ul>
+              </div>
+              <p className="text-white/60 text-xs mt-3 text-center">
+                Coaching sessions cover tournament strategy, mental game, and hand reviews
+              </p>
+            </div>
+
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
               <h3 className="text-xl font-bold text-white mb-3">🔗 On Base</h3>
               <p className="text-blue-200 text-sm leading-relaxed">
