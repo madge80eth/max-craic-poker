@@ -58,6 +58,8 @@ export default function MiniApp() {
   const [userRank, setUserRank] = useState<any>(null);
   const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(false);
   const [activeLeaderboard, setActiveLeaderboard] = useState<'participants' | 'champions'>('participants');
+  const [claimingNFT, setClaimingNFT] = useState(false);
+  const [nftClaimed, setNftClaimed] = useState<Record<string, boolean>>({});
 
   // CRITICAL: Call sdk.actions.ready() to dismiss Farcaster splash screen
   // DO NOT REMOVE - Prevents purple screen hang on Farcaster
@@ -233,11 +235,42 @@ export default function MiniApp() {
       if (data.success) {
         setLeaderboard(data.leaderboard);
         setUserRank(data.userRank);
+
+        // Check NFT claim status if user is connected
+        if (address) {
+          const claimRes = await fetch(`/api/nft/claim?wallet=${address}`);
+          const claimData = await claimRes.json();
+          if (claimData.success && claimData.claimed) {
+            setNftClaimed({ ...nftClaimed, [address]: true });
+          }
+        }
       }
     } catch (error) {
       console.error('Leaderboard fetch error:', error);
     } finally {
       setIsLoadingLeaderboard(false);
+    }
+  };
+
+  const handleClaimNFT = async (walletAddress: string) => {
+    if (!address || claimingNFT) return;
+
+    setClaimingNFT(true);
+    try {
+      const res = await fetch('/api/nft/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walletAddress: address })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setNftClaimed({ ...nftClaimed, [walletAddress]: true });
+      }
+    } catch (error) {
+      console.error('NFT claim error:', error);
+    } finally {
+      setClaimingNFT(false);
     }
   };
 
@@ -274,6 +307,11 @@ export default function MiniApp() {
   const formatDate = (isoString: string) => {
     const date = new Date(isoString);
     return date.toLocaleDateString('en-GB', { month: 'short', day: 'numeric' });
+  };
+
+  const getCurrentMonth = () => {
+    const now = new Date();
+    return now.toLocaleString('en-GB', { month: 'long' });
   };
 
   return (
@@ -369,7 +407,7 @@ export default function MiniApp() {
                   <div className="text-5xl mb-3">🎊</div>
                   <h3 className="text-2xl font-bold text-white mb-2">You Won!</h3>
                   <p className="text-green-200 mb-4">
-                    You placed {userWinnerInfo.place === 1 ? '1st' : userWinnerInfo.place === 2 ? '2nd' : '3rd'} and 
+                    You placed {userWinnerInfo.place === 1 ? '1st' : userWinnerInfo.place === 2 ? '2nd' : '3rd'} and
                     earned {userWinnerInfo.profitShare}% profit share
                   </p>
                   <p className="text-white/80 text-sm">
@@ -379,20 +417,25 @@ export default function MiniApp() {
               </div>
             )}
 
-            {/* Stream CTA for Winners */}
+            {/* Stream CTA for Winners - WITH STREAM TIME */}
             <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
-              <h3 className="text-xl font-bold text-white mb-3 text-center">Watch Live</h3>
-              <p className="text-white/80 mb-4 text-center text-sm">
-                Join the stream to see how the community tournaments unfold!
-              </p>
+              <h3 className="text-xl font-bold text-white mb-2 text-center">Watch the Stream</h3>
+              {streamStartTime && (
+                <p className="text-blue-200 text-sm mb-4 text-center">
+                  {isStreamInFuture
+                    ? `Stream starts ${formatStreamTime()}`
+                    : `Stream was live @ ${formatStreamTime()}`
+                  }
+                </p>
+              )}
               <a
                 href="https://retake.tv/live/68b58fa755320f51930c9081"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition-colors"
+                className="flex items-center justify-center gap-2 w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-4 px-6 rounded-lg transition-all"
               >
                 <ExternalLink className="w-5 h-5" />
-                Watch Live Stream
+                View Stream
               </a>
             </div>
           </div>
@@ -530,7 +573,9 @@ export default function MiniApp() {
             <div className="flex items-center justify-between">
               <div className="flex-1 text-center">
                 <h2 className="text-3xl font-bold text-white">
-                  {activeLeaderboard === 'participants' ? 'Top Participants' : 'Community Champions'}
+                  {activeLeaderboard === 'participants'
+                    ? `Top Community Supporters for ${getCurrentMonth()}`
+                    : 'Community Champions'}
                 </h2>
                 <p className="text-blue-200 text-sm mt-1">
                   {activeLeaderboard === 'participants'
@@ -576,7 +621,7 @@ export default function MiniApp() {
                         : 'bg-white/10 border-white/20'
                     }`}
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-4">
                         <div className="text-2xl font-bold text-white w-8">
                           {entry.rank <= 3 ? (
@@ -599,6 +644,21 @@ export default function MiniApp() {
                         <p className="text-blue-300 text-xs">entries</p>
                       </div>
                     </div>
+
+                    {/* NFT Claim Button for Top 3 - Only show if user's wallet */}
+                    {entry.rank <= 3 && address?.toLowerCase() === entry.walletAddress.toLowerCase() && (
+                      <button
+                        onClick={() => handleClaimNFT(entry.walletAddress)}
+                        disabled={claimingNFT || nftClaimed[entry.walletAddress]}
+                        className={`w-full mt-3 py-2 px-4 rounded-lg font-semibold text-sm transition-all ${
+                          nftClaimed[entry.walletAddress]
+                            ? 'bg-green-600/50 text-white cursor-not-allowed'
+                            : 'bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 text-white'
+                        }`}
+                      >
+                        {nftClaimed[entry.walletAddress] ? '✅ NFT Claimed' : claimingNFT ? 'Claiming...' : '🎁 Claim Free NFT'}
+                      </button>
+                    )}
                   </div>
                 ))}
 

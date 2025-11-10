@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { checkAndResetSession } from '@/lib/session';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -10,6 +11,9 @@ const redis = new Redis({
 
 export async function POST(request: NextRequest) {
   try {
+    // Auto-reset if session changed in tournaments.json
+    await checkAndResetSession();
+
     // Get all entries
     const entries = await redis.hgetall('raffle_entries');
     
