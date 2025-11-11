@@ -16,6 +16,9 @@ export default function InfoPage() {
           <p className="text-blue-200 leading-relaxed mt-2">
             Each winner is assigned to one of 6 tournaments. If that tournament cashes, you get paid your share of the profit!
           </p>
+          <p className="text-blue-200 leading-relaxed mt-3 text-sm">
+            All tournaments are streamed live via Retake for full transparency.
+          </p>
         </div>
 
         {/* Prize Structure */}
