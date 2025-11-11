@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 import { checkAndResetSession } from '@/lib/session';
 import { checkAndResetMonthly } from '@/lib/monthly-reset';
+import { updateUserStats } from '@/lib/redis';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -83,6 +84,12 @@ export async function POST(request: NextRequest) {
 
     // Get total entries count for current draw
     const totalEntries = await redis.hlen('raffle_entries');
+
+    // Generate current draw ID (timestamp-based)
+    const drawId = `draw-${Date.now()}`;
+
+    // Update user stats for streak tracking
+    await updateUserStats(walletAddress, drawId);
 
     return NextResponse.json({
       success: true,

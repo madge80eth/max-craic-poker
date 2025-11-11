@@ -3,6 +3,8 @@ import { Redis } from '@upstash/redis';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import { checkAndResetSession } from '@/lib/session';
+import { getUserStats, incrementTournamentsAssigned } from '@/lib/redis';
+import { Winner, DrawResult } from '@/types';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -33,9 +35,9 @@ export async function POST(request: NextRequest) {
       };
     });
 
-    if (entryArray.length < 3) {
+    if (entryArray.length < 6) {
       return NextResponse.json(
-        { success: false, message: `Need at least 3 entries for draw. Currently have ${entryArray.length}` },
+        { success: false, message: `Need at least 6 entries for draw. Currently have ${entryArray.length}` },
         { status: 400 }
       );
     }
@@ -53,53 +55,64 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    // Shuffle entries and pick first 3 as winners
+    // Shuffle entries and take first 6 unique winners
     const shuffled = [...entryArray].sort(() => Math.random() - 0.5);
-    
-    const firstPlace = shuffled[0];
-    const secondPlace = shuffled[1];
-    const thirdPlace = shuffled[2];
+    const uniqueWinners = Array.from(new Set(shuffled.map(e => e.walletAddress)))
+      .slice(0, 6)
+      .map(address => shuffled.find(e => e.walletAddress === address)!);
 
-    // Shuffle tournaments and assign UNIQUE ones to each winner
-    const shuffledTournaments = [...tournaments].sort(() => Math.random() - 0.5);
-    const firstTournament = shuffledTournaments[0];
-    const secondTournament = shuffledTournaments[1];
-    const thirdTournament = shuffledTournaments[2];
-
-    // Create winners with profit shares (doubled if they shared)
-    const winners = [
-      {
-        place: 1,
-        walletAddress: firstPlace.walletAddress,
-        tournament: firstTournament.name,
-        tournamentBuyIn: firstTournament.buyIn,
-        profitShare: firstPlace.hasShared ? 12 : 6,
-        hasShared: firstPlace.hasShared || false
-      },
-      {
-        place: 2,
-        walletAddress: secondPlace.walletAddress,
-        tournament: secondTournament.name,
-        tournamentBuyIn: secondTournament.buyIn,
-        profitShare: secondPlace.hasShared ? 10 : 5,
-        hasShared: secondPlace.hasShared || false
-      },
-      {
-        place: 3,
-        walletAddress: thirdPlace.walletAddress,
-        tournament: thirdTournament.name,
-        tournamentBuyIn: thirdTournament.buyIn,
-        profitShare: thirdPlace.hasShared ? 8 : 4,
-        hasShared: thirdPlace.hasShared || false
-      }
+    // Prize structure
+    const prizeStructure = [
+      { position: 1 as const, basePercent: 6 },
+      { position: 2 as const, basePercent: 5 },
+      { position: 3 as const, basePercent: 4.5 },
+      { position: 4 as const, basePercent: 4 },
+      { position: 5 as const, basePercent: 3.5 },
+      { position: 6 as const, basePercent: 3 }
     ];
 
-    // Store winners
-    await redis.set('raffle_winners', JSON.stringify({
-      winners,
-      drawnAt: new Date().toISOString(),
-      totalEntries: entryArray.length
-    }));
+    // Shuffle tournaments and assign one to each winner
+    const shuffledTournaments = [...tournaments].sort(() => Math.random() - 0.5);
+
+    // Create winner objects with bonuses
+    const winners: Winner[] = await Promise.all(
+      uniqueWinners.map(async (entry, idx) => {
+        const stats = await getUserStats(entry.walletAddress);
+        const hasShared = entry.hasShared || false;
+        const hasStreak = stats.currentStreak === 3;
+
+        const basePercent = prizeStructure[idx].basePercent;
+        const sharingBonus = hasShared ? 2 : 0;
+        const baseWithBonus = basePercent + sharingBonus;
+        const streakMultiplier = hasStreak ? 1.5 : 1;
+        const finalPercent = baseWithBonus * streakMultiplier;
+
+        // Increment tournaments assigned
+        await incrementTournamentsAssigned(entry.walletAddress);
+
+        return {
+          walletAddress: entry.walletAddress,
+          position: prizeStructure[idx].position,
+          assignedTournament: shuffledTournaments[idx]?.name || 'TBD',
+          basePercentage: basePercent,
+          sharingBonus,
+          streakMultiplier,
+          finalPercentage: finalPercent,
+          tournamentResult: 'pending' as const,
+          payout: 0
+        };
+      })
+    );
+
+    const drawResult: DrawResult = {
+      drawId: `draw-${Date.now()}`,
+      timestamp: Date.now(),
+      winners
+    };
+
+    // Store draw result
+    await redis.set('raffle_winners', JSON.stringify(drawResult));
+    await redis.set('current_draw_result', JSON.stringify(drawResult));
 
     return NextResponse.json({
       success: true,
