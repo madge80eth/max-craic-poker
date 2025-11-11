@@ -14,7 +14,7 @@ export default function InfoPage() {
             Every stream, 6 winners are randomly selected from all entries.
           </p>
           <p className="text-blue-200 leading-relaxed mt-2">
-            Each winner is assigned to one of Dom's 6 tournaments. If that tournament cashes, you get paid your share of the profit!
+            Each winner is assigned to one of 6 tournaments. If that tournament cashes, you get paid your share of the profit!
           </p>
         </div>
 
