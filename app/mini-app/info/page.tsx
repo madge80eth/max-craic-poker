@@ -102,12 +102,12 @@ export default function InfoPage() {
         <div className="bg-gradient-to-r from-purple-600/20 to-blue-600/20 backdrop-blur-sm rounded-lg p-6 border border-purple-400/30">
           <h2 className="text-xl font-bold text-white mb-3">📊 Example</h2>
           <p className="text-blue-200 text-sm mb-3">
-            You're drawn 1st, you shared the draw, and you're on a 3-draw streak. Your assigned tournament cashes £500 profit.
+            You're drawn 1st, you shared the draw, and you're on a 3-draw streak. Your assigned tournament cashes $500 profit.
           </p>
           <div className="bg-white/10 rounded-lg p-4">
             <p className="text-white text-sm">
-              Your payout: <span className="font-mono">6% + 2% = 8% × 1.5 = 12% × £500 = </span>
-              <span className="font-bold text-green-300 text-lg">£60</span>
+              Your payout: <span className="font-mono">6% + 2% = 8% × 1.5 = 12% × $500 = </span>
+              <span className="font-bold text-green-300 text-lg">$60</span>
             </p>
           </div>
         </div>
