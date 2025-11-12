@@ -3,26 +3,115 @@
 <head>
   <title>MCP Admin</title>
   <style>
-    body { font-family: sans-serif; max-width: 800px; margin: 50px auto; padding: 20px; }
-    button { padding: 15px 30px; font-size: 16px; margin: 10px; cursor: pointer; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 1000px;
+      margin: 50px auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%);
+      min-height: 100vh;
+      color: #e0e7ff;
+    }
+    h1 {
+      text-align: center;
+      color: white;
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      text-align: center;
+      color: #a5b4fc;
+      margin-bottom: 40px;
+    }
+    button {
+      padding: 15px 30px;
+      font-size: 16px;
+      margin: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    }
     .reset { background: #dc2626; color: white; border: none; border-radius: 8px; }
     .draw { background: #10b981; color: white; border: none; border-radius: 8px; }
     .test { background: #f59e0b; color: white; border: none; border-radius: 8px; }
-    .status { background: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0; }
-    pre { background: #1f2937; color: #10b981; padding: 10px; border-radius: 4px; overflow-x: auto; }
-    .section { margin: 30px 0; padding: 20px; border: 2px solid #e5e7eb; border-radius: 12px; }
-    h2 { color: #1f2937; margin-top: 0; }
-    .description { color: #6b7280; margin-bottom: 15px; }
+    .info { background: #3b82f6; color: white; border: none; border-radius: 8px; }
+    .status { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid rgba(255,255,255,0.2); }
+    pre { background: #1f2937; color: #10b981; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 14px; }
+    .section {
+      margin: 30px 0;
+      padding: 25px;
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    h2 {
+      color: white;
+      margin-top: 0;
+      font-size: 1.5rem;
+    }
+    .description { color: #c7d2fe; margin-bottom: 15px; }
+    .entries-card {
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      padding: 30px;
+      border-radius: 16px;
+      text-align: center;
+      margin: 20px 0;
+      box-shadow: 0 10px 40px rgba(59, 130, 246, 0.3);
+    }
+    .entries-count {
+      font-size: 4rem;
+      font-weight: bold;
+      color: white;
+      margin: 10px 0;
+    }
+    .entries-label {
+      color: #ddd6fe;
+      font-size: 1.2rem;
+      margin-bottom: 5px;
+    }
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
   </style>
 </head>
 <body>
-  <h1>Max Craic Poker Admin</h1>
+  <h1>🎰 Max Craic Poker Admin</h1>
+  <p class="subtitle">Manage draws and view statistics</p>
+
+  <div class="section">
+    <h2>📊 Current Draw Statistics</h2>
+    <p class="description">Live view of the current draw entries</p>
+
+    <div id="entriesCard" style="display: none;">
+      <div class="entries-card">
+        <div class="entries-label">Total Entries</div>
+        <div class="entries-count" id="entriesCount">-</div>
+        <div style="color: #ddd6fe; font-size: 0.9rem; margin-top: 10px;">
+          Last updated: <span id="lastUpdated">-</span>
+        </div>
+      </div>
+    </div>
+
+    <button class="info" onclick="fetchCurrentEntries()">🔄 Get Current Entries</button>
+
+    <div id="winnersInfo" style="margin-top: 20px; display: none;">
+      <h3 style="color: white; margin-bottom: 10px;">🏆 Current Winners</h3>
+      <div id="winnersList"></div>
+    </div>
+  </div>
 
   <div class="section">
     <h2>🧪 Testing</h2>
     <p class="description">Add test wallets to quickly test the draw functionality without manual entries</p>
     <button class="test" onclick="testDraw()">Add Test Entries</button>
-    <p style="color: #6b7280; font-size: 14px; margin-top: 10px;">Adds 4 test wallets to the current draw</p>
+    <p style="color: #a5b4fc; font-size: 14px; margin-top: 10px;">Adds 4 test wallets to the current draw</p>
   </div>
 
   <div class="section">
@@ -47,6 +136,54 @@
   </div>
 
   <script>
+    async function fetchCurrentEntries() {
+      const button = event.target;
+      button.classList.add('loading');
+      button.textContent = '⏳ Loading...';
+
+      try {
+        const response = await fetch('/api/status');
+        const data = await response.json();
+
+        if (data.success) {
+          // Show entries card
+          document.getElementById('entriesCard').style.display = 'block';
+          document.getElementById('entriesCount').textContent = data.totalEntries || 0;
+          document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
+
+          // Show winners if available
+          if (data.winners && data.winners.length > 0) {
+            document.getElementById('winnersInfo').style.display = 'block';
+            let winnersHtml = '';
+            data.winners.forEach((winner, index) => {
+              winnersHtml += `
+                <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                  <div style="color: white; font-weight: bold; margin-bottom: 5px;">
+                    Tournament ${index + 1}: ${winner.tournament || 'N/A'}
+                  </div>
+                  <div style="color: #c7d2fe; font-size: 0.9rem; font-family: monospace;">
+                    ${winner.walletAddress}
+                  </div>
+                  ${winner.percentage ? `<div style="color: #fbbf24; margin-top: 5px;">Prize: ${winner.percentage}%</div>` : ''}
+                </div>
+              `;
+            });
+            document.getElementById('winnersList').innerHTML = winnersHtml;
+          } else {
+            document.getElementById('winnersInfo').style.display = 'none';
+          }
+
+          // Also update the status section
+          document.getElementById('status').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+        }
+      } catch (error) {
+        alert('Error fetching entries: ' + error.message);
+      } finally {
+        button.classList.remove('loading');
+        button.textContent = '🔄 Get Current Entries';
+      }
+    }
+
     async function testDraw() {
       if (!confirm('Add 4 test wallets to the draw?\n\nThis will add test entries you can use to test the draw functionality.')) return;
 
@@ -55,7 +192,10 @@
       document.getElementById('status').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
 
       if (data.success) {
-        setTimeout(checkStatus, 1000); // Refresh status after adding
+        setTimeout(() => {
+          checkStatus();
+          fetchCurrentEntries();
+        }, 1000);
       }
     }
 
@@ -67,7 +207,10 @@
       document.getElementById('status').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
 
       if (data.success) {
-        setTimeout(checkStatus, 1000); // Refresh status after draw
+        setTimeout(() => {
+          checkStatus();
+          fetchCurrentEntries();
+        }, 1000);
       }
     }
 
@@ -79,7 +222,10 @@
       document.getElementById('status').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
 
       if (data.success) {
-        setTimeout(checkStatus, 1000); // Refresh status after reset
+        setTimeout(() => {
+          checkStatus();
+          fetchCurrentEntries();
+        }, 1000);
       }
     }
 
@@ -91,7 +237,10 @@
       document.getElementById('status').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
 
       if (data.success) {
-        setTimeout(checkStatus, 1000);
+        setTimeout(() => {
+          checkStatus();
+          fetchCurrentEntries();
+        }, 1000);
       }
     }
 
@@ -101,9 +250,13 @@
       document.getElementById('status').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
     }
 
-    // Auto-refresh status every 10 seconds
+    // Auto-refresh status and entries every 10 seconds
     checkStatus();
-    setInterval(checkStatus, 10000);
+    fetchCurrentEntries();
+    setInterval(() => {
+      checkStatus();
+      fetchCurrentEntries();
+    }, 10000);
   </script>
 </body>
 </html>
