@@ -16,6 +16,7 @@ export default function StatsPage() {
   const [stats, setStats] = useState<UserStats | null>(null);
   const [nextStreamTime, setNextStreamTime] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
+  const [hasWinners, setHasWinners] = useState(false);
 
   useEffect(() => {
     if (!address) {
@@ -54,8 +55,21 @@ export default function StatsPage() {
       }
     }
 
+    async function checkWinners() {
+      try {
+        const res = await fetch('/api/status');
+        const data = await res.json();
+        if (data.winners && Array.isArray(data.winners) && data.winners.length > 0) {
+          setHasWinners(true);
+        }
+      } catch (error) {
+        console.error('Winners check error:', error);
+      }
+    }
+
     fetchStats();
     fetchNextStream();
+    checkWinners();
   }, [address]);
 
   if (!address) {
@@ -163,8 +177,8 @@ export default function StatsPage() {
           </div>
         </div>
 
-        {/* Next Draw Info */}
-        {nextStreamTime && (
+        {/* Next Draw Info (only show if no winners) */}
+        {!hasWinners && nextStreamTime && (
           <div className="bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20">
             <div className="text-center">
               <h3 className="text-base font-bold text-white mb-1">Next Draw</h3>
@@ -179,7 +193,7 @@ export default function StatsPage() {
           href="/mini-app/draw"
           className="block w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white font-bold py-3 px-6 rounded-lg hover:opacity-90 transition text-center text-sm"
         >
-          Enter Next Draw →
+          {hasWinners ? 'View Draw Results →' : 'Enter Next Draw →'}
         </Link>
 
         {/* Info Card */}
