@@ -287,80 +287,52 @@ export default function DrawPage() {
         {/* Winners Display */}
         {winners && winners.length > 0 && (
           <div className="space-y-4">
-            <div className="bg-gradient-to-r from-yellow-600 to-orange-600 rounded-xl p-6 border border-yellow-400/30">
-              <div className="text-center mb-4">
-                <Trophy className="w-12 h-12 text-white mx-auto mb-2" />
-                <h2 className="text-2xl font-bold text-white mb-1">Winners Announced! 🎉</h2>
-                <p className="text-white/90 text-sm">Good luck in your assigned tournaments!</p>
+            {/* Winners Announced Header */}
+            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20">
+              <div className="flex items-center justify-center gap-2 mb-1">
+                <Trophy className="w-5 h-5 text-blue-300" />
+                <h2 className="text-lg font-bold text-white">Draw Complete</h2>
               </div>
+              <p className="text-white/70 text-xs text-center">6 winners selected</p>
             </div>
 
+            {/* User Winner Notification */}
             {isUserWinner && (
-              <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-xl p-6 border border-green-400/30">
-                <div className="text-center">
-                  <div className="text-5xl mb-3">🏆</div>
-                  <h3 className="text-2xl font-bold text-white mb-2">You Won!</h3>
-                  <p className="text-white/90 text-sm">Check your details below</p>
-                </div>
+              <div className="bg-green-500/20 backdrop-blur-lg rounded-xl p-4 border border-green-400/40">
+                <p className="text-green-200 text-sm font-semibold text-center">
+                  ✓ You won! Check your assignment below
+                </p>
               </div>
             )}
 
-            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-              <h3 className="text-xl font-bold text-white mb-4 text-center">Draw Results</h3>
-              <div className="space-y-3">
+            {/* Winners List - Compact */}
+            <div className="bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20">
+              <div className="space-y-2">
                 {winners.map((winner, idx) => {
                   const isCurrentUser = address && winner.walletAddress.toLowerCase() === address.toLowerCase();
                   return (
                     <div
                       key={idx}
-                      className={`rounded-lg p-4 border ${
+                      className={`flex items-center justify-between p-3 rounded-lg ${
                         isCurrentUser
-                          ? 'bg-green-500/20 border-green-400/40'
-                          : 'bg-white/5 border-white/10'
+                          ? 'bg-green-500/20 border border-green-400/40'
+                          : 'bg-white/5'
                       }`}
                     >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-2xl">
-                            {winner.position === 1 ? '🥇' : winner.position === 2 ? '🥈' : winner.position === 3 ? '🥉' : '🏅'}
-                          </span>
-                          <div>
-                            <p className="text-white font-bold text-sm">
-                              Position {winner.position}
-                              {isCurrentUser && <span className="ml-2 text-green-300">(You!)</span>}
-                            </p>
-                            <p className="text-white/60 text-xs font-mono">
-                              {winner.walletAddress.slice(0, 6)}...{winner.walletAddress.slice(-4)}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-white font-bold text-xl">{winner.finalPercentage.toFixed(1)}%</p>
-                          <p className="text-white/60 text-xs">profit share</p>
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <span className="text-lg flex-shrink-0">
+                          {winner.position === 1 ? '🥇' : winner.position === 2 ? '🥈' : winner.position === 3 ? '🥉' : '🏅'}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white/60 text-xs font-mono truncate">
+                            {winner.walletAddress.slice(0, 6)}...{winner.walletAddress.slice(-4)}
+                            {isCurrentUser && <span className="ml-1 text-green-300">(You)</span>}
+                          </p>
+                          <p className="text-white/90 text-xs truncate">{winner.assignedTournament}</p>
                         </div>
                       </div>
-
-                      <div className="bg-white/5 rounded-lg p-3 mb-2">
-                        <p className="text-white text-sm font-semibold mb-1">📍 {winner.assignedTournament}</p>
-                      </div>
-
-                      <div className="space-y-1 text-xs">
-                        <div className="flex justify-between text-white/70">
-                          <span>Base %:</span>
-                          <span>{winner.basePercentage}%</span>
-                        </div>
-                        {winner.sharingBonus > 0 && (
-                          <div className="flex justify-between text-yellow-300">
-                            <span>✨ Sharing Bonus:</span>
-                            <span>+{winner.sharingBonus}%</span>
-                          </div>
-                        )}
-                        {winner.streakMultiplier > 1 && (
-                          <div className="flex justify-between text-orange-300">
-                            <span>🔥 Streak Multiplier:</span>
-                            <span>×{winner.streakMultiplier}</span>
-                          </div>
-                        )}
+                      <div className="text-right flex-shrink-0 ml-2">
+                        <p className="text-white font-bold text-sm">{winner.finalPercentage.toFixed(1)}%</p>
                       </div>
                     </div>
                   );
@@ -368,29 +340,21 @@ export default function DrawPage() {
               </div>
             </div>
 
-            {/* Stream CTA */}
-            <div className="bg-gradient-to-r from-red-600 to-pink-600 rounded-xl p-6 border border-red-400/30">
-              <div className="text-center mb-4">
-                <h3 className="text-xl font-bold text-white mb-2">🎥 Watch the Action Live!</h3>
-                <p className="text-white/90 text-sm mb-4">
-                  See how your community games play out
-                </p>
-                <a
-                  href="https://retake.tv/live/68b58fa755320f51930c9081"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-block w-full bg-white hover:bg-white/90 text-red-600 font-bold py-4 px-8 rounded-lg transition-all text-lg shadow-lg"
-                >
-                  Join Stream Now →
-                </a>
-              </div>
-            </div>
+            {/* Stream CTA - Subtle */}
+            <a
+              href="https://retake.tv/live/68b58fa755320f51930c9081"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors text-center text-sm"
+            >
+              Watch Stream →
+            </a>
 
             <Link
               href="/mini-app/stats"
-              className="block w-full bg-white/10 hover:bg-white/15 text-white font-semibold py-3 px-6 rounded-lg transition-colors text-center"
+              className="block w-full bg-white/10 hover:bg-white/15 text-white font-semibold py-3 px-6 rounded-lg transition-colors text-center text-sm"
             >
-              View Your Stats →
+              View Your Stats
             </Link>
           </div>
         )}
