@@ -133,7 +133,7 @@ export async function POST(request: NextRequest) {
 export async function GET() {
   try {
     const winnersData = await redis.get('raffle_winners');
-    
+
     if (!winnersData) {
       return NextResponse.json(
         { success: false, message: 'No winners drawn yet' },
@@ -141,9 +141,12 @@ export async function GET() {
       );
     }
 
+    // Parse if string, otherwise use as-is (Redis sometimes returns parsed data)
+    const parsed = typeof winnersData === 'string' ? JSON.parse(winnersData) : winnersData;
+
     return NextResponse.json({
       success: true,
-      ...JSON.parse(winnersData as string)
+      ...parsed
     });
 
   } catch (error) {
