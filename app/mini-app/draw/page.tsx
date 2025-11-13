@@ -183,12 +183,16 @@ export default function DrawPage() {
 
         {/* Header */}
         <div className="text-center mb-6">
-          <h1 className="text-3xl font-bold text-white mb-2">Enter the Draw</h1>
-          <p className="text-blue-200">Free entry • Win profit shares</p>
+          <h1 className="text-3xl font-bold text-white mb-2">
+            {winners ? 'Draw Results' : 'Enter the Draw'}
+          </h1>
+          <p className="text-blue-200">
+            {winners ? 'Winners have been selected' : 'Free entry • Win profit shares'}
+          </p>
         </div>
 
         {/* Countdown (only show if no winners yet) */}
-        {streamStartTime && timeUntilStream && !winners && (
+        {!winners && streamStartTime && timeUntilStream && (
           <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-2">
@@ -307,45 +311,45 @@ export default function DrawPage() {
 
             {/* Winners List - Compact */}
             <div className="bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20">
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {winners.map((winner, idx) => {
                   const isCurrentUser = address && winner.walletAddress.toLowerCase() === address.toLowerCase();
                   return (
                     <div
                       key={idx}
-                      className={`flex items-center justify-between p-3 rounded-lg ${
+                      className={`p-3 rounded-lg ${
                         isCurrentUser
                           ? 'bg-green-500/20 border border-green-400/40'
                           : 'bg-white/5'
                       }`}
                     >
-                      <div className="flex items-center gap-3 flex-1 min-w-0">
-                        <span className="text-lg flex-shrink-0">
-                          {winner.position === 1 ? '🥇' : winner.position === 2 ? '🥈' : winner.position === 3 ? '🥉' : '🏅'}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-white/60 text-xs font-mono truncate">
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-lg flex-shrink-0">
+                            {winner.position === 1 ? '🥇' : winner.position === 2 ? '🥈' : winner.position === 3 ? '🥉' : '🏅'}
+                          </span>
+                          <p className="text-white/60 text-xs font-mono">
                             {winner.walletAddress.slice(0, 6)}...{winner.walletAddress.slice(-4)}
                             {isCurrentUser && <span className="ml-1 text-green-300">(You)</span>}
                           </p>
-                          <p className="text-white/90 text-xs truncate">{winner.assignedTournament}</p>
+                        </div>
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-white font-bold text-sm">{winner.finalPercentage.toFixed(1)}%</p>
                         </div>
                       </div>
-                      <div className="text-right flex-shrink-0 ml-2">
-                        <p className="text-white font-bold text-sm">{winner.finalPercentage.toFixed(1)}%</p>
-                      </div>
+                      <p className="text-white/90 text-xs pl-8">{winner.assignedTournament}</p>
                     </div>
                   );
                 })}
               </div>
             </div>
 
-            {/* Stream CTA - Subtle */}
+            {/* Stream CTA - Live Red */}
             <a
               href="https://retake.tv/live/68b58fa755320f51930c9081"
               target="_blank"
               rel="noopener noreferrer"
-              className="block w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors text-center text-sm"
+              className="block w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors text-center text-sm shadow-lg"
             >
               Watch Stream →
             </a>
