@@ -107,6 +107,28 @@
     </div>
   </div>
 
+  <div class="section" id="payoutCalculator" style="display: none;">
+    <h2>💰 Winner Payout Calculator</h2>
+    <p class="description">Calculate USDC payouts for each winner based on tournament results</p>
+
+    <div style="margin: 20px 0; padding: 20px; background: rgba(59, 130, 246, 0.2); border-radius: 12px; border: 2px solid rgba(59, 130, 246, 0.4);">
+      <label style="color: white; font-size: 1.1rem; font-weight: 600; display: block; margin-bottom: 10px;">
+        Total Tournament Winnings (USDC)
+      </label>
+      <input
+        type="number"
+        id="totalWinnings"
+        placeholder="0.00"
+        step="0.01"
+        oninput="calculatePayouts()"
+        style="width: 100%; padding: 15px; font-size: 1.5rem; border: 2px solid rgba(255,255,255,0.3); border-radius: 8px; background: rgba(255,255,255,0.1); color: white; font-weight: bold;"
+      />
+      <p style="color: #a5b4fc; font-size: 0.85rem; margin-top: 8px;">Enter the total amount won from the tournament (before calculating profit shares)</p>
+    </div>
+
+    <div id="payoutCards"></div>
+  </div>
+
   <div class="section">
     <h2>🧪 Testing</h2>
     <p class="description">Add test wallets to quickly test the draw functionality without manual entries</p>
@@ -136,6 +158,9 @@
   </div>
 
   <script>
+    let winnersData = null;
+    let tournamentsData = null;
+
     async function fetchCurrentEntries() {
       const button = event.target;
       button.classList.add('loading');
@@ -169,8 +194,14 @@
               `;
             });
             document.getElementById('winnersList').innerHTML = winnersHtml;
+
+            // Show payout calculator
+            winnersData = data.winners;
+            await loadPayoutCalculator();
           } else {
             document.getElementById('winnersInfo').style.display = 'none';
+            document.getElementById('payoutCalculator').style.display = 'none';
+            winnersData = null;
           }
 
           // Also update the status section
@@ -182,6 +213,140 @@
         button.classList.remove('loading');
         button.textContent = '🔄 Get Current Entries';
       }
+    }
+
+    async function loadPayoutCalculator() {
+      if (!winnersData || winnersData.length === 0) {
+        document.getElementById('payoutCalculator').style.display = 'none';
+        return;
+      }
+
+      // Load tournaments data
+      try {
+        const response = await fetch('/tournaments.json');
+        tournamentsData = await response.json();
+
+        document.getElementById('payoutCalculator').style.display = 'block';
+        calculatePayouts();
+      } catch (error) {
+        console.error('Error loading tournaments:', error);
+      }
+    }
+
+    function parseBuyIn(buyInString) {
+      // Extract numeric value from strings like "$11" or "€10"
+      const match = buyInString.match(/[\d.]+/);
+      return match ? parseFloat(match[0]) : 0;
+    }
+
+    function getTournamentBuyIn(tournamentName) {
+      if (!tournamentsData || !tournamentsData.tournaments) return 0;
+
+      const tournament = tournamentsData.tournaments.find(t => t.name === tournamentName);
+      return tournament ? parseBuyIn(tournament.buyIn) : 0;
+    }
+
+    function calculatePayouts() {
+      if (!winnersData || winnersData.length === 0) return;
+
+      const totalWinnings = parseFloat(document.getElementById('totalWinnings').value) || 0;
+      const payoutCardsDiv = document.getElementById('payoutCards');
+
+      let html = '';
+
+      winnersData.forEach((winner, index) => {
+        const position = winner.position;
+        const positionEmoji = position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : '🏅';
+        const positionText = ['1st', '2nd', '3rd', '4th', '5th', '6th'][position - 1];
+
+        const buyIn = getTournamentBuyIn(winner.assignedTournament);
+        const netProfit = Math.max(0, totalWinnings - buyIn);
+
+        const basePercentage = winner.basePercentage || 0;
+        const streakMultiplier = winner.streakMultiplier || 1;
+        const sharingBonus = winner.sharingBonus || 0;
+        const finalPercentage = winner.finalPercentage || basePercentage;
+
+        // Calculate payout
+        const payout = netProfit * (finalPercentage / 100);
+
+        html += `
+          <div style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(59, 130, 246, 0.2) 100%); padding: 20px; border-radius: 12px; margin-bottom: 15px; border: 2px solid rgba(139, 92, 246, 0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+              <div>
+                <div style="color: white; font-size: 1.3rem; font-weight: bold;">
+                  ${positionEmoji} ${positionText} Place
+                </div>
+                <div style="color: #c7d2fe; font-size: 0.85rem; font-family: monospace; margin-top: 5px;">
+                  ${winner.walletAddress.slice(0, 8)}...${winner.walletAddress.slice(-6)}
+                </div>
+              </div>
+              <button
+                onclick="copyAddress('${winner.walletAddress}')"
+                style="background: #10b981; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem;"
+              >
+                📋 Copy Address
+              </button>
+            </div>
+
+            <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+              <div style="color: #a5b4fc; font-size: 0.9rem; margin-bottom: 5px;">Tournament</div>
+              <div style="color: white; font-weight: 600;">${winner.assignedTournament}</div>
+              <div style="color: #fbbf24; font-size: 0.85rem; margin-top: 5px;">Buy-in: $${buyIn.toFixed(2)}</div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+              <div style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; text-align: center;">
+                <div style="color: #a5b4fc; font-size: 0.75rem;">Base %</div>
+                <div style="color: white; font-weight: bold; font-size: 1.1rem;">${basePercentage}%</div>
+              </div>
+              ${streakMultiplier > 1 ? `
+                <div style="background: rgba(249, 115, 22, 0.2); padding: 10px; border-radius: 6px; text-align: center; border: 1px solid rgba(249, 115, 22, 0.3);">
+                  <div style="color: #fed7aa; font-size: 0.75rem;">Streak 🔥</div>
+                  <div style="color: #fb923c; font-weight: bold; font-size: 1.1rem;">${streakMultiplier}x</div>
+                </div>
+              ` : ''}
+              ${sharingBonus > 0 ? `
+                <div style="background: rgba(34, 197, 94, 0.2); padding: 10px; border-radius: 6px; text-align: center; border: 1px solid rgba(34, 197, 94, 0.3);">
+                  <div style="color: #bbf7d0; font-size: 0.75rem;">Share Bonus</div>
+                  <div style="color: #4ade80; font-weight: bold; font-size: 1.1rem;">+${sharingBonus}%</div>
+                </div>
+              ` : ''}
+              <div style="background: rgba(168, 85, 247, 0.2); padding: 10px; border-radius: 6px; text-align: center; border: 1px solid rgba(168, 85, 247, 0.3);">
+                <div style="color: #e9d5ff; font-size: 0.75rem;">Final %</div>
+                <div style="color: #c084fc; font-weight: bold; font-size: 1.1rem;">${finalPercentage.toFixed(1)}%</div>
+              </div>
+            </div>
+
+            <div style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; margin-bottom: 10px;">
+              <div style="color: #a5b4fc; font-size: 0.85rem; margin-bottom: 8px;">Calculation:</div>
+              <div style="color: #c7d2fe; font-size: 0.85rem; font-family: monospace;">
+                ($${totalWinnings.toFixed(2)} - $${buyIn.toFixed(2)}) × ${finalPercentage.toFixed(1)}%
+              </div>
+              <div style="color: #c7d2fe; font-size: 0.85rem; font-family: monospace; margin-top: 5px;">
+                = $${netProfit.toFixed(2)} × ${finalPercentage.toFixed(1)}%
+              </div>
+            </div>
+
+            <div style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 20px; border-radius: 10px; text-align: center;">
+              <div style="color: rgba(255,255,255,0.9); font-size: 0.9rem; margin-bottom: 5px;">PAYOUT AMOUNT</div>
+              <div style="color: white; font-size: 2.5rem; font-weight: bold;">$${payout.toFixed(2)}</div>
+              <div style="color: rgba(255,255,255,0.8); font-size: 0.85rem; margin-top: 5px;">USDC</div>
+            </div>
+          </div>
+        `;
+      });
+
+      payoutCardsDiv.innerHTML = html;
+    }
+
+    function copyAddress(address) {
+      navigator.clipboard.writeText(address).then(() => {
+        alert('Address copied to clipboard!\n\n' + address);
+      }).catch(err => {
+        console.error('Failed to copy:', err);
+        prompt('Copy this address:', address);
+      });
     }
 
     async function testDraw() {
