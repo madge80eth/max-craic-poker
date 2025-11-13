@@ -187,8 +187,8 @@ export default function DrawPage() {
           <p className="text-blue-200">Free entry • Win profit shares</p>
         </div>
 
-        {/* Countdown */}
-        {streamStartTime && timeUntilStream && (
+        {/* Countdown (only show if no winners yet) */}
+        {streamStartTime && timeUntilStream && !winners && (
           <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-2">
@@ -210,7 +210,7 @@ export default function DrawPage() {
         )}
 
         {/* Tournaments List */}
-        {tournaments.length > 0 && !hasEntered && (
+        {tournaments.length > 0 && !hasEntered && !winners && (
           <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
             <h2 className="text-xl font-bold text-white mb-4 text-center">Today's Tournaments</h2>
             <p className="text-blue-200 text-center text-sm mb-4">Winners get assigned to one of these</p>
@@ -228,8 +228,8 @@ export default function DrawPage() {
           </div>
         )}
 
-        {/* Entry Section */}
-        {!hasEntered && (
+        {/* Entry Section (only show if no winners drawn yet) */}
+        {!hasEntered && !winners && (
           <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
             {!isConnected ? (
               <div className="space-y-3">
@@ -365,6 +365,24 @@ export default function DrawPage() {
                     </div>
                   );
                 })}
+              </div>
+            </div>
+
+            {/* Stream CTA */}
+            <div className="bg-gradient-to-r from-red-600 to-pink-600 rounded-xl p-6 border border-red-400/30">
+              <div className="text-center mb-4">
+                <h3 className="text-xl font-bold text-white mb-2">🎥 Watch the Action Live!</h3>
+                <p className="text-white/90 text-sm mb-4">
+                  See how your community games play out
+                </p>
+                <a
+                  href="https://retake.tv/live/68b58fa755320f51930c9081"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-block w-full bg-white hover:bg-white/90 text-red-600 font-bold py-4 px-8 rounded-lg transition-all text-lg shadow-lg"
+                >
+                  Join Stream Now →
+                </a>
               </div>
             </div>
 
