@@ -1,8 +1,8 @@
 'use client';
 
-import { useAccount } from 'wagmi';
+import { useAccount, useConnect } from 'wagmi';
 import { useEffect, useState } from 'react';
-import { TrendingUp, Trophy, Flame } from 'lucide-react';
+import { TrendingUp, Trophy, Flame, Wallet } from 'lucide-react';
 import Link from 'next/link';
 
 interface UserStats {
@@ -12,7 +12,8 @@ interface UserStats {
 }
 
 export default function StatsPage() {
-  const { address } = useAccount();
+  const { address, isConnected } = useAccount();
+  const { connect, connectors } = useConnect();
   const [stats, setStats] = useState<UserStats | null>(null);
   const [nextStreamTime, setNextStreamTime] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
@@ -74,20 +75,40 @@ export default function StatsPage() {
 
   if (!address) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-800 p-4 flex items-center justify-center">
-        <div className="text-center max-w-md">
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-800 p-4 flex items-center justify-center pb-24">
+        <div className="text-center max-w-md w-full px-4">
           <div className="flex items-center justify-center gap-3 mb-4">
             <img src="/mcp-logo.png" alt="MCP Logo" className="w-12 h-12 object-contain" />
             <Trophy className="w-12 h-12 text-purple-400" />
           </div>
-          <h1 className="text-2xl font-bold text-white mb-3">Your MCP Stats</h1>
-          <p className="text-blue-200 text-sm mb-6">Connect your wallet to view your stats and progress</p>
-          <Link
-            href="/mini-app/draw"
-            className="inline-block bg-gradient-to-r from-purple-500 to-blue-500 text-white font-bold py-3 px-8 rounded-lg hover:opacity-90 transition text-sm"
-          >
-            Get Started
-          </Link>
+          <h1 className="text-2xl font-bold text-white mb-3">Welcome to Max Craic Poker</h1>
+          <p className="text-blue-200 text-sm mb-6">Connect your wallet to view stats and enter draws</p>
+
+          {/* Wallet Connection Buttons */}
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20 space-y-3">
+            <p className="text-white/80 text-center mb-4 text-sm">Connect your wallet to get started</p>
+            {connectors.map((connector) => (
+              <button
+                key={connector.id}
+                onClick={() => connect({ connector })}
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-all flex items-center justify-center gap-2"
+              >
+                <Wallet className="w-5 h-5" />
+                Connect {connector.name}
+              </button>
+            ))}
+          </div>
+
+          {/* Info Card */}
+          <div className="mt-6 bg-purple-500/10 backdrop-blur-lg rounded-xl p-4 border border-purple-400/20">
+            <h3 className="text-white font-semibold mb-2 text-sm">How It Works</h3>
+            <ul className="text-blue-200 text-xs space-y-1.5 text-left">
+              <li>• Enter each draw for free</li>
+              <li>• 6 winners selected per stream</li>
+              <li>• Win up to 12% profit share</li>
+              <li>• Streak bonus: 3 consecutive entries = 1.5x multiplier</li>
+            </ul>
+          </div>
         </div>
       </div>
     );

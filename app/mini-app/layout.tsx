@@ -40,7 +40,7 @@ export default function MiniAppLayout({
               }`}
             >
               <TrendingUp className="w-5 h-5" />
-              <span className="text-xs font-medium">Stats</span>
+              <span className="text-xs font-medium">Home</span>
             </Link>
 
             <Link

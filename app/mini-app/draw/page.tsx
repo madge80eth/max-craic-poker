@@ -237,17 +237,15 @@ export default function DrawPage() {
           <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
             {!isConnected ? (
               <div className="space-y-3">
-                <p className="text-white/80 text-center mb-4">Connect wallet to enter</p>
-                {connectors.map((connector) => (
-                  <button
-                    key={connector.id}
-                    onClick={() => connect({ connector })}
-                    className="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-all flex items-center justify-center gap-2"
-                  >
-                    <Wallet className="w-5 h-5" />
-                    Connect {connector.name}
-                  </button>
-                ))}
+                <button
+                  disabled
+                  className="w-full bg-gray-600 text-white/60 font-bold py-4 px-6 rounded-lg cursor-not-allowed"
+                >
+                  Connect Wallet First
+                </button>
+                <p className="text-blue-200 text-xs text-center">
+                  Go to the <Link href="/mini-app/stats" className="underline font-semibold">Home</Link> tab to connect your wallet
+                </p>
               </div>
             ) : (
               <>
