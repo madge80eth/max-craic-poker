@@ -30,12 +30,18 @@ export async function updateUserStats(
   // Calculate streak (3 consecutive draws = streak)
   const currentStreak = lastThree.length === 3 ? 3 : lastThree.length;
 
-  await redis.hset(`user:${walletAddress}`, {
+  const newStats = {
     totalEntries: stats.totalEntries + 1,
     tournamentsAssigned: stats.tournamentsAssigned, // Updated when they win
     lastThreeDrawIds: JSON.stringify(lastThree),
     currentStreak
-  });
+  };
+
+  console.log(`📊 Updating user stats for ${walletAddress}:`, newStats);
+
+  await redis.hset(`user:${walletAddress}`, newStats);
+
+  console.log(`✅ User stats updated successfully for ${walletAddress}`);
 }
 
 export async function incrementTournamentsAssigned(
