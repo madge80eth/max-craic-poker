@@ -4,7 +4,7 @@
 import { Metadata } from 'next'
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { TrendingUp, Ticket, BarChart3, Info } from 'lucide-react';
+import { TrendingUp, Ticket, BarChart3, Menu } from 'lucide-react';
 
 export const dynamic = 'force-dynamic'
 
@@ -68,15 +68,15 @@ export default function MiniAppLayout({
             </Link>
 
             <Link
-              href="/mini-app/info"
+              href="/mini-app/more"
               className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
-                isActive('/mini-app/info')
+                isActive('/mini-app/more')
                   ? 'bg-purple-600 text-white'
                   : 'text-blue-300 hover:text-white'
               }`}
             >
-              <Info className="w-5 h-5" />
-              <span className="text-xs font-medium">Info</span>
+              <Menu className="w-5 h-5" />
+              <span className="text-xs font-medium">More</span>
             </Link>
 
           </div>

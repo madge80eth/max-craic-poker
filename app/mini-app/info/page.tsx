@@ -1,11 +1,34 @@
 'use client';
 
+import Link from 'next/link';
+
 export default function InfoPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-800 p-4 pb-24">
       <div className="max-w-2xl mx-auto pt-8 space-y-6">
 
         <h1 className="text-3xl font-bold text-white text-center mb-6">How It Works</h1>
+
+        {/* Community Game Card */}
+        <Link href="/mini-app/community-game">
+          <div className="bg-gradient-to-br from-purple-600 to-pink-600 backdrop-blur-sm rounded-lg p-6 border border-pink-400/30 hover:from-purple-700 hover:to-pink-700 transition-all cursor-pointer">
+            <div className="flex items-start gap-3">
+              <span className="text-3xl">🎮</span>
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <h2 className="text-xl font-bold text-white">Community Game</h2>
+                  <span className="bg-yellow-400 text-purple-900 text-xs font-bold px-2 py-0.5 rounded-full">COMING SOON</span>
+                </div>
+                <p className="text-pink-100 leading-relaxed text-sm">
+                  New way to win! Compete before each stream for cash prizes and equity in future community games. Finish top 3 to claim guaranteed rewards.
+                </p>
+                <p className="text-pink-200 text-xs mt-2 font-semibold">
+                  Tap to learn more →
+                </p>
+              </div>
+            </div>
+          </div>
+        </Link>
 
         {/* The Draw */}
         <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
