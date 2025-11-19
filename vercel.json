@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/check-tournament",
       "schedule": "* * * * *"
+    },
+    {
+      "path": "/api/cron/check-hands",
+      "schedule": "* * * * *"
     }
   ]
 }

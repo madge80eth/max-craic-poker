@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getGameState, getActiveTournament, getPlayerCards } from '@/lib/tournament-redis'
+import { getLatestEvent } from '@/lib/tournament-pubsub'
 import { GameState } from '@/types'
 
 // Cache for 1 second to reduce Redis calls
@@ -56,16 +57,23 @@ export async function GET(req: NextRequest) {
     cacheTime = now
     cachedTournamentId = targetTournamentId
 
+    // Get latest event (for notifications)
+    const latestEvent = await getLatestEvent(targetTournamentId)
+
     // Add private cards if wallet provided
     if (walletAddress) {
       const cards = await getPlayerCards(targetTournamentId, walletAddress)
       return NextResponse.json({
         ...state,
-        privateCards: cards || []
+        privateCards: cards || [],
+        latestEvent
       })
     }
 
-    return NextResponse.json(state)
+    return NextResponse.json({
+      ...state,
+      latestEvent
+    })
 
   } catch (error) {
     console.error('Error fetching game state:', error)
