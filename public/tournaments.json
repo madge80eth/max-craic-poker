@@ -1,12 +1,12 @@
 {
-  "sessionId": "2025-11-13",
-  "streamStartTime": "2025-11-13T09:00:00Z",
+  "sessionId": "2025-11-20",
+  "streamStartTime": "2025-11-20T11:00:00Z",
   "tournaments": [
-    { "name": "Betfair: €10 Knockout 8-Max, €1K Gtd", "buyIn": "€10" },
-    { "name": "PokerStars: Bounty Builder $11, $4K Gtd", "buyIn": "$11" },
-    { "name": "888: $800 Early PKO Rumble", "buyIn": "$11" },
-    { "name": "PokerStars: Big $3.30, $400 Gtd", "buyIn": "$3.30" },
-    { "name": "PokerStars: Big $16.50, $1.5K Gtd", "buyIn": "$16.50" },
-    { "name": "Betfair: €3 Morning Micro, €400 Gtd", "buyIn": "€3" }
+    { "name": "Betfair: €10 Bounty Hunter Prime Morning [8-Max], €1.5K Gtd", "buyIn": "€10" },
+    { "name": "PokerStars: Bounty Builder $4.40, $2.5K Gtd", "buyIn": "$4.40" },
+    { "name": "PokerStars: $5.50 NLHE, $300 Gtd", "buyIn": "$5.50" },
+    { "name": "PokerStars: $11 NLHE [6-Max, Progressive KO], $750 Gtd", "buyIn": "$11" },
+    { "name": "888: $2K Early Mystery Bounty", "buyIn": "$8.80" },
+    { "name": "888: $200 Freezeout", "buyIn": "$5.50" }
   ]
 }
