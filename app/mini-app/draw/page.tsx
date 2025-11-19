@@ -3,7 +3,7 @@
 import { useAccount, useConnect } from 'wagmi';
 import { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { Clock, Trophy, Wallet, Share2 } from 'lucide-react';
+import { Clock, Trophy, Wallet, Share2, Flame } from 'lucide-react';
 import Link from 'next/link';
 import { useComposeCast } from '@coinbase/onchainkit/minikit';
 
@@ -167,11 +167,27 @@ export default function DrawPage() {
   }
 
   const handleShare = async () => {
+    if (!address) return;
+
     try {
+      // Open the compose cast
       composeCast({
         text: "I just entered the Max Craic Poker community draw! 🎰\n\nWin poker tournament profit shares - paid in USDC onchain 💰",
         embeds: ['https://max-craic-poker.vercel.app/share']
       });
+
+      // Record the share in backend (apply +2% bonus)
+      const shareRes = await fetch('/api/share', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ walletAddress: address })
+      });
+
+      const shareData = await shareRes.json();
+
+      if (shareData.success) {
+        alert('✅ Share recorded! +2% bonus applied to your entry');
+      }
     } catch (error) {
       console.error('Share error:', error);
     }
@@ -371,11 +387,25 @@ export default function DrawPage() {
                 You'll be assigned to a tournament when winners are drawn 30 mins before stream
               </p>
 
-              {userStats?.currentStreak === 3 && (
-                <div className="bg-orange-500/20 rounded-lg p-3 border border-orange-400/30 mb-3">
-                  <p className="text-orange-200 text-sm font-semibold">
-                    🔥 Streak Active - Your next win gets 1.5x multiplier! 🔥
-                  </p>
+              {/* Streak Status Display */}
+              {userStats && (
+                <div className="bg-white/10 rounded-lg p-3 border border-white/20 mb-3">
+                  <div className="flex items-center justify-center gap-2 mb-1">
+                    <Flame className={`w-5 h-5 ${userStats.currentStreak === 3 ? 'text-orange-300' : 'text-blue-300'}`} />
+                    <p className="text-white text-sm font-semibold">
+                      Streak: {userStats.currentStreak}/3 consecutive entries
+                    </p>
+                  </div>
+                  {userStats.currentStreak === 3 && (
+                    <p className="text-orange-200 text-xs font-semibold mt-1">
+                      🔥 Your next win gets 1.5x multiplier! 🔥
+                    </p>
+                  )}
+                  {userStats.currentStreak === 2 && (
+                    <p className="text-yellow-200 text-xs mt-1">
+                      💪 One more entry to activate 1.5x bonus!
+                    </p>
+                  )}
                 </div>
               )}
             </div>
