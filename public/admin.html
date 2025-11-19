@@ -117,7 +117,7 @@
     <h2>🧪 Testing</h2>
     <p class="description">Add test wallets to quickly test the draw functionality without manual entries</p>
     <button class="test" onclick="testDraw()">Add Test Entries</button>
-    <p style="color: #a5b4fc; font-size: 14px; margin-top: 10px;">Adds 4 test wallets to the current draw</p>
+    <p style="color: #a5b4fc; font-size: 14px; margin-top: 10px;">Adds 10 test wallets to the current draw</p>
   </div>
 
   <div class="section">
@@ -320,7 +320,7 @@
     }
 
     async function testDraw() {
-      if (!confirm('Add 4 test wallets to the draw?\n\nThis will add test entries you can use to test the draw functionality.')) return;
+      if (!confirm('Add 10 test wallets to the draw?\n\nThis will add test entries you can use to test the draw functionality.')) return;
 
       const response = await fetch('/api/test-draw', { method: 'POST' });
       const data = await response.json();
