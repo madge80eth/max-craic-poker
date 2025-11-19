@@ -169,6 +169,97 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    // STEP 4: Check for blind increases (every 5 minutes)
+    if (state && state.status === 'active') {
+      const { getBlindLevel } = await import('@/lib/poker-engine')
+
+      // Calculate time elapsed since tournament start
+      const tournamentStartTime = config.startTime
+      const timeElapsed = now - tournamentStartTime
+      const minutesElapsed = Math.floor(timeElapsed / (60 * 1000))
+
+      // Blind level increases every 5 minutes
+      const expectedBlindLevel = Math.floor(minutesElapsed / 5) + 1
+
+      if (expectedBlindLevel > state.currentBlindLevel) {
+        const newBlindLevel = getBlindLevel(expectedBlindLevel)
+
+        state.currentBlindLevel = expectedBlindLevel
+        state.smallBlind = newBlindLevel.smallBlind
+        state.bigBlind = newBlindLevel.bigBlind
+
+        await setGameState({
+          ...state,
+          lastUpdate: now
+        })
+
+        const { notifyEvent } = await import('@/lib/tournament-pubsub')
+        await notifyEvent(tournamentId, 'blinds_increased', {
+          level: expectedBlindLevel,
+          smallBlind: newBlindLevel.smallBlind,
+          bigBlind: newBlindLevel.bigBlind
+        })
+
+        console.log(`📈 Blinds increased to Level ${expectedBlindLevel}: ${newBlindLevel.smallBlind}/${newBlindLevel.bigBlind}`)
+
+        return NextResponse.json({
+          action: 'blinds_increased',
+          tournamentId,
+          level: expectedBlindLevel,
+          smallBlind: newBlindLevel.smallBlind,
+          bigBlind: newBlindLevel.bigBlind
+        })
+      }
+    }
+
+    // STEP 5: Check for tournament completion (down to 3 players or less)
+    if (state && state.status === 'active') {
+      const activePlayers = state.players.filter(p => p.status !== 'eliminated' && p.chipStack > 0)
+
+      if (activePlayers.length <= 3 && activePlayers.length > 0) {
+        console.log(`🏆 Tournament complete! ${activePlayers.length} finalists`)
+
+        // Sort by chip count for final positions
+        const finalists = [...activePlayers].sort((a, b) => b.chipStack - a.chipStack)
+
+        // Mark tournament as completed
+        state.status = 'completed'
+        await setGameState({
+          ...state,
+          lastUpdate: now
+        })
+
+        // Create tournament result with proper prize distribution
+        const { setTournamentResult } = await import('@/lib/tournament-redis')
+        const { getTournamentPrizes, EQUITY_PERCENTAGE } = await import('@/lib/prize-distribution')
+
+        const prizes = getTournamentPrizes() // Default €100 prize pool
+
+        await setTournamentResult({
+          tournamentId,
+          completedAt: now,
+          winners: finalists.slice(0, 3).map((player, idx) => ({
+            walletAddress: player.walletAddress,
+            position: (idx + 1) as 1 | 2 | 3,
+            prizeAmount: prizes[(idx + 1) as 1 | 2 | 3],
+            equityPercentage: EQUITY_PERCENTAGE
+          }))
+        })
+
+        console.log(`🎉 Winners:`, finalists.slice(0, 3).map(p => p.walletAddress))
+
+        return NextResponse.json({
+          action: 'tournament_completed',
+          tournamentId,
+          winners: finalists.slice(0, 3).map((p, idx) => ({
+            position: idx + 1,
+            walletAddress: p.walletAddress,
+            chipCount: p.chipStack
+          }))
+        })
+      }
+    }
+
     // Nothing to do right now
     return NextResponse.json({
       message: 'All checks complete',

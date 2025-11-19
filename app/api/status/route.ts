@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 import { checkAndResetSession } from '@/lib/session';
+import { getActiveTournament, getTournamentResult } from '@/lib/tournament-redis';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -19,13 +20,24 @@ export async function GET(request: NextRequest) {
     const entries = await redis.hgetall('raffle_entries');
     const totalEntries = entries ? Object.keys(entries).length : 0;
 
-    // Get winners data
+    // Get raffle winners data
     const winnersData = await redis.get('raffle_winners');
-    let winners = null;
-    
+    let raffleWinners = null;
+
     if (winnersData) {
       const parsed = typeof winnersData === 'string' ? JSON.parse(winnersData) : winnersData;
-      winners = parsed.winners || null;
+      raffleWinners = parsed.winners || null;
+    }
+
+    // Get tournament winners
+    const tournamentId = await getActiveTournament();
+    let tournamentWinners = null;
+
+    if (tournamentId) {
+      const tournamentResult = await getTournamentResult(tournamentId);
+      if (tournamentResult) {
+        tournamentWinners = tournamentResult.winners;
+      }
     }
 
     // Check if specific wallet requested
@@ -37,10 +49,18 @@ export async function GET(request: NextRequest) {
         userEntry = typeof userEntryData === 'string' ? JSON.parse(userEntryData) : userEntryData;
       }
 
-      // Check if user is a winner
-      let userWinnerInfo = null;
-      if (winners && Array.isArray(winners)) {
-        userWinnerInfo = winners.find((w: any) => 
+      // Check if user is a raffle winner
+      let raffleWinnerInfo = null;
+      if (raffleWinners && Array.isArray(raffleWinners)) {
+        raffleWinnerInfo = raffleWinners.find((w: any) =>
+          w.walletAddress.toLowerCase() === walletAddress.toLowerCase()
+        );
+      }
+
+      // Check if user is a tournament winner
+      let tournamentWinnerInfo = null;
+      if (tournamentWinners && Array.isArray(tournamentWinners)) {
+        tournamentWinnerInfo = tournamentWinners.find((w: any) =>
           w.walletAddress.toLowerCase() === walletAddress.toLowerCase()
         );
       }
@@ -50,9 +70,14 @@ export async function GET(request: NextRequest) {
         totalEntries,
         hasEntered: !!userEntry,
         userEntry,
-        isWinner: !!userWinnerInfo,
-        winnerInfo: userWinnerInfo,
-        winners
+        isRaffleWinner: !!raffleWinnerInfo,
+        raffleWinnerInfo,
+        isTournamentWinner: !!tournamentWinnerInfo,
+        tournamentWinnerInfo,
+        allWinners: {
+          raffle: raffleWinners,
+          tournament: tournamentWinners
+        }
       });
     }
 
@@ -60,7 +85,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       totalEntries,
-      winners
+      allWinners: {
+        raffle: raffleWinners,
+        tournament: tournamentWinners
+      }
     });
 
   } catch (error) {
