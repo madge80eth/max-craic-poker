@@ -81,7 +81,8 @@ export async function startTournament(tournamentId: string, config: TournamentCo
     ? (firstToAct.seatPosition % players.length) + 1
     : players[0].seatPosition
 
-  // Create initial game state
+  // Create initial game state with 3-min "Deal Me In" deadline
+  const now = Date.now()
   const initialState: GameState = {
     tournamentId,
     status: 'active',
@@ -98,7 +99,8 @@ export async function startTournament(tournamentId: string, config: TournamentCo
     activePlayerPosition,
     players,
     sidePots: [],
-    lastUpdate: Date.now()
+    lastUpdate: now,
+    dealMeInDeadline: now + (3 * 60 * 1000) // 3 minutes from start
   }
 
   await setGameState(initialState)

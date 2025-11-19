@@ -79,6 +79,7 @@ export interface GameState {
   players: Player[];
   sidePots: SidePot[];
   lastUpdate: number; // Unix timestamp
+  dealMeInDeadline?: number; // Initial 3-min deadline for first "Deal Me In"
 }
 
 export interface SidePot {
