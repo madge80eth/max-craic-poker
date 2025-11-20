@@ -4,7 +4,7 @@
 import { Metadata } from 'next'
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { TrendingUp, Ticket, Gamepad2, BarChart3, Menu } from 'lucide-react';
+import { TrendingUp, Ticket, Gamepad2, Film, Menu } from 'lucide-react';
 
 export const dynamic = 'force-dynamic'
 
@@ -68,15 +68,15 @@ export default function MiniAppLayout({
             </Link>
 
             <Link
-              href="/mini-app/leaderboard"
+              href="/mini-app/media"
               className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg transition-all ${
-                isActive('/mini-app/leaderboard')
+                isActive('/mini-app/media')
                   ? 'bg-purple-600 text-white'
                   : 'text-blue-300 hover:text-white'
               }`}
             >
-              <BarChart3 className="w-5 h-5" />
-              <span className="text-[11px] font-medium">Boards</span>
+              <Film className="w-5 h-5" />
+              <span className="text-[11px] font-medium">Media</span>
             </Link>
 
             <Link

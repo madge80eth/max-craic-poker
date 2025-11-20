@@ -25,3 +25,30 @@ export interface DrawResult {
   timestamp: number;
   winners: Winner[];
 }
+
+// ============================================
+// VIDEO/MEDIA TYPES
+// ============================================
+
+export type VideoCategory = 'highlight' | 'breakdown' | 'strategy';
+
+export interface Video {
+  id: string;
+  title: string;
+  description: string;
+  cloudflareVideoId: string; // Cloudflare Stream video ID
+  thumbnailUrl: string; // Cloudflare thumbnail
+  duration: number; // seconds
+  category: VideoCategory;
+  uploadedAt: number; // timestamp
+  viewCount: number;
+  totalTips: number; // USDC cents (e.g., 1000 = $10.00)
+}
+
+export interface VideoTip {
+  videoId: string;
+  tipper: string; // wallet address
+  amount: number; // USDC cents
+  timestamp: number;
+  txHash?: string; // Base transaction hash
+}
