@@ -6,10 +6,11 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const video = await getVideo(params.id);
+    const { id } = await params;
+    const video = await getVideo(id);
 
     if (!video) {
       return NextResponse.json(

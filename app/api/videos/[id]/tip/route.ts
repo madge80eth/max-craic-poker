@@ -7,9 +7,10 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await request.json();
     const { amount, tipper, txHash } = body;
 
@@ -29,7 +30,7 @@ export async function POST(
     }
 
     // Verify video exists
-    const video = await getVideo(params.id);
+    const video = await getVideo(id);
 
     if (!video) {
       return NextResponse.json(
@@ -40,7 +41,7 @@ export async function POST(
 
     // Create tip object
     const tip: VideoTip = {
-      videoId: params.id,
+      videoId: id,
       tipper,
       amount,
       timestamp: Date.now(),

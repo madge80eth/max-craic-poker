@@ -6,11 +6,12 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     // Verify video exists
-    const video = await getVideo(params.id);
+    const video = await getVideo(id);
 
     if (!video) {
       return NextResponse.json(
@@ -20,7 +21,7 @@ export async function POST(
     }
 
     // Increment view count
-    await incrementViewCount(params.id);
+    await incrementViewCount(id);
 
     return NextResponse.json({ success: true, viewCount: video.viewCount + 1 });
   } catch (error) {
