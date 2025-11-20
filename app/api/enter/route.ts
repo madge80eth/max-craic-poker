@@ -32,6 +32,15 @@ export async function POST(request: NextRequest) {
     // Auto-check and reset monthly leaderboard if new month
     await checkAndResetMonthly();
 
+    // Block entries if winners already drawn
+    const winnersData = await redis.get('raffle_winners');
+    if (winnersData) {
+      return NextResponse.json({
+        success: false,
+        error: 'Draw has already been completed. Cannot enter after winners are selected.'
+      }, { status: 400 });
+    }
+
     // Check if already entered
     const existingEntry = await redis.hget('raffle_entries', walletAddress);
     if (existingEntry) {
