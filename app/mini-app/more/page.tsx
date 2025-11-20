@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Info } from 'lucide-react';
+import { Info, BarChart3 } from 'lucide-react';
 
 export default function MorePage() {
   return (
@@ -14,8 +14,25 @@ export default function MorePage() {
           <p className="text-blue-200 text-sm">Additional resources and information</p>
         </div>
 
-        {/* Info Card - Centered Single Card */}
-        <div className="flex justify-center">
+        {/* Cards Grid */}
+        <div className="flex flex-col items-center gap-6">
+          {/* Leaderboard Card */}
+          <Link
+            href="/mini-app/leaderboard"
+            className="bg-white/10 backdrop-blur-lg rounded-xl p-8 border border-white/20 hover:bg-white/15 transition-all group w-64"
+          >
+            <div className="flex flex-col items-center text-center gap-4">
+              <div className="bg-gradient-to-br from-orange-500 to-red-600 p-4 rounded-full group-hover:scale-110 transition-transform">
+                <BarChart3 className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h3 className="text-white font-bold text-lg mb-2">Leaderboard</h3>
+                <p className="text-blue-200 text-sm">See top entries and tournament assignments</p>
+              </div>
+            </div>
+          </Link>
+
+          {/* Info Card */}
           <Link
             href="/mini-app/info"
             className="bg-white/10 backdrop-blur-lg rounded-xl p-8 border border-white/20 hover:bg-white/15 transition-all group w-64"
