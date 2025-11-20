@@ -85,8 +85,11 @@ export async function POST(request: NextRequest) {
     // Get total entries count for current draw
     const totalEntries = await redis.hlen('raffle_entries');
 
-    // Generate current draw ID (timestamp-based)
-    const drawId = `draw-${Date.now()}`;
+    // Get sessionId from tournaments.json for consistent draw tracking
+    const tournamentsPath = require('path').join(process.cwd(), 'public', 'tournaments.json');
+    const tournamentsFile = require('fs').readFileSync(tournamentsPath, 'utf-8');
+    const tournamentsData = JSON.parse(tournamentsFile);
+    const drawId = tournamentsData.sessionId || `draw-${Date.now()}`;
 
     // Update user stats for streak tracking
     await updateUserStats(walletAddress, drawId);

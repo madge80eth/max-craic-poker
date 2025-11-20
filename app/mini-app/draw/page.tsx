@@ -42,6 +42,7 @@ export default function DrawPage() {
   const [timeUntilStream, setTimeUntilStream] = useState<string>('');
   const [winners, setWinners] = useState<Winner[] | null>(null);
   const [isUserWinner, setIsUserWinner] = useState(false);
+  const [streamHasPassed, setStreamHasPassed] = useState(false);
 
   useEffect(() => {
     if (!address) return;
@@ -93,8 +94,14 @@ export default function DrawPage() {
       const now = new Date().getTime();
       const streamTime = streamStartTime.getTime();
       const difference = streamTime - now;
+      // Stream considered "passed" 12 hours after start time
+      const twelveHoursAfterStream = streamTime + (12 * 60 * 60 * 1000);
 
-      if (difference > 0) {
+      if (now > twelveHoursAfterStream) {
+        setStreamHasPassed(true);
+        setTimeUntilStream('');
+      } else if (difference > 0) {
+        setStreamHasPassed(false);
         const days = Math.floor(difference / (1000 * 60 * 60 * 24));
         const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
         const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
@@ -107,7 +114,8 @@ export default function DrawPage() {
           setTimeUntilStream(`${minutes}m`);
         }
       } else {
-        setTimeUntilStream('Stream is live!');
+        setStreamHasPassed(false);
+        setTimeUntilStream('');
       }
     };
 
@@ -207,8 +215,30 @@ export default function DrawPage() {
           </p>
         </div>
 
-        {/* Countdown (only show if no winners yet) */}
-        {!winners && streamStartTime && timeUntilStream && (
+        {/* Past Stream Message */}
+        {streamHasPassed && !winners && (
+          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
+            <div className="text-center">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Trophy className="w-5 h-5 text-purple-300" />
+                <h3 className="text-lg font-bold text-white">Last Stream</h3>
+              </div>
+              <p className="text-blue-200 text-sm mb-3">
+                {streamStartTime?.toLocaleString('en-GB', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </p>
+              <p className="text-white/80 text-sm">Catch up on stream highlights in the Media tab</p>
+            </div>
+          </div>
+        )}
+
+        {/* Countdown (only show if stream upcoming and no winners yet) */}
+        {!streamHasPassed && !winners && streamStartTime && timeUntilStream && (
           <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
             <div className="text-center">
               <div className="flex items-center justify-center gap-2 mb-2">
@@ -251,7 +281,19 @@ export default function DrawPage() {
         {/* Entry Section (only show if no winners drawn yet) */}
         {!hasEntered && !winners && (
           <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
-            {!isConnected ? (
+            {streamHasPassed ? (
+              <div className="space-y-3">
+                <button
+                  disabled
+                  className="w-full bg-gray-600 text-white/60 font-bold py-4 px-6 rounded-lg cursor-not-allowed"
+                >
+                  Draw Closed
+                </button>
+                <p className="text-blue-200 text-xs text-center">
+                  This draw has ended. Check back for the next stream!
+                </p>
+              </div>
+            ) : !isConnected ? (
               <div className="space-y-3">
                 <button
                   disabled
