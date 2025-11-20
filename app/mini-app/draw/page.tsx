@@ -94,10 +94,10 @@ export default function DrawPage() {
       const now = new Date().getTime();
       const streamTime = streamStartTime.getTime();
       const difference = streamTime - now;
-      // Stream considered "passed" 2 hours after start time (enough time for stream to finish)
-      const twoHoursAfterStream = streamTime + (2 * 60 * 60 * 1000);
+      // Stream considered "passed" 6 hours after start time (covers 5-hour streams + buffer)
+      const sixHoursAfterStream = streamTime + (6 * 60 * 60 * 1000);
 
-      if (now > twoHoursAfterStream) {
+      if (now > sixHoursAfterStream) {
         setStreamHasPassed(true);
         setTimeUntilStream('');
       } else if (difference > 0) {
