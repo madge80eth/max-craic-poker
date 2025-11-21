@@ -269,23 +269,23 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Enter Draw CTA */}
+            {/* Stack More Tickets - Primary CTA */}
+            <div className="bg-blue-500/20 rounded-lg p-4 border border-blue-400/30 text-center">
+              <p className="text-blue-200 font-semibold mb-1">
+                🎯 Come back tomorrow for more tickets!
+              </p>
+              <p className="text-blue-200/70 text-xs">
+                Stack them up to increase your odds in the next draw
+              </p>
+            </div>
+
+            {/* Enter Draw - Secondary option */}
             <Link
               href="/mini-app/draw"
-              className="block w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-all text-center text-base"
+              className="block w-full bg-white/10 hover:bg-white/20 text-white/80 font-medium py-2 px-4 rounded-lg transition-all text-center text-sm border border-white/20"
             >
-              🎟️ Enter Draw with {totalTickets} Ticket{totalTickets !== 1 ? 's' : ''}
+              Or enter now with {totalTickets} ticket{totalTickets !== 1 ? 's' : ''} →
             </Link>
-
-            {/* How it works */}
-            <div className="bg-white/5 rounded-lg p-3 border border-white/10">
-              <ul className="text-blue-200/80 text-xs space-y-1">
-                <li>• More tickets = better chances in the draw</li>
-                <li>• 6 winners get free equity in poker tournaments</li>
-                <li>• Streamed live on Retake for transparency</li>
-                <li>• All rewards distributed on Base</li>
-              </ul>
-            </div>
           </div>
         )}
 
@@ -311,32 +311,25 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Enter Draw CTA */}
-            {totalTickets > 0 && (
-              <Link
-                href="/mini-app/draw"
-                className="block w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-all text-center text-base"
-              >
-                🎟️ Enter Draw with {totalTickets} Ticket{totalTickets !== 1 ? 's' : ''}
-              </Link>
-            )}
-
-            {/* Come back tomorrow */}
-            <div className="bg-blue-500/10 rounded-lg p-3 border border-blue-400/20 text-center">
-              <p className="text-blue-200 text-xs">
-                Resets at midnight UTC - come back tomorrow!
+            {/* Stack More Tickets - Primary message */}
+            <div className="bg-blue-500/20 rounded-lg p-4 border border-blue-400/30 text-center">
+              <p className="text-blue-200 font-semibold mb-1">
+                🎯 Come back tomorrow for more tickets!
+              </p>
+              <p className="text-blue-200/70 text-xs">
+                Resets at midnight UTC • More tickets = better odds
               </p>
             </div>
 
-            {/* How it works */}
-            <div className="bg-white/5 rounded-lg p-3 border border-white/10">
-              <ul className="text-blue-200/80 text-xs space-y-1">
-                <li>• More tickets = better chances in the draw</li>
-                <li>• 6 winners get free equity in poker tournaments</li>
-                <li>• Streamed live on Retake for transparency</li>
-                <li>• All rewards distributed on Base</li>
-              </ul>
-            </div>
+            {/* Enter Draw - Secondary option */}
+            {totalTickets > 0 && (
+              <Link
+                href="/mini-app/draw"
+                className="block w-full bg-white/10 hover:bg-white/20 text-white/80 font-medium py-2 px-4 rounded-lg transition-all text-center text-sm border border-white/20"
+              >
+                Or enter now with {totalTickets} ticket{totalTickets !== 1 ? 's' : ''} →
+              </Link>
+            )}
           </div>
         )}
 
