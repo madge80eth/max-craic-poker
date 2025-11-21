@@ -125,7 +125,7 @@ export default function HomePage() {
       case 'result':
         return `${handResult?.handRank}! Nice hand!`;
       case 'already_played_today':
-        return "You've played today! Come back tomorrow for more tickets.";
+        return "You've played today! Come back tomorrow for another hand.";
       default:
         return "";
     }
@@ -280,6 +280,7 @@ export default function HomePage() {
             {/* How it works */}
             <div className="bg-white/5 rounded-lg p-3 border border-white/10">
               <ul className="text-blue-200/80 text-xs space-y-1">
+                <li>• More tickets = better chances in the draw</li>
                 <li>• 6 winners get free equity in poker tournaments</li>
                 <li>• Streamed live on Retake for transparency</li>
                 <li>• All rewards distributed on Base</li>
@@ -330,6 +331,7 @@ export default function HomePage() {
             {/* How it works */}
             <div className="bg-white/5 rounded-lg p-3 border border-white/10">
               <ul className="text-blue-200/80 text-xs space-y-1">
+                <li>• More tickets = better chances in the draw</li>
                 <li>• 6 winners get free equity in poker tournaments</li>
                 <li>• Streamed live on Retake for transparency</li>
                 <li>• All rewards distributed on Base</li>
