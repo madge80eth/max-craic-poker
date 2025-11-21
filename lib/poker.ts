@@ -193,17 +193,20 @@ export interface HandResult {
 }
 
 // Calculate tickets based on hand strength (rankValue 1-10)
-// Better poker hand = more tickets
+// Better poker hand = more tickets - tickets equal the hand rank!
 export function calculateTickets(rankValue: number): number {
-  // rankValue: 1=High Card, 2=Pair, 3=Two Pair, 4=Three of Kind,
-  //            5=Straight, 6=Flush, 7=Full House, 8=Four of Kind,
-  //            9=Straight Flush, 10=Royal Flush
-
-  if (rankValue >= 9) return 5;  // Straight Flush, Royal Flush
-  if (rankValue >= 7) return 4;  // Full House, Four of a Kind
-  if (rankValue >= 5) return 3;  // Straight, Flush
-  if (rankValue >= 3) return 2;  // Two Pair, Three of a Kind
-  return 1;                       // High Card, One Pair
+  // rankValue directly maps to tickets:
+  // 1 = High Card      → 1 ticket
+  // 2 = One Pair       → 2 tickets
+  // 3 = Two Pair       → 3 tickets
+  // 4 = Three of Kind  → 4 tickets
+  // 5 = Straight       → 5 tickets
+  // 6 = Flush          → 6 tickets
+  // 7 = Full House     → 7 tickets
+  // 8 = Four of Kind   → 8 tickets
+  // 9 = Straight Flush → 9 tickets
+  // 10 = Royal Flush   → 10 tickets
+  return rankValue;
 }
 
 // Compare two hands: returns negative if hand1 < hand2, positive if hand1 > hand2, 0 if equal
