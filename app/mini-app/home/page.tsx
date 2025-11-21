@@ -119,7 +119,7 @@ export default function HomePage() {
         if (totalTickets > 0) {
           return `Welcome back! You have ${totalTickets} ticket${totalTickets !== 1 ? 's' : ''} saved up. Deal to earn more!`;
         }
-        return "Hi! Welcome to Max Craic Poker - deal your hand to earn raffle tickets!";
+        return "Hi! Welcome to Max Craic Poker! Deal a daily hand to earn tickets! Stack them up for the next draw - winners share real profits from my poker tournaments, paid in USDC on Base.";
       case 'dealing':
         return "Shuffling the deck...";
       case 'result':
