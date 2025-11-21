@@ -256,10 +256,14 @@ export default function HomePage() {
               🎟️ Enter Draw (Free)
             </Link>
 
-            {/* Info */}
-            <p className="text-center text-blue-200/60 text-xs">
-              Winners announced 30 mins before each stream
-            </p>
+            {/* How it works */}
+            <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+              <ul className="text-blue-200/80 text-xs space-y-1">
+                <li>• 6 winners get free equity in poker tournaments</li>
+                <li>• Streamed live on Retake for transparency</li>
+                <li>• All rewards distributed on Base</li>
+              </ul>
+            </div>
           </div>
         )}
 
