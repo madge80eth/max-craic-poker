@@ -215,16 +215,16 @@ export default function HomePage() {
 
         {/* Welcome State - Deal Button */}
         {gameState === 'welcome' && !isDealing && (
-          <div className="space-y-4">
+          <div className="space-y-3">
             <button
               onClick={handleDeal}
-              className="w-full bg-gradient-to-r from-purple-500 via-purple-600 to-purple-700 hover:from-purple-600 hover:via-purple-700 hover:to-purple-800 text-white font-bold py-4 px-8 rounded-xl transition-all transform hover:scale-[1.02] shadow-lg shadow-purple-500/30 text-lg"
+              className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-all text-base"
             >
               🎴 Deal Me In
             </button>
 
-            <p className="text-center text-blue-200/70 text-xs">
-              Play daily to accumulate tickets for the next draw!
+            <p className="text-center text-blue-200/60 text-xs">
+              Resets daily at midnight UTC
             </p>
           </div>
         )}
@@ -272,7 +272,7 @@ export default function HomePage() {
             {/* Enter Draw CTA */}
             <Link
               href="/mini-app/draw"
-              className="block w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-4 px-6 rounded-xl transition-all text-center text-lg shadow-lg shadow-green-500/30"
+              className="block w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-all text-center text-base"
             >
               🎟️ Enter Draw with {totalTickets} Ticket{totalTickets !== 1 ? 's' : ''}
             </Link>
@@ -314,16 +314,16 @@ export default function HomePage() {
             {totalTickets > 0 && (
               <Link
                 href="/mini-app/draw"
-                className="block w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-4 px-6 rounded-xl transition-all text-center text-lg shadow-lg shadow-green-500/30"
+                className="block w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-all text-center text-base"
               >
                 🎟️ Enter Draw with {totalTickets} Ticket{totalTickets !== 1 ? 's' : ''}
               </Link>
             )}
 
             {/* Come back tomorrow */}
-            <div className="bg-blue-500/10 backdrop-blur-lg rounded-xl p-4 border border-blue-400/20 text-center">
-              <p className="text-blue-200 text-sm">
-                🎯 Come back tomorrow to earn more tickets!
+            <div className="bg-blue-500/10 rounded-lg p-3 border border-blue-400/20 text-center">
+              <p className="text-blue-200 text-xs">
+                Resets at midnight UTC - come back tomorrow!
               </p>
             </div>
 

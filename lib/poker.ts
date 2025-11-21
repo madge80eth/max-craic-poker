@@ -192,22 +192,18 @@ export interface HandResult {
   playedAt: number;
 }
 
-// Calculate tickets based on percentile placement
-export function calculateTickets(placement: number, totalUsers: number): number {
-  if (totalUsers === 0) return 1;
+// Calculate tickets based on hand strength (rankValue 1-10)
+// Better poker hand = more tickets
+export function calculateTickets(rankValue: number): number {
+  // rankValue: 1=High Card, 2=Pair, 3=Two Pair, 4=Three of Kind,
+  //            5=Straight, 6=Flush, 7=Full House, 8=Four of Kind,
+  //            9=Straight Flush, 10=Royal Flush
 
-  const percentile = (placement / totalUsers) * 100;
-
-  // Top 20%: 5 tickets
-  if (percentile <= 20) return 5;
-  // 20-40%: 4 tickets
-  if (percentile <= 40) return 4;
-  // 40-60%: 3 tickets
-  if (percentile <= 60) return 3;
-  // 60-80%: 2 tickets
-  if (percentile <= 80) return 2;
-  // Bottom 20%: 1 ticket
-  return 1;
+  if (rankValue >= 9) return 5;  // Straight Flush, Royal Flush
+  if (rankValue >= 7) return 4;  // Full House, Four of a Kind
+  if (rankValue >= 5) return 3;  // Straight, Flush
+  if (rankValue >= 3) return 2;  // Two Pair, Three of a Kind
+  return 1;                       // High Card, One Pair
 }
 
 // Compare two hands: returns negative if hand1 < hand2, positive if hand1 > hand2, 0 if equal

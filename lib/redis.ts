@@ -148,8 +148,8 @@ export async function storeDailyHand(walletAddress: string): Promise<{ handResul
   const rank = await redis.zrevrank(dailyHandsKey, JSON.stringify(handData));
   const placement = (rank ?? totalUsers - 1) + 1;
 
-  // Calculate tickets based on percentile
-  const ticketsEarned = calculateTickets(placement, totalUsers);
+  // Calculate tickets based on hand strength (not placement)
+  const ticketsEarned = calculateTickets(rankValue);
 
   // Create full result
   const handResult: HandResult = {
