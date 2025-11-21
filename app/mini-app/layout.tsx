@@ -4,7 +4,7 @@
 import { Metadata } from 'next'
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { TrendingUp, Ticket, Gamepad2, Film, Menu } from 'lucide-react';
+import { Home, Ticket, Gamepad2, Film, Menu } from 'lucide-react';
 
 export const dynamic = 'force-dynamic'
 
@@ -16,8 +16,8 @@ export default function MiniAppLayout({
   const pathname = usePathname();
 
   const isActive = (path: string) => {
-    if (path === '/mini-app' || path === '/mini-app/stats') {
-      return pathname === path || pathname === '/mini-app' || pathname === '/mini-app/stats';
+    if (path === '/mini-app/home') {
+      return pathname === path || pathname === '/mini-app' || pathname === '/mini-app/home';
     }
     return pathname === path;
   };
@@ -32,14 +32,14 @@ export default function MiniAppLayout({
           <div className="flex items-center justify-around">
 
             <Link
-              href="/mini-app/stats"
+              href="/mini-app/home"
               className={`flex flex-col items-center gap-1 px-4 py-2 rounded-lg transition-all ${
-                isActive('/mini-app/stats') || isActive('/mini-app')
+                isActive('/mini-app/home')
                   ? 'bg-purple-600 text-white'
                   : 'text-blue-300 hover:text-white'
               }`}
             >
-              <TrendingUp className="w-5 h-5" />
+              <Home className="w-5 h-5" />
               <span className="text-xs font-medium">Home</span>
             </Link>
 

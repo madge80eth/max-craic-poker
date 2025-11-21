@@ -20,9 +20,9 @@ export default function MiniAppHome() {
     initSDK();
   }, []);
 
-  // Redirect to stats page
+  // Redirect to home page (Madge interactive game)
   useEffect(() => {
-    router.push('/mini-app/stats');
+    router.push('/mini-app/home');
   }, [router]);
 
   return (
