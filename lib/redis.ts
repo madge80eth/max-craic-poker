@@ -211,3 +211,47 @@ export async function recalculateTodayPlacement(walletAddress: string): Promise<
 
   return result;
 }
+
+// Clear a user's daily hand and tickets (for reset)
+export async function clearUserDailyData(walletAddress: string): Promise<void> {
+  const dateKey = getTodayKey();
+  const handKey = getDailyHandKey(walletAddress, dateKey);
+  const ticketsKey = getTicketsKey(walletAddress);
+
+  await redis.del(handKey);
+  await redis.del(ticketsKey);
+
+  console.log(`🗑️ Cleared daily hand and tickets for ${walletAddress}`);
+}
+
+// Clear today's daily hands sorted set
+export async function clearTodayDailyHands(): Promise<void> {
+  const dateKey = getTodayKey();
+  const dailyHandsKey = getDailyHandsKey(dateKey);
+  await redis.del(dailyHandsKey);
+  console.log(`🗑️ Cleared daily hands sorted set for ${dateKey}`);
+}
+
+// Get all wallet addresses that have played today (from the sorted set)
+export async function getTodayPlayers(): Promise<string[]> {
+  const dateKey = getTodayKey();
+  const dailyHandsKey = getDailyHandsKey(dateKey);
+
+  // Get all members from the sorted set
+  const members = await redis.zrange(dailyHandsKey, 0, -1);
+
+  // Extract wallet addresses from the JSON members
+  const wallets: string[] = [];
+  for (const member of members) {
+    try {
+      const data = typeof member === 'string' ? JSON.parse(member) : member;
+      if (data.walletAddress) {
+        wallets.push(data.walletAddress);
+      }
+    } catch {
+      // Skip invalid entries
+    }
+  }
+
+  return wallets;
+}

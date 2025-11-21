@@ -350,7 +350,7 @@
     }
 
     async function resetDraw() {
-      if (!confirm('Reset the draw?\n\nThis clears:\n- All current entries\n- Winner data\n\nPreserves:\n- Entry history (leaderboard)\n\nThe app will revert to showing the next stream countdown.')) return;
+      if (!confirm('Reset the draw?\n\nThis clears:\n- All current entries\n- Winner data\n- Today\'s poker hands (Madge game)\n- Accumulated tickets\n\nPreserves:\n- Entry history (leaderboard)\n\nThe app will revert to showing the next stream countdown.')) return;
 
       const response = await fetch('/api/reset', { method: 'POST' });
       const data = await response.json();

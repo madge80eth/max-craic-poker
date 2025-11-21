@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
+import { getTodayPlayers, clearUserDailyData, clearTodayDailyHands } from '@/lib/redis';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -12,6 +13,19 @@ export async function POST(request: NextRequest) {
     await redis.del('raffle_entries');  // Current draw pool
     await redis.del('raffle_winners');  // Last session winners
 
+    // Get all players who played today before clearing
+    const todayPlayers = await getTodayPlayers();
+
+    // Clear today's daily hands sorted set
+    await clearTodayDailyHands();
+
+    // Clear each player's daily hand and tickets
+    for (const wallet of todayPlayers) {
+      await clearUserDailyData(wallet);
+    }
+
+    console.log(`🔄 Reset complete. Cleared data for ${todayPlayers.length} players.`);
+
     // IMPORTANT: entry_history is NEVER cleared
     // This key tracks all-time participation stats for leaderboard
     // Only manual database maintenance should touch this
@@ -19,7 +33,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       message: 'Session reset successfully. Ready for new raffle session.',
-      cleared: ['raffle_entries', 'raffle_winners'],
+      cleared: ['raffle_entries', 'raffle_winners', 'daily hands sorted set'],
+      playersCleared: todayPlayers,
+      playersCount: todayPlayers.length,
       preserved: ['entry_history']
     });
 

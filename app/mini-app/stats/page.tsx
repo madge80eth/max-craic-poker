@@ -217,17 +217,6 @@ export default function StatsPage() {
           {hasWinners ? 'View Draw Results →' : 'Enter Next Draw →'}
         </Link>
 
-        {/* Info Card */}
-        <div className="bg-purple-500/10 backdrop-blur-lg rounded-xl p-4 border border-purple-400/20">
-          <h3 className="text-white font-semibold mb-2 text-sm">How It Works</h3>
-          <ul className="text-blue-200 text-xs space-y-1.5">
-            <li>• Enter each draw for free</li>
-            <li>• 6 winners selected per stream</li>
-            <li>• Win up to 12% profit share</li>
-            <li>• Streak bonus: 3 consecutive entries = 1.5x multiplier</li>
-          </ul>
-        </div>
-
       </div>
     </div>
   );
