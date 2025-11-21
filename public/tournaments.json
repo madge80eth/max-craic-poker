@@ -1,8 +1,8 @@
 {
-  "sessionId": "2025-11-20",
-  "streamStartTime": "2025-11-20T11:00:00Z",
+  "sessionId": "2025-11-24",
+  "streamStartTime": "2025-11-24T20:00:00Z",
   "tournaments": [
-    { "name": "Betfair: €10 Bounty Hunter Prime Morning [8-Max], €1.5K Gtd", "buyIn": "€10" },
+    { "name": "Betfair: €10 Bounty Hunter Prime Evening [8-Max], €2K Gtd", "buyIn": "€10" },
     { "name": "PokerStars: Bounty Builder $4.40, $2.5K Gtd", "buyIn": "$4.40" },
     { "name": "PokerStars: $5.50 NLHE, $300 Gtd", "buyIn": "$5.50" },
     { "name": "PokerStars: $11 NLHE [6-Max, Progressive KO], $750 Gtd", "buyIn": "$11" },

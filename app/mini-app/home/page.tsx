@@ -116,7 +116,7 @@ export default function HomePage() {
       case 'result':
         return `${handResult?.handRank}! Nice hand!`;
       case 'already_played':
-        return "You're in! Come back when the next stream starts";
+        return "You've played! Enter the draw to use your tickets";
       default:
         return "";
     }
@@ -289,19 +289,21 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* View Draw CTA */}
+            {/* Enter Draw CTA */}
             <Link
               href="/mini-app/draw"
-              className="block w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-bold py-3 px-6 rounded-xl transition-all text-center"
+              className="block w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-4 px-6 rounded-xl transition-all text-center text-lg shadow-lg shadow-green-500/30"
             >
-              View Current Draw →
+              🎟️ Enter Draw (Free)
             </Link>
 
-            {/* Next stream reminder */}
-            <div className="bg-blue-500/10 backdrop-blur-lg rounded-xl p-4 border border-blue-400/20 text-center">
-              <p className="text-blue-200 text-sm">
-                🎯 New hands available each stream session!
-              </p>
+            {/* How it works */}
+            <div className="bg-white/5 rounded-lg p-3 border border-white/10">
+              <ul className="text-blue-200/80 text-xs space-y-1">
+                <li>• 6 winners get free equity in poker tournaments</li>
+                <li>• Streamed live on Retake for transparency</li>
+                <li>• All rewards distributed on Base</li>
+              </ul>
             </div>
           </div>
         )}
