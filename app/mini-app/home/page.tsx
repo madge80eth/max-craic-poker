@@ -7,7 +7,7 @@ import Link from 'next/link';
 import Madge from '../components/Madge';
 import CardHand from '../components/CardHand';
 
-type GameState = 'welcome' | 'dealing' | 'result' | 'already_played';
+type GameState = 'welcome' | 'dealing' | 'result' | 'already_played_today';
 
 interface HandResult {
   cards: string[];
@@ -25,12 +25,13 @@ export default function HomePage() {
 
   const [gameState, setGameState] = useState<GameState>('welcome');
   const [handResult, setHandResult] = useState<HandResult | null>(null);
+  const [totalTickets, setTotalTickets] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isDealing, setIsDealing] = useState(false);
   const [showCards, setShowCards] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Check if user has already played this draw
+  // Check if user has already played today
   useEffect(() => {
     if (!address) {
       setIsLoading(false);
@@ -42,12 +43,16 @@ export default function HomePage() {
         const res = await fetch(`/api/home/status?wallet=${address}`);
         const data = await res.json();
 
-        if (data.success && data.hasPlayed && data.result) {
-          setHandResult(data.result);
-          setGameState('already_played');
-          setShowCards(true);
-        } else {
-          setGameState('welcome');
+        if (data.success) {
+          setTotalTickets(data.totalTickets || 0);
+
+          if (data.hasPlayedToday && data.todayResult) {
+            setHandResult(data.todayResult);
+            setGameState('already_played_today');
+            setShowCards(true);
+          } else {
+            setGameState('welcome');
+          }
         }
       } catch (err) {
         console.error('Status check error:', err);
@@ -86,6 +91,7 @@ export default function HomePage() {
 
       // Start card animation
       setHandResult(data.result);
+      setTotalTickets(data.totalTickets || 0);
 
       // Brief dealing animation, then show cards
       setTimeout(() => {
@@ -110,13 +116,16 @@ export default function HomePage() {
   const getMadgeMessage = (): string => {
     switch (gameState) {
       case 'welcome':
-        return "Hi! Welcome to Max Craic Poker - giving audiences free upside in creator success";
+        if (totalTickets > 0) {
+          return `Welcome back! You have ${totalTickets} ticket${totalTickets !== 1 ? 's' : ''} saved up. Deal to earn more!`;
+        }
+        return "Hi! Welcome to Max Craic Poker - deal your hand to earn raffle tickets!";
       case 'dealing':
         return "Shuffling the deck...";
       case 'result':
         return `${handResult?.handRank}! Nice hand!`;
-      case 'already_played':
-        return "You've played! Enter the draw to use your tickets";
+      case 'already_played_today':
+        return "You've played today! Come back tomorrow for more tickets.";
       default:
         return "";
     }
@@ -147,9 +156,9 @@ export default function HomePage() {
           <div className="mt-6 bg-purple-500/10 backdrop-blur-lg rounded-xl p-4 border border-purple-400/20">
             <h3 className="text-white font-semibold mb-2 text-sm">How It Works</h3>
             <ul className="text-blue-200 text-xs space-y-1.5 text-left">
-              <li>• Deal your hand to earn raffle tickets</li>
-              <li>• Better hands = more tickets</li>
-              <li>• Enter the draw for free</li>
+              <li>• Play daily to earn raffle tickets</li>
+              <li>• Tickets accumulate until you enter a draw</li>
+              <li>• More tickets = better odds to win</li>
               <li>• Win up to 12% profit share!</li>
             </ul>
           </div>
@@ -172,6 +181,18 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-800 p-4 pb-24">
       <div className="max-w-md mx-auto pt-6 space-y-4">
+
+        {/* Total Tickets Banner - Always show if has tickets */}
+        {totalTickets > 0 && gameState !== 'dealing' && (
+          <div className="bg-gradient-to-r from-yellow-500/20 to-orange-500/20 rounded-xl p-3 border border-yellow-400/30">
+            <div className="flex items-center justify-center gap-2">
+              <Ticket className="w-5 h-5 text-yellow-400" />
+              <span className="text-yellow-200 font-bold">
+                Total Tickets: {totalTickets}
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* Madge Character */}
         <div className="flex justify-center">
@@ -203,7 +224,7 @@ export default function HomePage() {
             </button>
 
             <p className="text-center text-blue-200/70 text-xs">
-              Get your poker hand and earn raffle tickets!
+              Play daily to accumulate tickets for the next draw!
             </p>
           </div>
         )}
@@ -231,19 +252,19 @@ export default function HomePage() {
 
               {/* Placement */}
               <p className="text-blue-200 text-center mb-4">
-                You placed <span className="text-white font-bold">{handResult.placement}</span>/{handResult.totalUsers} entrants
+                You placed <span className="text-white font-bold">{handResult.placement}</span>/{handResult.totalUsers} today
               </p>
 
-              {/* Tickets Earned */}
+              {/* Tickets Earned Today */}
               <div className="bg-yellow-500/20 rounded-lg p-4 border border-yellow-400/30">
                 <div className="flex items-center justify-center gap-2">
                   <Ticket className="w-6 h-6 text-yellow-400" />
                   <span className="text-yellow-200 text-lg font-bold">
-                    You earned {handResult.ticketsEarned} raffle ticket{handResult.ticketsEarned !== 1 ? 's' : ''}!
+                    +{handResult.ticketsEarned} ticket{handResult.ticketsEarned !== 1 ? 's' : ''} added!
                   </span>
                 </div>
                 <p className="text-yellow-200/70 text-xs text-center mt-2">
-                  Each ticket = one entry in the raffle
+                  Total: {totalTickets} tickets for the next draw
                 </p>
               </div>
             </div>
@@ -253,7 +274,7 @@ export default function HomePage() {
               href="/mini-app/draw"
               className="block w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-4 px-6 rounded-xl transition-all text-center text-lg shadow-lg shadow-green-500/30"
             >
-              🎟️ Enter Draw (Free)
+              🎟️ Enter Draw with {totalTickets} Ticket{totalTickets !== 1 ? 's' : ''}
             </Link>
 
             {/* How it works */}
@@ -267,35 +288,44 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* Already Played State */}
-        {gameState === 'already_played' && handResult && (
+        {/* Already Played Today State */}
+        {gameState === 'already_played_today' && handResult && (
           <div className="space-y-4">
-            {/* Previous Result */}
+            {/* Today's Result */}
             <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
               <h2 className="text-xl font-bold text-white text-center mb-2">
-                Your Hand: {handResult.handRank}
+                Today's Hand: {handResult.handRank}
               </h2>
 
               <p className="text-blue-200 text-center mb-3">
-                Placed <span className="text-white font-bold">{handResult.placement}</span>/{handResult.totalUsers}
+                Placed <span className="text-white font-bold">{handResult.placement}</span>/{handResult.totalUsers} today
               </p>
 
-              {/* Tickets */}
-              <div className="flex items-center justify-center gap-2 bg-yellow-500/20 rounded-lg p-3 border border-yellow-400/30">
-                <Ticket className="w-5 h-5 text-yellow-400" />
-                <span className="text-yellow-200 font-bold">
-                  {handResult.ticketsEarned} ticket{handResult.ticketsEarned !== 1 ? 's' : ''} earned
+              {/* Tickets earned today */}
+              <div className="flex items-center justify-center gap-2 bg-green-500/20 rounded-lg p-3 border border-green-400/30">
+                <Ticket className="w-5 h-5 text-green-400" />
+                <span className="text-green-200 font-bold">
+                  +{handResult.ticketsEarned} earned today
                 </span>
               </div>
             </div>
 
             {/* Enter Draw CTA */}
-            <Link
-              href="/mini-app/draw"
-              className="block w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-4 px-6 rounded-xl transition-all text-center text-lg shadow-lg shadow-green-500/30"
-            >
-              🎟️ Enter Draw (Free)
-            </Link>
+            {totalTickets > 0 && (
+              <Link
+                href="/mini-app/draw"
+                className="block w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-4 px-6 rounded-xl transition-all text-center text-lg shadow-lg shadow-green-500/30"
+              >
+                🎟️ Enter Draw with {totalTickets} Ticket{totalTickets !== 1 ? 's' : ''}
+              </Link>
+            )}
+
+            {/* Come back tomorrow */}
+            <div className="bg-blue-500/10 backdrop-blur-lg rounded-xl p-4 border border-blue-400/20 text-center">
+              <p className="text-blue-200 text-sm">
+                🎯 Come back tomorrow to earn more tickets!
+              </p>
+            </div>
 
             {/* How it works */}
             <div className="bg-white/5 rounded-lg p-3 border border-white/10">

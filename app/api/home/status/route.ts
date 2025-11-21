@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { hasUserPlayedDraw, recalculatePlacement } from '@/lib/redis';
-import { checkAndResetSession } from '@/lib/session';
-import path from 'path';
-import fs from 'fs';
+import { hasUserPlayedToday, recalculateTodayPlacement, getUserTickets } from '@/lib/redis';
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,44 +13,29 @@ export async function GET(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Auto-reset if session changed
-    await checkAndResetSession();
+    // Check if user played today
+    const hasPlayedToday = await hasUserPlayedToday(walletAddress);
 
-    // Get current sessionId from tournaments.json
-    const tournamentsPath = path.join(process.cwd(), 'public', 'tournaments.json');
-    const tournamentsFile = fs.readFileSync(tournamentsPath, 'utf-8');
-    const tournamentsData = JSON.parse(tournamentsFile);
-    const sessionId = tournamentsData.sessionId;
+    // Get total accumulated tickets
+    const totalTickets = await getUserTickets(walletAddress);
 
-    if (!sessionId) {
+    if (!hasPlayedToday) {
       return NextResponse.json({
         success: true,
-        hasPlayed: false,
-        sessionId: null,
-        result: null
+        hasPlayedToday: false,
+        todayResult: null,
+        totalTickets
       });
     }
 
-    // Check if user played this draw
-    const hasPlayed = await hasUserPlayedDraw(walletAddress, sessionId);
-
-    if (!hasPlayed) {
-      return NextResponse.json({
-        success: true,
-        hasPlayed: false,
-        sessionId,
-        result: null
-      });
-    }
-
-    // Get user's result with recalculated placement
-    const result = await recalculatePlacement(walletAddress, sessionId);
+    // Get today's result with recalculated placement
+    const todayResult = await recalculateTodayPlacement(walletAddress);
 
     return NextResponse.json({
       success: true,
-      hasPlayed: true,
-      sessionId,
-      result
+      hasPlayedToday: true,
+      todayResult,
+      totalTickets
     });
 
   } catch (error) {

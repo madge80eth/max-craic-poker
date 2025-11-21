@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 import { checkAndResetSession } from '@/lib/session';
 import { checkAndResetMonthly } from '@/lib/monthly-reset';
-import { updateUserStats } from '@/lib/redis';
+import { updateUserStats, useAllTickets, getUserTickets } from '@/lib/redis';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -44,10 +44,10 @@ export async function POST(request: NextRequest) {
     // Check if already entered
     const existingEntry = await redis.hget('raffle_entries', walletAddress);
     if (existingEntry) {
-      const entry = typeof existingEntry === 'string' 
-        ? JSON.parse(existingEntry) 
+      const entry = typeof existingEntry === 'string'
+        ? JSON.parse(existingEntry)
         : existingEntry;
-        
+
       return NextResponse.json({
         success: true,
         message: 'Already entered!',
@@ -56,16 +56,25 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Create new entry - NO tournament assignment (happens at draw)
+    // Get user's accumulated tickets and use them all
+    const ticketsToUse = await useAllTickets(walletAddress);
+
+    // Ensure at least 1 entry even if no tickets accumulated
+    const entryCount = Math.max(ticketsToUse, 1);
+
+    // Create new entry with ticket count
     const entry = {
       walletAddress,
       platform,
       timestamp: Date.now(),
-      hasShared: false  // Track if user shared for bonus calculation
+      hasShared: false,  // Track if user shared for bonus calculation
+      ticketCount: entryCount  // Number of raffle entries this user has
     };
 
     // Store entry in current draw pool
     await redis.hset('raffle_entries', { [walletAddress]: JSON.stringify(entry) });
+
+    console.log(`🎫 ${walletAddress} entered draw with ${entryCount} tickets`);
 
     // Update persistent entry history (never cleared by reset)
     const historyKey = 'entry_history';
@@ -105,9 +114,10 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'Successfully entered the community draw!',
+      message: `Successfully entered with ${entryCount} ticket${entryCount !== 1 ? 's' : ''}!`,
       entry,
-      totalEntries
+      totalEntries,
+      ticketsUsed: entryCount
     });
 
   } catch (error) {

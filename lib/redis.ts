@@ -52,76 +52,107 @@ export async function incrementTournamentsAssigned(
 }
 
 // ============================================
-// MADGE GAME - Hand Storage & Retrieval
+// MADGE GAME - Daily Hand & Ticket Accumulation
 // ============================================
 
-// Redis key pattern: user:{wallet}:draw:{sessionId}:hand
-function getHandKey(walletAddress: string, sessionId: string): string {
-  return `user:${walletAddress}:draw:${sessionId}:hand`;
+// Get today's date string (YYYY-MM-DD in UTC)
+function getTodayKey(): string {
+  return new Date().toISOString().split('T')[0];
 }
 
-// Redis key for all hands in a draw session (for placement calculation)
-function getDrawHandsKey(sessionId: string): string {
-  return `draw:${sessionId}:hands`;
+// Redis key for user's daily hand
+function getDailyHandKey(walletAddress: string, dateKey: string): string {
+  return `user:${walletAddress}:daily:${dateKey}:hand`;
 }
 
-// Check if user has already played in this draw
-export async function hasUserPlayedDraw(
-  walletAddress: string,
-  sessionId: string
-): Promise<boolean> {
-  const key = getHandKey(walletAddress, sessionId);
+// Redis key for all hands played today (for placement calculation)
+function getDailyHandsKey(dateKey: string): string {
+  return `daily:${dateKey}:hands`;
+}
+
+// Redis key for user's accumulated tickets
+function getTicketsKey(walletAddress: string): string {
+  return `user:${walletAddress}:tickets`;
+}
+
+// Check if user has already played today
+export async function hasUserPlayedToday(walletAddress: string): Promise<boolean> {
+  const dateKey = getTodayKey();
+  const key = getDailyHandKey(walletAddress, dateKey);
   const exists = await redis.exists(key);
   return exists === 1;
 }
 
-// Get user's hand result for this draw
-export async function getUserHandResult(
-  walletAddress: string,
-  sessionId: string
-): Promise<HandResult | null> {
-  const key = getHandKey(walletAddress, sessionId);
+// Get user's hand result for today
+export async function getTodayHandResult(walletAddress: string): Promise<HandResult | null> {
+  const dateKey = getTodayKey();
+  const key = getDailyHandKey(walletAddress, dateKey);
   const data = await redis.get(key);
   if (!data) return null;
   return typeof data === 'string' ? JSON.parse(data) : data as HandResult;
 }
 
-// Store user's hand and calculate placement
-export async function storeUserHand(
-  walletAddress: string,
-  sessionId: string
-): Promise<HandResult> {
+// Get user's total accumulated tickets
+export async function getUserTickets(walletAddress: string): Promise<number> {
+  const key = getTicketsKey(walletAddress);
+  const tickets = await redis.get(key);
+  return parseInt(tickets as string || '0');
+}
+
+// Add tickets to user's accumulated total
+export async function addUserTickets(walletAddress: string, amount: number): Promise<number> {
+  const key = getTicketsKey(walletAddress);
+  const newTotal = await redis.incrby(key, amount);
+  console.log(`🎟️ Added ${amount} tickets to ${walletAddress}. New total: ${newTotal}`);
+  return newTotal;
+}
+
+// Use all accumulated tickets (called when entering draw)
+export async function useAllTickets(walletAddress: string): Promise<number> {
+  const key = getTicketsKey(walletAddress);
+  const tickets = await redis.get(key);
+  const ticketCount = parseInt(tickets as string || '0');
+
+  if (ticketCount > 0) {
+    await redis.set(key, '0');
+    console.log(`🎫 Used ${ticketCount} tickets for ${walletAddress}`);
+  }
+
+  return ticketCount;
+}
+
+// Store user's daily hand and add tickets to accumulation
+export async function storeDailyHand(walletAddress: string): Promise<{ handResult: HandResult; totalTickets: number }> {
+  const dateKey = getTodayKey();
+
   // Generate hand
   const cards = dealHand();
   const { rankValue, rankName, subRank } = evaluateHand(cards);
   const playedAt = Date.now();
 
-  // Store in the draw's hands list for ranking
-  const drawHandsKey = getDrawHandsKey(sessionId);
+  // Store in today's hands list for ranking
+  const dailyHandsKey = getDailyHandsKey(dateKey);
   const handData = {
     walletAddress,
     rankValue,
     subRank,
     playedAt
   };
-  await redis.zadd(drawHandsKey, {
-    score: rankValue * 1000000 + subRank, // Composite score for ranking
+  await redis.zadd(dailyHandsKey, {
+    score: rankValue * 1000000 + subRank,
     member: JSON.stringify(handData)
   });
 
-  // Get total users and calculate placement
-  const totalUsers = await redis.zcard(drawHandsKey);
-
-  // Get rank (zrevrank gives 0-indexed position from highest score)
-  // Higher score = better hand = lower placement number
-  const rank = await redis.zrevrank(drawHandsKey, JSON.stringify(handData));
-  const placement = (rank ?? totalUsers - 1) + 1; // 1-indexed
+  // Get total users today and calculate placement
+  const totalUsers = await redis.zcard(dailyHandsKey);
+  const rank = await redis.zrevrank(dailyHandsKey, JSON.stringify(handData));
+  const placement = (rank ?? totalUsers - 1) + 1;
 
   // Calculate tickets based on percentile
   const ticketsEarned = calculateTickets(placement, totalUsers);
 
   // Create full result
-  const result: HandResult = {
+  const handResult: HandResult = {
     cards,
     handRank: rankName,
     rankValue,
@@ -132,21 +163,22 @@ export async function storeUserHand(
     playedAt
   };
 
-  // Store user's full hand result
-  const handKey = getHandKey(walletAddress, sessionId);
-  await redis.set(handKey, JSON.stringify(result));
+  // Store user's daily hand result
+  const handKey = getDailyHandKey(walletAddress, dateKey);
+  await redis.set(handKey, JSON.stringify(handResult));
 
-  console.log(`🎴 Stored hand for ${walletAddress}: ${rankName} - Placement ${placement}/${totalUsers} - ${ticketsEarned} tickets`);
+  // Add tickets to user's accumulated total
+  const totalTickets = await addUserTickets(walletAddress, ticketsEarned);
 
-  return result;
+  console.log(`🎴 Daily hand for ${walletAddress}: ${rankName} - Earned ${ticketsEarned} tickets - Total: ${totalTickets}`);
+
+  return { handResult, totalTickets };
 }
 
-// Recalculate placement for a user (called when fetching status)
-export async function recalculatePlacement(
-  walletAddress: string,
-  sessionId: string
-): Promise<HandResult | null> {
-  const handKey = getHandKey(walletAddress, sessionId);
+// Recalculate placement for today's hand
+export async function recalculateTodayPlacement(walletAddress: string): Promise<HandResult | null> {
+  const dateKey = getTodayKey();
+  const handKey = getDailyHandKey(walletAddress, dateKey);
   const existingData = await redis.get(handKey);
 
   if (!existingData) return null;
@@ -155,9 +187,9 @@ export async function recalculatePlacement(
     ? JSON.parse(existingData)
     : existingData as HandResult;
 
-  // Get current total users
-  const drawHandsKey = getDrawHandsKey(sessionId);
-  const totalUsers = await redis.zcard(drawHandsKey);
+  // Get current total users today
+  const dailyHandsKey = getDailyHandsKey(dateKey);
+  const totalUsers = await redis.zcard(dailyHandsKey);
 
   // Recalculate placement
   const handData = {
@@ -166,17 +198,14 @@ export async function recalculatePlacement(
     subRank: result.subRank,
     playedAt: result.playedAt
   };
-  const rank = await redis.zrevrank(drawHandsKey, JSON.stringify(handData));
+  const rank = await redis.zrevrank(dailyHandsKey, JSON.stringify(handData));
   const placement = (rank ?? totalUsers - 1) + 1;
 
-  // Recalculate tickets
-  const ticketsEarned = calculateTickets(placement, totalUsers);
-
-  // Update if changed
-  if (placement !== result.placement || totalUsers !== result.totalUsers || ticketsEarned !== result.ticketsEarned) {
+  // Note: We don't recalculate tickets since they were already added when played
+  // Just update placement display
+  if (placement !== result.placement || totalUsers !== result.totalUsers) {
     result.placement = placement;
     result.totalUsers = totalUsers;
-    result.ticketsEarned = ticketsEarned;
     await redis.set(handKey, JSON.stringify(result));
   }
 
