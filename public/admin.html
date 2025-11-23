@@ -79,11 +79,104 @@
       opacity: 0.6;
       pointer-events: none;
     }
+    .tournament-form input {
+      width: 100%;
+      padding: 12px;
+      font-size: 14px;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.05);
+      color: white;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+    }
+    .tournament-form input:focus {
+      outline: none;
+      border-color: #8b5cf6;
+      background: rgba(255,255,255,0.1);
+    }
+    .tournament-form input::placeholder {
+      color: #6b7280;
+    }
+    .tournament-entry {
+      display: grid;
+      grid-template-columns: 1fr 120px;
+      gap: 10px;
+      margin-bottom: 15px;
+      padding: 15px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .tournament-entry label {
+      color: #a5b4fc;
+      font-size: 12px;
+      margin-bottom: 5px;
+      display: block;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      color: #a5b4fc;
+      font-size: 12px;
+      margin-bottom: 5px;
+      display: block;
+    }
+    .success-msg {
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid #10b981;
+      color: #10b981;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 15px;
+    }
+    .error-msg {
+      background: rgba(220, 38, 38, 0.2);
+      border: 1px solid #dc2626;
+      color: #fca5a5;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 15px;
+    }
   </style>
 </head>
 <body>
   <h1>🎰 Max Craic Poker Admin</h1>
   <p class="subtitle">Manage draws and view statistics</p>
+
+  <div class="section">
+    <h2>🎯 Tournament Manager</h2>
+    <p class="description">Update tournaments.json for the next stream without editing files</p>
+
+    <div class="tournament-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Session ID (keep same to preserve existing entries)</label>
+          <input type="text" id="sessionId" placeholder="2025-11-13">
+        </div>
+        <div class="form-group">
+          <label>Stream Start Date & Time (GMT)</label>
+          <input type="datetime-local" id="streamStartTime">
+        </div>
+      </div>
+
+      <h3 style="color: white; margin: 20px 0 15px 0; font-size: 1.1rem;">Tournaments (up to 6)</h3>
+
+      <div id="tournamentEntries">
+        <!-- Tournament entries will be populated by JS -->
+      </div>
+
+      <button class="draw" onclick="updateTournaments()" style="width: 100%; margin: 20px 0 0 0;">
+        💾 Update Tournaments
+      </button>
+
+      <div id="tournamentStatus"></div>
+    </div>
+  </div>
 
   <div class="section">
     <h2>📊 Current Draw Statistics</h2>
@@ -144,6 +237,120 @@
   <script>
     let winnersData = null;
     let tournamentsData = null;
+
+    // Tournament Manager Functions
+    async function loadCurrentTournaments() {
+      try {
+        const response = await fetch('/tournaments.json');
+        const data = await response.json();
+        tournamentsData = data;
+
+        // Populate session ID
+        document.getElementById('sessionId').value = data.sessionId || '';
+
+        // Convert ISO string to datetime-local format (remove the 'Z' and seconds)
+        if (data.streamStartTime) {
+          const dt = new Date(data.streamStartTime);
+          // Format: YYYY-MM-DDTHH:MM
+          const localDateTime = dt.toISOString().slice(0, 16);
+          document.getElementById('streamStartTime').value = localDateTime;
+        }
+
+        // Populate tournament entries
+        renderTournamentEntries(data.tournaments || []);
+      } catch (error) {
+        console.error('Error loading tournaments:', error);
+        renderTournamentEntries([]);
+      }
+    }
+
+    function renderTournamentEntries(tournaments) {
+      const container = document.getElementById('tournamentEntries');
+      let html = '';
+
+      // Always show 6 slots
+      for (let i = 0; i < 6; i++) {
+        const tournament = tournaments[i] || { name: '', buyIn: '' };
+        html += `
+          <div class="tournament-entry">
+            <div>
+              <label>Tournament ${i + 1} Name</label>
+              <input type="text" id="tournament-name-${i}" value="${tournament.name || ''}" placeholder="PokerStars: Big $16.50, $1.5K Gtd">
+            </div>
+            <div>
+              <label>Buy-in</label>
+              <input type="text" id="tournament-buyin-${i}" value="${tournament.buyIn || ''}" placeholder="$16.50">
+            </div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    }
+
+    async function updateTournaments() {
+      const statusDiv = document.getElementById('tournamentStatus');
+      statusDiv.innerHTML = '<div style="color: #a5b4fc; padding: 15px;">⏳ Updating tournaments...</div>';
+
+      try {
+        const sessionId = document.getElementById('sessionId').value.trim();
+        const streamStartTimeLocal = document.getElementById('streamStartTime').value;
+
+        if (!sessionId) {
+          statusDiv.innerHTML = '<div class="error-msg">Session ID is required</div>';
+          return;
+        }
+
+        if (!streamStartTimeLocal) {
+          statusDiv.innerHTML = '<div class="error-msg">Stream start time is required</div>';
+          return;
+        }
+
+        // Convert datetime-local to ISO string with Z (GMT)
+        const streamStartTime = new Date(streamStartTimeLocal).toISOString();
+
+        // Collect tournaments
+        const tournaments = [];
+        for (let i = 0; i < 6; i++) {
+          const name = document.getElementById(`tournament-name-${i}`).value.trim();
+          const buyIn = document.getElementById(`tournament-buyin-${i}`).value.trim();
+          if (name && buyIn) {
+            tournaments.push({ name, buyIn });
+          }
+        }
+
+        if (tournaments.length === 0) {
+          statusDiv.innerHTML = '<div class="error-msg">At least one tournament is required</div>';
+          return;
+        }
+
+        const response = await fetch('/api/admin/update-tournaments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId, streamStartTime, tournaments })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          statusDiv.innerHTML = `
+            <div class="success-msg">
+              ✅ Tournaments updated successfully!<br>
+              <small style="color: #6ee7b7;">Session: ${sessionId} | ${tournaments.length} tournaments | Stream: ${new Date(streamStartTime).toLocaleString()}</small>
+            </div>
+          `;
+          // Reload the data
+          await loadCurrentTournaments();
+        } else {
+          statusDiv.innerHTML = `<div class="error-msg">❌ ${data.message}</div>`;
+        }
+      } catch (error) {
+        statusDiv.innerHTML = `<div class="error-msg">❌ Error: ${error.message}</div>`;
+      }
+    }
+
+    // Load tournaments on page load
+    loadCurrentTournaments();
 
     async function fetchCurrentEntries() {
       const button = event.target;
