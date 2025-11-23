@@ -269,13 +269,10 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Stack More Tickets - Primary CTA */}
-            <div className="bg-blue-500/20 rounded-lg p-4 border border-blue-400/30 text-center">
-              <p className="text-blue-200 font-semibold mb-1">
-                🎯 Come back tomorrow for more tickets!
-              </p>
-              <p className="text-blue-200/70 text-xs">
-                Stack them up to increase your odds in the next draw
+            {/* Stack Tip */}
+            <div className="bg-blue-500/20 rounded-lg p-3 border border-blue-400/30 text-center">
+              <p className="text-blue-200/80 text-xs">
+                💡 Stack tickets over multiple days to increase your odds!
               </p>
             </div>
 
@@ -311,13 +308,10 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Stack More Tickets - Primary message */}
-            <div className="bg-blue-500/20 rounded-lg p-4 border border-blue-400/30 text-center">
-              <p className="text-blue-200 font-semibold mb-1">
-                🎯 Come back tomorrow for more tickets!
-              </p>
-              <p className="text-blue-200/70 text-xs">
-                Resets at midnight UTC • More tickets = better odds
+            {/* Stack Tip */}
+            <div className="bg-blue-500/20 rounded-lg p-3 border border-blue-400/30 text-center">
+              <p className="text-blue-200/80 text-xs">
+                💡 Stack tickets over multiple days to increase your odds!
               </p>
             </div>
 

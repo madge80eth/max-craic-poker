@@ -1,6 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { Redis } from '@upstash/redis';
+import { getTodayPlayers, clearUserDailyData, clearTodayDailyHands } from '@/lib/redis';
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,10 +51,28 @@ export async function POST(request: NextRequest) {
     const filePath = path.join(process.cwd(), 'public', 'tournaments.json');
     await fs.writeFile(filePath, JSON.stringify(tournamentsData, null, 2));
 
+    // Clear entries and start fresh draw (same as reset)
+    await redis.del('raffle_entries');
+    await redis.del('raffle_winners');
+
+    // Clear today's Madge game data
+    const todayPlayers = await getTodayPlayers();
+    await clearTodayDailyHands();
+    for (const wallet of todayPlayers) {
+      await clearUserDailyData(wallet);
+    }
+
+    console.log(`🎯 Tournament update + reset complete. Cleared ${todayPlayers.length} players.`);
+
     return NextResponse.json({
       success: true,
-      message: 'Tournaments updated successfully',
-      data: tournamentsData
+      message: 'Tournaments updated and draw reset successfully',
+      data: tournamentsData,
+      cleared: {
+        entries: true,
+        winners: true,
+        dailyHands: todayPlayers.length
+      }
     });
 
   } catch (error) {

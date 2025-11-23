@@ -335,12 +335,14 @@
         if (data.success) {
           statusDiv.innerHTML = `
             <div class="success-msg">
-              ✅ Tournaments updated successfully!<br>
-              <small style="color: #6ee7b7;">Session: ${sessionId} | ${tournaments.length} tournaments | Stream: ${new Date(streamStartTime).toLocaleString()}</small>
+              ✅ Tournaments updated & draw reset!<br>
+              <small style="color: #6ee7b7;">Session: ${sessionId} | ${tournaments.length} tournaments | Stream: ${new Date(streamStartTime).toLocaleString()}</small><br>
+              <small style="color: #fbbf24;">Entries cleared - fresh draw started</small>
             </div>
           `;
-          // Reload the data
+          // Reload the data and refresh entries
           await loadCurrentTournaments();
+          fetchCurrentEntries();
         } else {
           statusDiv.innerHTML = `<div class="error-msg">❌ ${data.message}</div>`;
         }
