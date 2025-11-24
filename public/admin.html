@@ -544,7 +544,7 @@
     }
 
     async function triggerDraw() {
-      if (!confirm('Trigger the draw now?\n\nThis will select 3 winners from current entries.')) return;
+      if (!confirm('Trigger the draw now?\n\nThis will select 6 winners from current entries.')) return;
 
       const response = await fetch('/api/draw', { method: 'POST' });
       const data = await response.json();
