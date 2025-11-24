@@ -2,7 +2,7 @@
 
 import { useAccount, useConnect } from 'wagmi';
 import { useState, useEffect } from 'react';
-import { Wallet, Ticket } from 'lucide-react';
+import { Wallet, Ticket, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import Madge from '../components/Madge';
 import CardHand from '../components/CardHand';
@@ -30,6 +30,32 @@ export default function HomePage() {
   const [isDealing, setIsDealing] = useState(false);
   const [showCards, setShowCards] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isWithinStreamWindow, setIsWithinStreamWindow] = useState(false);
+  const [winners, setWinners] = useState<any[] | null>(null);
+  const [streamUrl, setStreamUrl] = useState<string | null>(null);
+  const [streamDate, setStreamDate] = useState<string>('');
+
+  // Check stream timing and winners
+  useEffect(() => {
+    async function checkStreamAndWinners() {
+      try {
+        const tournamentRes = await fetch('/tournaments.json');
+        const tournamentData = await tournamentRes.json();
+        if (tournamentData.streamStartTime) {
+          const streamStart = new Date(tournamentData.streamStartTime).getTime();
+          const now = Date.now();
+          const twelveHoursAfter = streamStart + (12 * 60 * 60 * 1000);
+          setIsWithinStreamWindow(now >= streamStart && now <= twelveHoursAfter);
+          if (tournamentData.streamUrl) setStreamUrl(tournamentData.streamUrl);
+          setStreamDate(new Date(tournamentData.streamStartTime).toLocaleDateString('en-GB', { weekday: 'short', month: 'short', day: 'numeric' }));
+        }
+        const statusRes = await fetch('/api/status');
+        const statusData = await statusRes.json();
+        if (statusData.success && statusData.winners?.length > 0) setWinners(statusData.winners);
+      } catch (err) { console.error('Stream check error:', err); }
+    }
+    checkStreamAndWinners();
+  }, []);
 
   // Check if user has already played today
   useEffect(() => {
@@ -130,6 +156,61 @@ export default function HomePage() {
         return "";
     }
   };
+
+  
+  // STATE 1: WITHIN 12-HOUR STREAM WINDOW - Show Winners + Stream
+  if (isWithinStreamWindow && winners && winners.length > 0) {
+    const isUserWinner = address && winners.some((w: any) => w.walletAddress.toLowerCase() === address.toLowerCase());
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-800 p-4 pb-24">
+        <div className="max-w-md mx-auto pt-4 space-y-4">
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Trophy className="w-6 h-6 text-yellow-400" />
+              <h1 className="text-2xl font-bold text-white">Winners for {streamDate}!</h1>
+            </div>
+            <p className="text-blue-200 text-sm">Watch the action live:</p>
+          </div>
+          {streamUrl && (
+            <div className="bg-black rounded-xl overflow-hidden border border-white/20">
+              <iframe src={streamUrl} width="100%" height="220" allowFullScreen allow="autoplay; fullscreen" className="w-full" />
+            </div>
+          )}
+          {isUserWinner && (
+            <div className="bg-green-500/20 rounded-xl p-4 border border-green-400/40">
+              <p className="text-green-200 text-sm font-semibold text-center">You won! Check your assignment below</p>
+            </div>
+          )}
+          <div className="bg-white/10 rounded-xl p-4 border border-white/20">
+            <h2 className="text-lg font-bold text-white mb-3 text-center">Winners</h2>
+            <div className="space-y-2">
+              {winners.map((w: any, i: number) => {
+                const isCurrent = address && w.walletAddress.toLowerCase() === address.toLowerCase();
+                return (
+                  <div key={i} className={`p-3 rounded-lg ${isCurrent ? 'bg-green-500/20 border border-green-400/40' : 'bg-white/5'}`}>
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{w.position === 1 ? '🥇' : w.position === 2 ? '🥈' : w.position === 3 ? '🥉' : '🏅'}</span>
+                        <p className="text-white/60 text-xs font-mono">
+                          {w.walletAddress.slice(0, 6)}...{w.walletAddress.slice(-4)}
+                          {isCurrent && <span className="ml-1 text-green-300">(You)</span>}
+                        </p>
+                      </div>
+                      <p className="text-white font-bold text-sm">{w.finalPercentage.toFixed(1)}%</p>
+                    </div>
+                    <p className="text-white/80 text-xs pl-8">{w.assignedTournament}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+          <Link href="/mini-app/draw" className="block w-full bg-white/10 hover:bg-white/15 text-white font-semibold py-3 px-6 rounded-lg text-center text-sm">View Full Draw Details</Link>
+        </div>
+      </div>
+    );
+  }
+
+  // STATE 2: OUTSIDE STREAM WINDOW - Show Madge Game
 
   // Not connected state
   if (!address) {
