@@ -31,9 +31,7 @@ export async function GET(request: NextRequest) {
     // AUTO-DRAW: Check if we should auto-trigger draw (30 mins before stream, no winners yet)
     if (!winners && totalEntries >= 6) {
       try {
-        const baseUrl = process.env.VERCEL_URL
-          ? `https://${process.env.VERCEL_URL}`
-          : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        const baseUrl = 'https://max-craic-poker.vercel.app';
         const tournamentsRes = await fetch(`${baseUrl}/tournaments.json`);
         const tournamentsData = await tournamentsRes.json();
 

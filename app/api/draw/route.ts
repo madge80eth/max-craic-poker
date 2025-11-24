@@ -41,10 +41,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Load tournaments - fetch from public URL (works in serverless)
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const tournamentsRes = await fetch(`${baseUrl}/tournaments.json`);
+    const tournamentsRes = await fetch('https://max-craic-poker.vercel.app/tournaments.json');
     const tournamentsData = await tournamentsRes.json();
     const tournaments = tournamentsData.tournaments;
 
