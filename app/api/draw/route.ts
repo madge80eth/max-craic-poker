@@ -25,13 +25,19 @@ export async function POST(request: NextRequest) {
     }
 
     // Convert entries to array and parse JSON strings
-    const entryArray = Object.entries(entries).map(([address, data]) => {
-      const parsed = typeof data === 'string' ? JSON.parse(data) : data;
-      return {
-        walletAddress: address,
-        ...parsed
-      };
-    });
+    const entryArray: any[] = [];
+    for (const [address, data] of Object.entries(entries)) {
+      try {
+        const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+        entryArray.push({
+          walletAddress: address,
+          ...parsed
+        });
+      } catch (parseErr) {
+        console.error(`Failed to parse entry for ${address}:`, data, parseErr);
+        // Skip corrupted entries but continue
+      }
+    }
 
     if (entryArray.length < 6) {
       return NextResponse.json(
