@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
     const entryArray: any[] = [];
     for (const [address, data] of Object.entries(entries)) {
       try {
-        const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+        if (typeof data === 'string' && !data.startsWith('{')) { console.log('Skipping non-JSON entry'); continue; } const parsed = typeof data === 'string' ? JSON.parse(data) : data;
         entryArray.push({
           walletAddress: address,
           ...parsed
