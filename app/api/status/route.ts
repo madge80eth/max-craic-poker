@@ -22,10 +22,43 @@ export async function GET(request: NextRequest) {
     // Get winners data
     const winnersData = await redis.get('raffle_winners');
     let winners = null;
-    
+
     if (winnersData) {
       const parsed = typeof winnersData === 'string' ? JSON.parse(winnersData) : winnersData;
       winners = parsed.winners || null;
+    }
+
+    // AUTO-DRAW: Check if we should auto-trigger draw (30 mins before stream, no winners yet)
+    if (!winners && totalEntries >= 6) {
+      try {
+        const baseUrl = process.env.VERCEL_URL
+          ? `https://${process.env.VERCEL_URL}`
+          : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+        const tournamentsRes = await fetch(`${baseUrl}/tournaments.json`);
+        const tournamentsData = await tournamentsRes.json();
+
+        if (tournamentsData.streamStartTime) {
+          const streamStart = new Date(tournamentsData.streamStartTime).getTime();
+          const now = Date.now();
+          const thirtyMinsBefore = streamStart - (30 * 60 * 1000);
+
+          // Auto-draw if: 30 mins before stream OR stream already started (within 12h window)
+          const twelveHoursAfter = streamStart + (12 * 60 * 60 * 1000);
+          const shouldAutoDraw = now >= thirtyMinsBefore && now <= twelveHoursAfter;
+
+          if (shouldAutoDraw) {
+            console.log('Auto-triggering draw...');
+            const drawRes = await fetch(`${baseUrl}/api/draw`, { method: 'POST' });
+            const drawData = await drawRes.json();
+            if (drawData.success && drawData.winners) {
+              winners = drawData.winners;
+              console.log('Auto-draw successful!');
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Auto-draw check failed:', err);
+      }
     }
 
     // Check if specific wallet requested

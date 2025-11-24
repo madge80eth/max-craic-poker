@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
-import { readFileSync } from 'fs';
-import { join } from 'path';
 import { checkAndResetSession } from '@/lib/session';
 import { getUserStats, incrementTournamentsAssigned } from '@/lib/redis';
 import { Winner, DrawResult } from '@/types';
@@ -42,10 +40,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Load tournaments from filesystem
-    const tournamentsPath = join(process.cwd(), 'public', 'tournaments.json');
-    const tournamentsFile = readFileSync(tournamentsPath, 'utf-8');
-    const tournamentsData = JSON.parse(tournamentsFile);
+    // Load tournaments - fetch from public URL (works in serverless)
+    const baseUrl = process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    const tournamentsRes = await fetch(`${baseUrl}/tournaments.json`);
+    const tournamentsData = await tournamentsRes.json();
     const tournaments = tournamentsData.tournaments;
 
     if (!Array.isArray(tournaments) || tournaments.length === 0) {
