@@ -5,9 +5,9 @@
   <style>
     body {
       font-family: system-ui, -apple-system, sans-serif;
-      max-width: 1000px;
-      margin: 50px auto;
-      padding: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0;
       background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%);
       min-height: 100vh;
       color: #e0e7ff;
@@ -17,11 +17,65 @@
       color: white;
       font-size: 2.5rem;
       margin-bottom: 10px;
+      padding-top: 40px;
     }
     .subtitle {
       text-align: center;
       color: #a5b4fc;
-      margin-bottom: 40px;
+      margin-bottom: 30px;
+    }
+    .tabs-container {
+      background: rgba(0, 0, 0, 0.3);
+      border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+    .tabs {
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0;
+    }
+    .tab {
+      padding: 18px 32px;
+      cursor: pointer;
+      background: transparent;
+      color: #a5b4fc;
+      border: none;
+      border-bottom: 3px solid transparent;
+      font-size: 15px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      position: relative;
+      flex: 1;
+      max-width: 200px;
+    }
+    .tab:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: white;
+      transform: none;
+      box-shadow: none;
+    }
+    .tab.active {
+      color: white;
+      background: rgba(139, 92, 246, 0.2);
+      border-bottom-color: #8b5cf6;
+    }
+    .tab-content {
+      display: none;
+      padding: 30px 20px;
+      animation: fadeIn 0.3s ease;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
     button {
       padding: 15px 30px;
@@ -148,8 +202,55 @@
   <h1>🎰 Max Craic Poker Admin</h1>
   <p class="subtitle">Manage draws and view statistics</p>
 
-  <div class="section">
-    <h2>🎯 Tournament Manager</h2>
+  <div class="tabs-container">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('general')">📊 General</button>
+      <button class="tab" onclick="switchTab('tournaments')">🎯 Tournaments</button>
+      <button class="tab" onclick="switchTab('draw')">🎲 Draw</button>
+      <button class="tab" onclick="switchTab('stats')">📈 Stats</button>
+    </div>
+  </div>
+
+  <!-- GENERAL TAB -->
+  <div id="general-tab" class="tab-content active">
+    <div class="section">
+      <h2>📊 Current Draw Statistics</h2>
+      <p class="description">Live view of the current draw entries</p>
+
+      <div id="entriesCard" style="display: none;">
+        <div class="entries-card">
+          <div class="entries-label">Total Entries</div>
+          <div class="entries-count" id="entriesCount">-</div>
+          <div style="color: #ddd6fe; font-size: 0.9rem; margin-top: 10px;">
+            Last updated: <span id="lastUpdated">-</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="info" onclick="fetchCurrentEntries()">🔄 Get Current Entries</button>
+
+      <div id="winnersInfo" style="margin-top: 20px; display: none;">
+        <h3 style="color: white; margin-bottom: 10px;">🏆 Current Winners</h3>
+        <div id="winnersList"></div>
+      </div>
+    </div>
+
+    <div class="section" id="payoutCalculator" style="display: none;">
+      <h2>💰 Winner Payout Calculator</h2>
+      <p class="description">Enter tournament results to calculate USDC payouts</p>
+      <div id="payoutCards"></div>
+    </div>
+
+    <div class="section">
+      <h2>📊 System Status</h2>
+      <div class="status" id="status"></div>
+    </div>
+  </div>
+
+  <!-- TOURNAMENTS TAB -->
+  <div id="tournaments-tab" class="tab-content">
+    <div class="section">
+      <h2>🎯 Tournament Manager</h2>
     <p class="description">Update tournaments.json for the next stream without editing files</p>
 
     <div class="tournament-form">
@@ -176,73 +277,91 @@
 
       <div id="tournamentStatus"></div>
     </div>
+    </div>
   </div>
 
-  <div class="section">
-    <h2>📊 Current Draw Statistics</h2>
-    <p class="description">Live view of the current draw entries</p>
+  <!-- DRAW TAB -->
+  <div id="draw-tab" class="tab-content">
+    <div class="section">
+      <h2>🎲 Draw Management</h2>
+      <p class="description">Trigger the draw to select winners or reset to start fresh</p>
+      <button class="draw" onclick="triggerDraw()">Trigger Draw</button>
+      <button class="reset" onclick="resetDraw()">Reset Draw</button>
+    </div>
 
-    <div id="entriesCard" style="display: none;">
-      <div class="entries-card">
-        <div class="entries-label">Total Entries</div>
-        <div class="entries-count" id="entriesCount">-</div>
-        <div style="color: #ddd6fe; font-size: 0.9rem; margin-top: 10px;">
-          Last updated: <span id="lastUpdated">-</span>
+    <div class="section">
+      <h2>🧪 Testing</h2>
+      <p class="description">Add test wallets to quickly test the draw functionality without manual entries</p>
+      <button class="test" onclick="testDraw()">Add Test Entries</button>
+      <p style="color: #a5b4fc; font-size: 14px; margin-top: 10px;">Adds 10 test wallets to the current draw</p>
+    </div>
+  </div>
+
+  <!-- STATS TAB -->
+  <div id="stats-tab" class="tab-content">
+    <div class="section">
+      <h2>📈 Platform Statistics</h2>
+      <p class="description">Overview of all-time platform engagement</p>
+
+      <div id="statsCards" style="display: none; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+        <div class="entries-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+          <div class="entries-label">Unique Wallets</div>
+          <div class="entries-count" id="totalWalletsCount">-</div>
+          <div style="color: #d1fae5; font-size: 0.9rem; margin-top: 10px;">
+            All-time users
+          </div>
+        </div>
+        <div class="entries-card" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
+          <div class="entries-label">Total Draws</div>
+          <div class="entries-count" id="totalDrawsCount">-</div>
+          <div style="color: #dbeafe; font-size: 0.9rem; margin-top: 10px;">
+            All-time entries
+          </div>
         </div>
       </div>
+
+      <button class="info" onclick="fetchPlatformStats()">🔄 Get Platform Statistics</button>
     </div>
 
-    <button class="info" onclick="fetchCurrentEntries()">🔄 Get Current Entries</button>
-
-    <div id="winnersInfo" style="margin-top: 20px; display: none;">
-      <h3 style="color: white; margin-bottom: 10px;">🏆 Current Winners</h3>
-      <div id="winnersList"></div>
+    <div class="section">
+      <h2>🏆 Monthly Leaderboard</h2>
+      <p class="description">Monthly snapshots happen automatically. Use this for manual override or testing.</p>
+      <button class="draw" onclick="snapshotLeaderboard()">Manual Snapshot (Override)</button>
+      <p style="color: #6b7280; font-size: 14px; margin-top: 10px;">
+        ⚠️ The system auto-snapshots at month end. Only use this for testing or manual override.
+      </p>
     </div>
-  </div>
-
-  <div class="section" id="payoutCalculator" style="display: none;">
-    <h2>💰 Winner Payout Calculator</h2>
-    <p class="description">Enter tournament results to calculate USDC payouts</p>
-    <div id="payoutCards"></div>
-  </div>
-
-  <div class="section">
-    <h2>🧪 Testing</h2>
-    <p class="description">Add test wallets to quickly test the draw functionality without manual entries</p>
-    <button class="test" onclick="testDraw()">Add Test Entries</button>
-    <p style="color: #a5b4fc; font-size: 14px; margin-top: 10px;">Adds 10 test wallets to the current draw</p>
-  </div>
-
-  <div class="section">
-    <h2>🎲 Draw Management</h2>
-    <p class="description">Trigger the draw to select winners or reset to start fresh</p>
-    <button class="draw" onclick="triggerDraw()">Trigger Draw</button>
-    <button class="reset" onclick="resetDraw()">Reset Draw</button>
-  </div>
-
-  <div class="section">
-    <h2>🏆 Monthly Leaderboard</h2>
-    <p class="description">Monthly snapshots happen automatically. Use this for manual override or testing.</p>
-    <button class="draw" onclick="snapshotLeaderboard()">Manual Snapshot (Override)</button>
-    <p style="color: #6b7280; font-size: 14px; margin-top: 10px;">
-      ⚠️ The system auto-snapshots at month end. Only use this for testing or manual override.
-    </p>
-  </div>
-
-  <div class="section">
-    <h2>📊 System Status</h2>
-    <div class="status" id="status"></div>
   </div>
 
   <script>
     let winnersData = null;
     let tournamentsData = null;
 
+    // Tab switching function
+    function switchTab(tabName) {
+      // Hide all tab contents
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+      });
+
+      // Remove active class from all tabs
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+
+      // Show selected tab content
+      document.getElementById(tabName + '-tab').classList.add('active');
+
+      // Add active class to clicked tab
+      event.target.classList.add('active');
+    }
+
     // Tournament Manager Functions
     async function loadCurrentTournaments() {
       try {
-        const response = await fetch('/tournaments.json');
-        const data = await response.json();
+        const response = await fetch('/api/tournaments');
+        const result = await response.json();
+        const data = result.data || result;
         tournamentsData = data;
 
         // Populate session ID
@@ -416,8 +535,9 @@
 
       // Load tournaments data
       try {
-        const response = await fetch('/tournaments.json');
-        tournamentsData = await response.json();
+        const response = await fetch('/api/tournaments');
+        const result = await response.json();
+        tournamentsData = result.data || result;
 
         document.getElementById('payoutCalculator').style.display = 'block';
         calculatePayouts();
@@ -570,6 +690,33 @@
           checkStatus();
           fetchCurrentEntries();
         }, 1000);
+      }
+    }
+
+    async function fetchPlatformStats() {
+      const button = event.target;
+      button.classList.add('loading');
+      button.textContent = '⏳ Loading...';
+
+      try {
+        const response = await fetch('/api/leaderboard');
+        const data = await response.json();
+
+        if (data.success) {
+          const totalWallets = data.totalParticipants || 0;
+          const totalDraws = data.totalDraws || 0;
+
+          document.getElementById('statsCards').style.display = 'grid';
+          document.getElementById('totalWalletsCount').textContent = totalWallets;
+          document.getElementById('totalDrawsCount').textContent = totalDraws;
+        } else {
+          alert('Failed to fetch platform statistics');
+        }
+      } catch (error) {
+        alert('Error fetching platform statistics: ' + error.message);
+      } finally {
+        button.classList.remove('loading');
+        button.textContent = '🔄 Get Platform Statistics';
       }
     }
 
