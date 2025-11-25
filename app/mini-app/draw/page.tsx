@@ -77,7 +77,7 @@ export default function DrawPage() {
   }, [address]);
 
   useEffect(() => {
-    fetch('/tournaments.json')
+    fetch('/api/tournaments')
       .then(res => res.json())
       .then((data) => {
         setTournaments(data.tournaments || []);
