@@ -40,7 +40,7 @@ export default function HomePage() {
   useEffect(() => {
     async function checkStreamAndWinners() {
       try {
-        const tournamentRes = await fetch('/tournaments.json');
+        const tournamentRes = await fetch('/api/tournaments');
         const tournamentData = await tournamentRes.json();
         if (tournamentData.streamStartTime) {
           const streamStart = new Date(tournamentData.streamStartTime).getTime();

@@ -39,7 +39,7 @@ export default function StatsPage() {
 
     async function fetchNextStream() {
       try {
-        const res = await fetch('/tournaments.json');
+        const res = await fetch('/api/tournaments');
         const data = await res.json();
         if (data.streamStartTime) {
           const streamDate = new Date(data.streamStartTime);
