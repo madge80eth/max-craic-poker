@@ -31,6 +31,7 @@ export default function HomePage() {
   const [showCards, setShowCards] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isWithinStreamWindow, setIsWithinStreamWindow] = useState(false);
+  const [isPostStreamWindow, setIsPostStreamWindow] = useState(false); // 12h-24h after stream
   const [winners, setWinners] = useState<any[] | null>(null);
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
   const [streamDate, setStreamDate] = useState<string>('');
@@ -45,7 +46,14 @@ export default function HomePage() {
           const streamStart = new Date(tournamentData.streamStartTime).getTime();
           const now = Date.now();
           const twelveHoursAfter = streamStart + (12 * 60 * 60 * 1000);
+          const twentyFourHoursAfter = streamStart + (24 * 60 * 60 * 1000);
+
+          // Within 12h stream window
           setIsWithinStreamWindow(now >= streamStart && now <= twelveHoursAfter);
+
+          // Post-stream window: 12h-24h after stream (stream ended but before draw)
+          setIsPostStreamWindow(now > twelveHoursAfter && now <= twentyFourHoursAfter);
+
           if (tournamentData.streamUrl) setStreamUrl(tournamentData.streamUrl);
           setStreamDate(new Date(tournamentData.streamStartTime).toLocaleDateString('en-GB', { weekday: 'short', month: 'short', day: 'numeric' }));
         }
@@ -157,7 +165,6 @@ export default function HomePage() {
     }
   };
 
-  
   // STATE 1: WITHIN 12-HOUR STREAM WINDOW - Show Winners + Stream
   if (isWithinStreamWindow && winners && winners.length > 0) {
     const isUserWinner = address && winners.some((w: any) => w.walletAddress.toLowerCase() === address.toLowerCase());
@@ -172,8 +179,19 @@ export default function HomePage() {
             <p className="text-blue-200 text-sm">Watch the action live:</p>
           </div>
           {streamUrl && (
-            <div className="bg-black rounded-xl overflow-hidden border border-white/20">
-              <iframe src={streamUrl} width="100%" height="220" allowFullScreen allow="autoplay; fullscreen" className="w-full" />
+            <div className="bg-black rounded-xl overflow-hidden border border-white/20 relative" style={{ height: '500px' }}>
+              <iframe
+                src={streamUrl}
+                className="w-full absolute"
+                style={{
+                  height: '800px',
+                  top: '-150px',
+                  left: '0',
+                  pointerEvents: 'auto'
+                }}
+                allowFullScreen
+                allow="autoplay; fullscreen"
+              />
             </div>
           )}
           {isUserWinner && (
@@ -210,7 +228,94 @@ export default function HomePage() {
     );
   }
 
-  // STATE 2: OUTSIDE STREAM WINDOW - Show Madge Game
+  // STATE 2: POST-STREAM WINDOW (12h-24h after stream) - Show recap + encourage ticket stacking
+  if (isPostStreamWindow && winners && winners.length > 0) {
+    const isUserWinner = address && winners.some((w: any) => w.walletAddress.toLowerCase() === address.toLowerCase());
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-800 p-4 pb-24">
+        <div className="max-w-md mx-auto pt-4 space-y-4">
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-2 mb-2">
+              <Trophy className="w-6 h-6 text-yellow-400" />
+              <h1 className="text-2xl font-bold text-white">Stream Complete!</h1>
+            </div>
+            <p className="text-blue-200 text-sm">{streamDate} winners announced</p>
+          </div>
+
+          {/* Post-Stream Message */}
+          <div className="bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-xl p-5 border border-blue-400/30">
+            <h2 className="text-white font-bold text-lg mb-3 text-center">Stream has ended! 🎉</h2>
+            <div className="space-y-3 text-blue-100 text-sm">
+              <div className="flex items-start gap-3">
+                <span className="text-xl">📺</span>
+                <div>
+                  <p className="font-semibold">Catch the highlights</p>
+                  <p className="text-blue-200/70 text-xs">Check out the best moments in the Media tab</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-xl">🎴</span>
+                <div>
+                  <p className="font-semibold">Stack tickets for next draw</p>
+                  <p className="text-blue-200/70 text-xs">Play Madge daily to accumulate more entries</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-3">
+                <span className="text-xl">🔔</span>
+                <div>
+                  <p className="font-semibold">Turn on notifications</p>
+                  <p className="text-blue-200/70 text-xs">Don't miss the next stream announcement</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {isUserWinner && (
+            <div className="bg-green-500/20 rounded-xl p-4 border border-green-400/40">
+              <p className="text-green-200 text-sm font-semibold text-center">You won! Check your assignment below</p>
+            </div>
+          )}
+
+          {/* Winners List */}
+          <div className="bg-white/10 rounded-xl p-4 border border-white/20">
+            <h2 className="text-lg font-bold text-white mb-3 text-center">Winners</h2>
+            <div className="space-y-2">
+              {winners.map((w: any, i: number) => {
+                const isCurrent = address && w.walletAddress.toLowerCase() === address.toLowerCase();
+                return (
+                  <div key={i} className={`p-3 rounded-lg ${isCurrent ? 'bg-green-500/20 border border-green-400/40' : 'bg-white/5'}`}>
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg">{w.position === 1 ? '🥇' : w.position === 2 ? '🥈' : w.position === 3 ? '🥉' : '🏅'}</span>
+                        <p className="text-white/60 text-xs font-mono">
+                          {w.walletAddress.slice(0, 6)}...{w.walletAddress.slice(-4)}
+                          {isCurrent && <span className="ml-1 text-green-300">(You)</span>}
+                        </p>
+                      </div>
+                      <p className="text-white font-bold text-sm">{w.finalPercentage.toFixed(1)}%</p>
+                    </div>
+                    <p className="text-white/80 text-xs pl-8">{w.assignedTournament}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="space-y-2">
+            <Link href="/mini-app/more" className="block w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-lg text-center">
+              📺 View Highlights in Media
+            </Link>
+            <Link href="/mini-app/draw" className="block w-full bg-white/10 hover:bg-white/15 text-white font-semibold py-3 px-6 rounded-lg text-center text-sm">
+              View Full Draw Details
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // STATE 3: OUTSIDE STREAM WINDOWS - Show Madge Game
 
   // Not connected state
   if (!address) {
