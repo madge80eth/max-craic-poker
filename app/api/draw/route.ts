@@ -122,6 +122,22 @@ export async function POST(request: NextRequest) {
     await redis.set('raffle_winners', JSON.stringify(drawResult));
     await redis.set('current_draw_result', JSON.stringify(drawResult));
 
+    // Send notification to all users
+    try {
+      const tournamentsData = await getTournamentsData();
+      if (tournamentsData?.streamStartTime) {
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://max-craic-poker.vercel.app';
+        await fetch(`${baseUrl}/api/notify-draw`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ streamTime: tournamentsData.streamStartTime })
+        });
+      }
+    } catch (notifError) {
+      console.error('Failed to send notification:', notifError);
+      // Don't fail the draw if notification fails
+    }
+
     return NextResponse.json({
       success: true,
       winners,

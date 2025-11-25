@@ -63,6 +63,9 @@ export async function GET(request: NextRequest) {
     // Get top 20
     const top20 = entries.slice(0, 20);
 
+    // Calculate total draws across all entries
+    const totalDraws = entries.reduce((sum, entry) => sum + entry.totalEntries, 0);
+
     // Find user's rank if wallet provided
     let userRank = null;
     if (userWallet) {
@@ -80,7 +83,8 @@ export async function GET(request: NextRequest) {
       success: true,
       leaderboard: top20,
       userRank,
-      totalParticipants: entries.length
+      totalParticipants: entries.length,
+      totalDraws
     });
 
   } catch (error) {

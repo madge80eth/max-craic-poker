@@ -4,8 +4,6 @@ import { useAccount, useConnect } from 'wagmi';
 import { useEffect, useState } from 'react';
 import { TrendingUp, Trophy, Flame, Wallet } from 'lucide-react';
 import Link from 'next/link';
-import NotificationToggle from '@/components/NotificationToggle';
-import { useDrawNotifications } from '@/hooks/useDrawNotifications';
 
 interface UserStats {
   totalEntries: number;
@@ -21,13 +19,6 @@ export default function StatsPage() {
   const [streamStartTime, setStreamStartTime] = useState<Date | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasWinners, setHasWinners] = useState(false);
-
-  // Enable draw notifications
-  useDrawNotifications({
-    walletAddress: address,
-    streamStartTime,
-    hasWinners
-  });
 
   useEffect(() => {
     if (!address) {
@@ -218,11 +209,6 @@ export default function StatsPage() {
               <p className="text-white/60 text-xs mt-1">Winners announced 30 mins before stream</p>
             </div>
           </div>
-        )}
-
-        {/* Notification Toggle */}
-        {address && (
-          <NotificationToggle walletAddress={address} />
         )}
 
         {/* CTA Button */}
