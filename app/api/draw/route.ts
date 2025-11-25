@@ -122,15 +122,26 @@ export async function POST(request: NextRequest) {
     await redis.set('raffle_winners', JSON.stringify(drawResult));
     await redis.set('current_draw_result', JSON.stringify(drawResult));
 
-    // Send notification to all users
+    // Send notification to all users who enabled notifications
     try {
       const tournamentsData = await getTournamentsData();
       if (tournamentsData?.streamStartTime) {
+        const streamDate = new Date(tournamentsData.streamStartTime);
+        const formattedTime = streamDate.toLocaleString('en-GB', {
+          hour: '2-digit',
+          minute: '2-digit'
+        });
+
         const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://max-craic-poker.vercel.app';
-        await fetch(`${baseUrl}/api/notify-draw`, {
+        await fetch(`${baseUrl}/api/send-notification`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ streamTime: tournamentsData.streamStartTime })
+          body: JSON.stringify({
+            title: '🎰 Draw is Live!',
+            message: `Winners announced! Check if you won & tune in at ${formattedTime}`,
+            targetUrl: `${baseUrl}/mini-app/draw`,
+            notificationId: `draw_${tournamentsData.sessionId}`
+          })
         });
       }
     } catch (notifError) {
