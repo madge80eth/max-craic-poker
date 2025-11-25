@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
-import { checkAndResetSession } from '@/lib/session';
+import { checkAndResetSession, getTournamentsData } from '@/lib/session';
 import { getUserStats, incrementTournamentsAssigned } from '@/lib/redis';
 import { Winner, DrawResult } from '@/types';
 
@@ -46,11 +46,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Load tournaments - fetch from public URL (works in serverless)
-    const tournamentsRes = await fetch('https://max-craic-poker.vercel.app/tournaments.json');
-    const tournamentsData = await tournamentsRes.json();
-    const tournaments = tournamentsData.tournaments;
+    // Load tournaments from Redis
+    const tournamentsData = await getTournamentsData();
+    if (!tournamentsData || !tournamentsData.tournaments) {
+      return NextResponse.json({
+        success: false,
+        message: 'No tournaments data available'
+      }, { status: 500 });
+    }
 
+    const tournaments = tournamentsData.tournaments;
     if (!Array.isArray(tournaments) || tournaments.length === 0) {
       return NextResponse.json({
         success: false,

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
-import { checkAndResetSession } from '@/lib/session';
+import { checkAndResetSession, getTournamentsData } from '@/lib/session';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -31,11 +31,9 @@ export async function GET(request: NextRequest) {
     // AUTO-DRAW: Check if we should auto-trigger draw (30 mins before stream, no winners yet)
     if (!winners && totalEntries >= 6) {
       try {
-        const baseUrl = 'https://max-craic-poker.vercel.app';
-        const tournamentsRes = await fetch(`${baseUrl}/tournaments.json`);
-        const tournamentsData = await tournamentsRes.json();
+        const tournamentsData = await getTournamentsData();
 
-        if (tournamentsData.streamStartTime) {
+        if (tournamentsData && tournamentsData.streamStartTime) {
           const streamStart = new Date(tournamentsData.streamStartTime).getTime();
           const now = Date.now();
           const thirtyMinsBefore = streamStart - (30 * 60 * 1000);
