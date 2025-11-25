@@ -4,6 +4,7 @@ import { useAccount, useConnect } from 'wagmi';
 import { useEffect, useState } from 'react';
 import { TrendingUp, Trophy, Flame, Wallet } from 'lucide-react';
 import Link from 'next/link';
+import NotificationPrompt from '@/components/NotificationPrompt';
 
 interface UserStats {
   totalEntries: number;
@@ -220,6 +221,9 @@ export default function StatsPage() {
         </Link>
 
       </div>
+
+      {/* Notification Prompt - only show if user is connected */}
+      {address && <NotificationPrompt />}
     </div>
   );
 }
