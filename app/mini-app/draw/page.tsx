@@ -6,6 +6,7 @@ import confetti from 'canvas-confetti';
 import { Clock, Trophy, Wallet, Share2, Flame } from 'lucide-react';
 import Link from 'next/link';
 import { useComposeCast } from '@coinbase/onchainkit/minikit';
+import NotificationPrompt from '@/components/NotificationPrompt';
 
 interface UserStats {
   totalEntries: number;
@@ -483,6 +484,11 @@ export default function DrawPage() {
         )}
 
       </div>
+
+      {/* Notification Prompt - show after entering */}
+      {hasEntered && !winners && (
+        <NotificationPrompt message="Get notified when winners are announced & the stream starts" />
+      )}
     </div>
   );
 }
