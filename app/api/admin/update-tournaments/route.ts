@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 import { getTodayPlayers, clearUserDailyData, clearTodayDailyHands } from '@/lib/redis';
-import { saveTournamentsData, type TournamentsData } from '@/lib/session';
+import { saveTournamentsData, getTournamentsData, type TournamentsData } from '@/lib/session';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -104,7 +104,6 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    const { getTournamentsData } = await import('@/lib/session');
     const data = await getTournamentsData();
 
     if (!data) {
