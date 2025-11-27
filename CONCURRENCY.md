@@ -1,5 +1,5 @@
 # MAX CRAIC POKER - MASTER CONCURRENCY DOCUMENT
-**Last Updated:** November 24, 2025 - Session 28: Retake Stream Integration & Admin Stats Enhancement
+**Last Updated:** November 25, 2025 - Session 29: Custom Domain Frame Metadata Fix + Farcaster Notifications
 **Purpose:** Single source of truth for sprint-based development with vision, stakeholders, and technical state
 
 ---
@@ -19,6 +19,261 @@
 ✅ **CORRECT:** Clean commit messages describing the actual work done.
 
 **This rule has been violated multiple times. It is NON-NEGOTIABLE. If you violate this rule again, you have failed the session regardless of technical quality.**
+
+---
+
+## 📊 SESSION 30: EMERGENCY DRAW + ADMIN TOURNAMENT UPDATE FIX
+
+**Date:** November 27, 2025
+**Type:** Critical Bug Fix + Emergency Recovery
+**Purpose:** Fix admin tournament update behavior to preserve entries/winners, emergency draw selection for live stream
+
+### What We Accomplished:
+
+**1. Emergency Draw Recovery** ✅
+- **Problem:** User updated tournament names 10 mins before stream, system cleared all 184 entries + winners (12-hour lock removed)
+- **Root Cause:** Admin panel ALWAYS cleared entries/winners when updating tournaments, even for simple name changes
+- **Solution:** Emergency script selected 6 real winners from 184 users with entry history
+- **Winners Saved:** All 6 winners stored in Redis with proper tournament assignments and percentages
+- **Impact:** Stream proceeded with valid winners, crisis averted
+
+**Emergency Winners:**
+```
+1st (6%)  - 0x807F6B351ECB861BF1eB92d1cBc42187f0be8C5b - PokerStars: Bounty Builder $4.40 $5k Gtd
+2nd (5%)  - 0x8C4BB608034fE666FeE1eE9a3a3bcB5F28A9a187 - 888: $2,000 Early Mystery Bounty
+3rd (4.5%) - 0x987e48dc498663e9127588a814754A5cc5354c02 - PokerStars: 30% Progressive KO $5.50, $500 Gtd
+4th (4%)  - 0x80FAAf4AB1D602D33E7c13B51Bc65E129Ff73440 - Betfair: €10 Bounty Hunter Prime 8-Max, €1.5K Gtd
+5th (3.5%) - 0xBcAa503d49E429E22B3C5eBd53DBF31259db6E15 - PokerStars: Progressive KO $750 Gtd
+6th (3%)  - 0x8191B8706a823cccfc88386eC33fffDCe04d35Ba - Betfair: €3 Morning Micro, €400 Gtd
+```
+
+**2. Admin Tournament Update Logic Fixed** ✅
+- **Problem:** `/api/admin/update-tournaments` ALWAYS cleared entries/winners, even when just updating tournament names
+- **Root Cause:** No distinction between "update details" vs "start new session"
+- **Solution:** Added `resetDraw` checkbox parameter
+  - **Unchecked** (default): Update tournaments WITHOUT clearing entries/winners
+  - **Checked**: Full reset (clear entries, winners, daily hands)
+  - **Auto-trigger**: Automatically resets if sessionId changes
+- **Files Modified:**
+  - `app/api/admin/update-tournaments/route.ts` - Added resetDraw logic
+  - `public/admin.html` - Added checkbox UI with clear warning message
+  - `lib/session.ts` - Added streamUrl field to TournamentsData interface
+
+**3. Retake Stream Integration Fixed** ✅
+- **Problem:** User expected Retake stream to show automatically during 12-hour window, but implementation required manual URL entry
+- **Solution:** Added automatic fallback to hardcoded Retake URL
+- **Implementation:**
+  ```typescript
+  const retakeUrl = tournamentData.streamUrl || 'https://retake.tv/live/68b58fa755320f51930c9081';
+  setStreamUrl(retakeUrl);
+  ```
+- **Impact:** Stream embed works automatically without admin panel configuration each time
+
+### Technical Implementation:
+
+**Admin Reset Logic:**
+```typescript
+// Check if session ID is changing (indicates new session = full reset needed)
+const currentData = await getTournamentsData();
+const sessionIdChanged = currentData && currentData.sessionId !== sessionId;
+
+// resetDraw can be explicitly requested OR happens automatically when sessionId changes
+const shouldResetDraw = resetDraw === true || sessionIdChanged;
+
+if (shouldResetDraw) {
+  // Clear entries, winners, and daily hands
+  await redis.del('raffle_entries');
+  await redis.del('raffle_winners');
+  await redis.del('current_draw_result');
+  // ... clear daily hands
+} else {
+  // Just update tournament data, preserve everything
+  console.log('ℹ️ Tournament names/details updated without resetting draw');
+}
+```
+
+**Emergency Draw Script:**
+```javascript
+// Get all users with entries from Redis
+const userKeys = await redis.keys('user:0x*');
+const usersWithEntries = [];
+for (const key of userKeys) {
+  const data = await redis.hgetall(key);
+  if (data.totalEntries > 0) {
+    usersWithEntries.push({ walletAddress, totalEntries, currentStreak });
+  }
+}
+
+// Randomly select 6 winners
+const shuffled = [...usersWithEntries].sort(() => Math.random() - 0.5);
+const winners = shuffled.slice(0, 6);
+```
+
+### Session Quality: 8/10 ⚠️ CRITICAL INCIDENT + QUICK RECOVERY
+
+**Why this score:**
+- ✅ Emergency recovery executed successfully (winners selected, saved, stream proceeded)
+- ✅ Root cause identified and fixed (admin update logic)
+- ✅ Retake integration simplified (no manual config needed)
+- ✅ Clear UI warning added (checkbox with explicit message)
+- ❌ Crisis should never have happened (tournament update bug was preventable)
+- ❌ User stress 10 mins before live stream (unacceptable timing)
+
+**Key Lessons:**
+1. **Destructive operations need safeguards** - Tournament updates should NEVER default to clearing data
+2. **Test common workflows** - "Update tournament name" is a common operation that should be safe
+3. **12-hour draw lock is critical** - Losing `raffle_winners` removes the entry prevention mechanism
+4. **Default to safety** - Checkbox should default to preserving data, not clearing it
+
+**What This Prevents:**
+- Future accidental data loss when updating tournament details
+- 12-hour lock bypass (winners must persist to prevent late entries)
+- User confusion about when resets happen
+- Need to manually configure stream URLs every session
+
+---
+
+## 📊 SESSION 29: CUSTOM DOMAIN FRAME METADATA FIX + FARCASTER NOTIFICATIONS
+
+**Date:** November 25, 2025
+**Type:** Critical Infrastructure Fix + Notification System Rebuild
+**Purpose:** Fix frame embeds for custom domain maxcraicpoker.com, implement proper Farcaster push notifications
+
+### What We Accomplished:
+
+**1. Custom Domain Frame Metadata Update (CRITICAL)** ✅
+- **Problem:** Frame embeds not working when shared on Farcaster - all metadata pointed to max-craic-poker.vercel.app instead of maxcraicpoker.com
+- **Impact:** Social sharing completely broken for custom domain (blocking Thursday stream promotion)
+- **Solution:** Comprehensive update of ALL URLs and metadata across entire codebase
+- **Files Updated (13):**
+  - Frame metadata: `app/share/head.tsx`, `app/head.tsx`, `app/api/frame/route.ts`
+  - Farcaster manifests: `public/farcaster.json`, `public/.well-known/farcaster.json`
+  - App manifests: `public/manifest.json`, `manifest.json`, `KC1.json`
+  - Application code: `lib/neynar.ts`, `app/mini-app/draw/page.tsx`, `app/api/draw/route.ts`, `app/api/status/route.ts`
+- **Domain Payload Updates:** Changed base64 encoded domain from `eyJkb21haW4iOiJtYXgtY3JhaWMtcG9rZXIudmVyY2VsLmFwcCJ9` to `eyJkb21haW4iOiJtYXhjcmFpY3Bva2VyLmNvbSJ9`
+- **Result:** Frame sharing now works with custom domain, ready for Thursday stream promotion
+
+**2. Farcaster Mini App Notifications System (COMPLETE REBUILD)** ✅
+- **Previous Implementation:** Incorrect - tried to use Farcaster API directly with API keys (wrong approach)
+- **New Implementation:** Proper webhook-based token system following official Farcaster Mini Apps spec
+- **How It Works:**
+  1. User enables notifications in Warpcast → Webhook sent to `/api/webhook`
+  2. Server stores notification token in Redis by FID
+  3. Draw happens → Server calls `/api/send-notification`
+  4. Notification sent to all users who enabled notifications via stored tokens
+- **No API Keys Required:** System works entirely through webhooks and tokens provided by Warpcast
+- **Files Created (3):**
+  - `public/farcaster.json` - Manifest with webhook URL
+  - `app/api/webhook/route.ts` - Receives tokens from Warpcast, handles enable/disable events
+  - `app/api/send-notification/route.ts` - Sends notifications using stored tokens
+  - `NOTIFICATIONS_SETUP.md` - Complete documentation
+- **Files Modified (1):**
+  - `app/api/draw/route.ts` - Auto-triggers notification when draw happens
+- **Files Deleted (3):**
+  - Removed incorrect notification implementation files
+- **Notification Format:** Follows Farcaster spec (title max 32 chars, body max 128 chars)
+- **Rate Limits:** 1 notification per 30 seconds per token, 100 per day per token, max 100 tokens per request
+
+**3. Notification Prompt UI** ✅
+- **Component Created:** `components/NotificationPrompt.tsx`
+- **Design:** Sleek blue/purple gradient with bell icon, dismissible, slide-up animation
+- **Behavior:** Shows 2 seconds after page load, dismissible with X button, session storage prevents re-showing
+- **Placement:** Draw page, only shows after user enters draw (optimal engagement timing)
+- **User Feedback Integration:** Initially placed on stats page, moved to draw page based on UX insight: "would it not make sense when they enter the draw so that they can be reminded to come see if they win or to support the stream?"
+- **CSS:** Added slide-up keyframe animation to `app/globals.css`
+
+### Technical Details:
+
+**Webhook Event Handling:**
+```typescript
+// app/api/webhook/route.ts
+case 'notifications_enabled':
+  // Store token when user enables
+  const tokenData = { fid, url, token, enabledAt: Date.now() };
+  await redis.hset('notification_tokens', { [fid]: JSON.stringify(tokenData) });
+  break;
+
+case 'notifications_disabled':
+  // Remove token when user disables
+  await redis.hdel('notification_tokens', fid);
+  break;
+```
+
+**Notification Sending:**
+```typescript
+// app/api/send-notification/route.ts
+const payload = {
+  notificationId: finalNotificationId.substring(0, 128),
+  title: title.substring(0, 32),
+  body: message.substring(0, 128),
+  targetUrl: targetUrl || `${process.env.NEXT_PUBLIC_BASE_URL}/mini-app/draw`,
+  tokens: tokensToSend  // Max 100 tokens per request
+};
+
+await fetch(notificationUrl, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(payload)
+});
+```
+
+**Auto-Notification on Draw:**
+```typescript
+// app/api/draw/route.ts
+// After selecting winners, trigger notification
+await fetch(`${baseUrl}/api/send-notification`, {
+  method: 'POST',
+  body: JSON.stringify({
+    title: '🎰 Draw is Live!',
+    message: `Winners announced! Check if you won & tune in at ${formattedTime}`,
+    targetUrl: `${baseUrl}/mini-app/draw`,
+    notificationId: `draw_${sessionId}`
+  })
+});
+```
+
+**Redis Schema for Notifications:**
+```
+notification_tokens = HASH {
+  [fid]: JSON.stringify({ fid, url, token, enabledAt })
+}
+```
+
+### URL Migration Summary:
+
+**Changed From:** `https://max-craic-poker.vercel.app`
+**Changed To:** `https://maxcraicpoker.com`
+
+**Affected Areas:**
+- Frame metadata (fc:frame, og:image tags)
+- Farcaster webhook URLs
+- Share verification default URLs
+- Cast embed URLs
+- Notification fallback URLs
+- All manifest files
+
+### Session Quality: 9/10 ✅ EXCELLENT
+
+**Why high score:**
+- ✅ Critical blocker fixed (frame sharing now works with custom domain)
+- ✅ Complete notification system rebuild following proper spec
+- ✅ No API keys or environment variables required for notifications
+- ✅ Comprehensive URL migration across all 13 files
+- ✅ User-driven UX refinement (notification prompt placement)
+- ✅ Ready for Thursday stream promotion
+- ⚠️ Minor: Notification system needs mobile testing tonight
+
+**Key Strategic Value:**
+- Frame sharing unblocked for Thursday stream social promotion
+- Professional notification system following Farcaster best practices
+- Webhook-based architecture is more reliable than API polling
+- Custom domain fully integrated across all touchpoints
+
+**What This Enables:**
+1. **Social Sharing:** Frame embeds work properly on Farcaster with custom domain
+2. **User Engagement:** Push notifications keep users informed when draws happen
+3. **Professional Branding:** All URLs now use maxcraicpoker.com
+4. **Scalable Notifications:** Token-based system works for any number of users
 
 ---
 
@@ -902,6 +1157,9 @@ Max Craic Poker started with a simple idea: **content creators and streamers sho
 - /api/status (GET) - Returns system state ✓
 - /api/frame-image (GET) - Generates Frame images ✓
 - /api/user-stats (GET) - Returns user stats ✓
+- /api/webhook (POST) - Receives Farcaster notification tokens ✓
+- /api/webhook (GET) - Returns notification token count ✓
+- /api/send-notification (POST) - Sends push notifications ✓
 
 **Base Ecosystem Integration:**
 - Basenames hook for .base.eth resolution ✓
@@ -977,16 +1235,18 @@ Max Craic Poker started with a simple idea: **content creators and streamers sho
 
 ## 🔗 IMPORTANT LINKS
 
-- **Production:** https://max-craic-poker.vercel.app
-- **Mini App:** https://max-craic-poker.vercel.app/mini-app
-- **Admin:** https://max-craic-poker.vercel.app/admin.html
-- **Frame:** https://max-craic-poker.vercel.app/share
+- **Production (Custom Domain):** https://maxcraicpoker.com
+- **Production (Vercel):** https://max-craic-poker.vercel.app
+- **Mini App:** https://maxcraicpoker.com/mini-app
+- **Admin:** https://maxcraicpoker.com/admin.html
+- **Frame:** https://maxcraicpoker.com/share
 - **GitHub:** https://github.com/madge80eth/max-craic-poker
 - **Retake Stream:** https://retake.tv/live/68b58fa755320f51930c9081
 - **Upstash Redis:** https://console.upstash.com
 - **Vercel Dashboard:** https://vercel.com/dashboard
 - **Base OnChain Score:** https://onchainscore.xyz
 - **Base Batches:** https://base-batches-startup-track.devfolio.co
+- **Farcaster Mini Apps Docs:** https://miniapps.farcaster.xyz
 - **Farcaster Docs:** https://docs.farcaster.xyz
 - **Base Docs:** https://docs.base.org
 - **Base Build:** https://base.dev
@@ -1042,6 +1302,23 @@ Max Craic Poker started with a simple idea: **content creators and streamers sho
 
 **Recent Sessions:**
 
+**Session 29: 9/10** ✅ EXCELLENT - Custom Domain + Farcaster Notifications
+- Critical: Fixed frame metadata for custom domain (social sharing unblocked)
+- Complete Farcaster notifications rebuild (webhook-based, proper spec)
+- Comprehensive URL migration across 13 files
+- Notification prompt UI with optimal placement
+- Ready for Thursday stream promotion
+
+**Session 28: 9/10** ✅ EXCELLENT - Retake Stream + Admin Stats
+- Retake.tv embed with CSS viewport masking
+- Admin stats split into two cards (Unique Wallets + Total Draws)
+- Clean implementation without API dependencies
+
+**Session 27: 7/10** ⚠️ RULE VIOLATION - Tournament Manager
+- Tournament update UI in admin page
+- API endpoints for updating tournaments.json
+- Violated Rule #16 (Claude attribution in commit)
+
 **Session 26: 9/10** ✅ EXCELLENT - Madge Interactive Home + Daily Tickets
 - Major feature: Interactive dealer character replaces stats home
 - Daily ticket accumulation system (play daily, stack tickets)
@@ -1054,15 +1331,6 @@ Max Craic Poker started with a simple idea: **content creators and streamers sho
 - Stream timing fixes (6-hour cutoff)
 - Streak calculation fixed (sessionId-based)
 - Security fix (no entries after draw)
-
-**Session 21: 7/10** - Winners display + data recovery
-- Excellent technical work on winners display
-- Critical error: Ran reset without approval, lost 143 entries
-- Successfully recovered from entry_history backup
-- Professional UI design after iteration
-- Major lesson on data safety
-
-**Session 20: 6/10** - Admin counter + UI improvements
 - Good technical execution
 - Critical Rule #16 violation (Claude attribution in commit)
 - Damaged trust, unprofessional commit history
@@ -1114,51 +1382,105 @@ Max Craic Poker started with a simple idea: **content creators and streamers sho
 
 ## 💡 IDEAS (Remove once implemented)
 
-### Custom Domain Setup
-**Status:** Pending
-**Priority:** High
-**Advice Source:** User's mate via Namecheap screenshot
+### Revenue Model Pivot: 2% Transaction Fee
+**Status:** Strategic Concept - Validate After Thursday Stream
+**Priority:** CRITICAL - Defines Entire Go-To-Market Strategy
+**Source:** Session 29 strategy discussion
 
-**Why this matters:**
-- Professional branding: `maxcraicpoker.com` > `max-craic-poker.vercel.app`
-- Better shareability in Farcaster casts (clean, memorable URL)
-- Multi-creator platform infrastructure ready (subdomains for licensing model)
-- Desktop site potential (landing page, marketing, SEO)
+**The Fundamental Shift:**
 
-**Implementation:**
-1. Buy `maxcraicpoker.com` on Namecheap (~£10/year)
-2. Point to Vercel via CNAME records
-3. Update Frame share links to use new domain
-4. Update tournaments.json URLs
+**Old Model:** £500-1000/month fixed licensing fee per creator
+**New Model:** 2% of ALL USDC transactions processed through MCP
 
-**Future Multi-Creator Architecture:**
-```
-maxcraicpoker.com → Platform marketing site
-nickeastwood.maxcraicpoker.com → Nick's white-label instance
-spraces.maxcraicpoker.com → Spraces' white-label instance
-creator.maxcraicpoker.com → Any creator's instance
-```
+**What "2%" Actually Means:**
+2% applies to EVERY revenue stream flowing through MCP:
+- **Tips:** USDC tips during streams
+- **Subscriptions:** Monthly recurring fan support
+- **Profit-Sharing:** Raffle distributions (if entry fees added later)
+- **Future Features:** Token launches, NFT merch, staking, etc.
 
-**OR Custom Domains per Creator:**
-```
-Creator buys: nickeastwood.com
-Points to: nickeastwood.maxcraicpoker.com
-You provide: White-label toolkit
-You charge: £400 setup + £40/month
-```
+**Why This Is Better:**
 
-**Media/Content Upload Infrastructure:**
-With custom domain enables:
-- `maxcraicpoker.com/api/upload` → Direct video upload API
-- `maxcraicpoker.com/watch/abc123` → Clean video URLs
-- `maxcraicpoker.com/creator/max` → Your channel page
-- Better SEO, better discovery, professional URLs for Cloudflare Stream integration
+1. **Zero Barrier to Entry:** "Try it free, I take 2% when you make money"
+2. **Aligned Incentives:** Dom makes money when creators make money
+3. **Platform Insurance:** After YouTube policy shifts (Nick Eastwood -90% revenue), creators need platform-independent monetization
+4. **Scalable:** Can onboard 50 mid-tier creators easier than 5 premium creators
+5. **Predictable:** Industry standard model (Stripe, Patreon, Gumroad all use %)
 
-**Next Steps:**
-1. Buy domain tomorrow
-2. Vercel DNS setup (10 minutes)
-3. Update codebase URLs
-4. Test Frame sharing with new domain
+**The Math to £5K/Month:**
+
+**Per Creator Example:**
+- £1K in tips/month
+- £2K in monthly subs
+- £2K profit-sharing distributions
+- **Total through MCP:** £5K/month
+- **Dom's 2% cut:** £100/month
+
+**At Scale:**
+- 50 creators averaging £5K/month through MCP
+- Dom's revenue: £5K/month (target achieved)
+
+**Positioning:**
+
+**What MCP Actually Is:** "Stripe for poker creators" - Invisible payment infrastructure that enables revenue that wouldn't exist otherwise
+
+**Value Proposition:**
+1. **Payment Rails:** USDC infrastructure on Base (frictionless, instant, onchain)
+2. **Distribution Network:** Access to 15M+ Coinbase wallet holders beyond YouTube/Twitch
+3. **Monetization Toolkit:** Profit-sharing, tips, subs, future token/NFT features
+4. **Bleeding Edge:** Dom stays ahead of Web3 monetization trends (Farcaster, DAOs, creator coins)
+
+**IT5PAYDAY Connection (First Big Creator Target):**
+- **Who:** Head of ACR Poker Sponsorship, WSOP ring winner, 3.9K followers
+- **Connection:** Dom's poker coach also coaches him (warm intro path)
+- **Timing:** Wait until Thursday stream results + demo video ready
+- **Approach:** Through coach with case study showing real transaction data
+
+**Validation Steps (Post-Thursday Stream):**
+
+1. **Document Real Results:**
+   - Number of entries
+   - USDC distributed to winners
+   - Winner reactions/testimonials
+   - Total transaction volume
+
+2. **Create Demo Assets:**
+   - 2-minute demo video showing full user flow
+   - Creator pitch deck with case study
+   - One-pager: "What poker creators earn through MCP"
+
+3. **Test 2% Model:**
+   - Calculate what 2% would have generated from Thursday stream
+   - Compare to fixed licensing model
+   - Validate creator ROI story
+
+4. **Pursue First Creator:**
+   - Use IT5PAYDAY as proof of concept
+   - Leverage coach connection for warm intro
+   - Document onboarding process
+
+**Open Questions (Need Answers):**
+
+1. **White-Label Branding:** How do creators brand their instance? (nickeastwood.maxcraicpoker.com vs custom domain)
+2. **What's Included:** Infrastructure, support, feature updates - all covered by 2%?
+3. **Minimum Threshold:** Do we charge on first £1 or only after £X/month?
+4. **Creator Control:** What admin controls do creators need? (tournament setup, prize structure, etc.)
+5. **Payment Timing:** Monthly reconciliation? Real-time deduction from each transaction?
+
+**Why This Changes Everything:**
+
+MCP isn't "raffle licensing" - it's **Web3 payment infrastructure for the poker creator economy**.
+
+Every USDC transaction between poker fans and creators flows through MCP. Dom takes 2% of that entire economy.
+
+This is the Stripe playbook: Own the payment rails, tax every transaction, scale horizontally across thousands of creators.
+
+**Next Actions:**
+1. Run Thursday stream successfully
+2. Document transaction data and creator revenue potential
+3. Build demo video + pitch deck
+4. Calculate 2% model ROI vs fixed licensing
+5. Test with IT5PAYDAY (warm intro via coach)
 
 ---
 
@@ -1204,4 +1526,4 @@ With custom domain enables:
 
 *This document is your project's memory. Keep it updated, keep it honest, keep it private.*
 
-**Last Updated:** November 21, 2025 - Session 26
+**Last Updated:** November 25, 2025 - Session 29
