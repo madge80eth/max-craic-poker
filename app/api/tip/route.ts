@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { redis } from '@/lib/session';
+import { Redis } from '@upstash/redis';
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
 export async function POST(request: NextRequest) {
   try {
