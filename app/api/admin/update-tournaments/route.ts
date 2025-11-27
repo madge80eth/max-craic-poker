@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('📦 Request body:', JSON.stringify(body, null, 2));
 
-    const { sessionId, streamStartTime, tournaments } = body;
+    const { sessionId, streamStartTime, tournaments, resetDraw, streamUrl } = body;
 
     // Validate required fields
     if (!sessionId || !streamStartTime || !tournaments || !Array.isArray(tournaments)) {
@@ -48,10 +48,18 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ Validation passed');
 
+    // Check if session ID is changing (indicates new session = full reset needed)
+    const currentData = await getTournamentsData();
+    const sessionIdChanged = currentData && currentData.sessionId !== sessionId;
+
+    // resetDraw can be explicitly requested OR happens automatically when sessionId changes
+    const shouldResetDraw = resetDraw === true || sessionIdChanged;
+
     // Build the tournaments data
     const tournamentsData: TournamentsData = {
       sessionId,
       streamStartTime,
+      streamUrl: streamUrl || undefined,
       tournaments: tournaments.filter((t: any) => t.name && t.name.trim() !== '')
     };
 
@@ -60,36 +68,51 @@ export async function POST(request: NextRequest) {
     await saveTournamentsData(tournamentsData);
     console.log('✅ Tournaments data saved successfully');
 
-    console.log('🗑️ Clearing raffle entries and winners...');
-    // Clear entries and start fresh draw (same as reset)
-    await redis.del('raffle_entries');
-    await redis.del('raffle_winners');
-    console.log('✅ Raffle data cleared');
+    let clearedData = {
+      entries: false,
+      winners: false,
+      dailyHands: 0
+    };
 
-    console.log('🗑️ Clearing today\'s Madge game data...');
-    // Clear today's Madge game data
-    const todayPlayers = await getTodayPlayers();
-    console.log(`📊 Found ${todayPlayers.length} players to clear`);
+    if (shouldResetDraw) {
+      console.log('🗑️ Clearing raffle entries and winners...');
+      // Clear entries and start fresh draw
+      await redis.del('raffle_entries');
+      await redis.del('raffle_winners');
+      await redis.del('current_draw_result');
+      console.log('✅ Raffle data cleared');
 
-    await clearTodayDailyHands();
-    console.log('✅ Daily hands cleared');
+      console.log('🗑️ Clearing today\'s Madge game data...');
+      // Clear today's Madge game data
+      const todayPlayers = await getTodayPlayers();
+      console.log(`📊 Found ${todayPlayers.length} players to clear`);
 
-    for (const wallet of todayPlayers) {
-      await clearUserDailyData(wallet);
-    }
-    console.log('✅ User daily data cleared');
+      await clearTodayDailyHands();
+      console.log('✅ Daily hands cleared');
 
-    console.log(`🎯 Tournament update + reset complete. Cleared ${todayPlayers.length} players.`);
+      for (const wallet of todayPlayers) {
+        await clearUserDailyData(wallet);
+      }
+      console.log('✅ User daily data cleared');
 
-    return NextResponse.json({
-      success: true,
-      message: 'Tournaments updated and draw reset successfully',
-      data: tournamentsData,
-      cleared: {
+      clearedData = {
         entries: true,
         winners: true,
         dailyHands: todayPlayers.length
-      }
+      };
+
+      console.log(`🎯 Tournament update + reset complete. Cleared ${todayPlayers.length} players.`);
+    } else {
+      console.log('ℹ️ Tournament names/details updated without resetting draw (entries & winners preserved)');
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: shouldResetDraw
+        ? 'Tournaments updated and draw reset successfully'
+        : 'Tournaments updated successfully (draw preserved)',
+      data: tournamentsData,
+      cleared: clearedData
     });
 
   } catch (error) {

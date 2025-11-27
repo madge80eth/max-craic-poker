@@ -265,6 +265,24 @@
         </div>
       </div>
 
+      <div class="form-group" style="margin-bottom: 20px;">
+        <label>Retake Stream URL (optional - for 12hr window embed)</label>
+        <input type="text" id="streamUrl" placeholder="https://retake.com/embed/...">
+        <p style="color: #6b7280; font-size: 0.75rem; margin-top: 5px;">
+          Trimmed Retake embed URL shown during 12-hour post-draw window
+        </p>
+      </div>
+
+      <div style="background: rgba(59, 130, 246, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid rgba(59, 130, 246, 0.3);">
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #dbeafe;">
+          <input type="checkbox" id="resetDraw" style="width: 18px; height: 18px; cursor: pointer;">
+          <span style="font-weight: 600;">Reset draw & clear entries</span>
+        </label>
+        <p style="color: #93c5fd; font-size: 0.85rem; margin: 8px 0 0 28px;">
+          ⚠️ Check this ONLY when starting a new session. Unchecked = update tournament names without clearing entries/winners.
+        </p>
+      </div>
+
       <h3 style="color: white; margin: 20px 0 15px 0; font-size: 1.1rem;">Tournaments (up to 6)</h3>
 
       <div id="tournamentEntries">
@@ -367,6 +385,9 @@
         // Populate session ID
         document.getElementById('sessionId').value = data.sessionId || '';
 
+        // Populate stream URL
+        document.getElementById('streamUrl').value = data.streamUrl || '';
+
         // Convert ISO string to datetime-local format (remove the 'Z' and seconds)
         if (data.streamStartTime) {
           const dt = new Date(data.streamStartTime);
@@ -414,6 +435,7 @@
       try {
         const sessionId = document.getElementById('sessionId').value.trim();
         const streamStartTimeLocal = document.getElementById('streamStartTime').value;
+        const streamUrl = document.getElementById('streamUrl').value.trim();
 
         if (!sessionId) {
           statusDiv.innerHTML = '<div class="error-msg">Session ID is required</div>';
@@ -443,20 +465,26 @@
           return;
         }
 
+        const resetDraw = document.getElementById('resetDraw').checked;
+
         const response = await fetch('/api/admin/update-tournaments', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionId, streamStartTime, tournaments })
+          body: JSON.stringify({ sessionId, streamStartTime, tournaments, resetDraw, streamUrl })
         });
 
         const data = await response.json();
 
         if (data.success) {
+          const resetMessage = data.cleared && data.cleared.entries
+            ? '<small style="color: #fbbf24;">Entries & winners cleared - fresh draw started</small>'
+            : '<small style="color: #6ee7b7;">Entries & winners preserved</small>';
+
           statusDiv.innerHTML = `
             <div class="success-msg">
-              ✅ Tournaments updated & draw reset!<br>
+              ✅ Tournaments updated!<br>
               <small style="color: #6ee7b7;">Session: ${sessionId} | ${tournaments.length} tournaments | Stream: ${new Date(streamStartTime).toLocaleString()}</small><br>
-              <small style="color: #fbbf24;">Entries cleared - fresh draw started</small>
+              ${resetMessage}
             </div>
           `;
           // Reload the data and refresh entries

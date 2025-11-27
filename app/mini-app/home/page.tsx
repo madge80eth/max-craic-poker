@@ -54,7 +54,10 @@ export default function HomePage() {
           // Post-stream window: 12h-24h after stream (stream ended but before draw)
           setIsPostStreamWindow(now > twelveHoursAfter && now <= twentyFourHoursAfter);
 
-          if (tournamentData.streamUrl) setStreamUrl(tournamentData.streamUrl);
+          // Auto-set Retake embed URL if streamUrl is provided, otherwise use hardcoded one
+          const retakeUrl = tournamentData.streamUrl || 'https://retake.tv/live/68b58fa755320f51930c9081';
+          setStreamUrl(retakeUrl);
+
           setStreamDate(new Date(tournamentData.streamStartTime).toLocaleDateString('en-GB', { weekday: 'short', month: 'short', day: 'numeric' }));
         }
         const statusRes = await fetch('/api/status');
