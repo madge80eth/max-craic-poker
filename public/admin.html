@@ -214,6 +214,23 @@
   <!-- GENERAL TAB -->
   <div id="general-tab" class="tab-content active">
     <div class="section">
+      <h2>💰 Stream Tips</h2>
+      <p class="description">Live tips counter for the current session</p>
+
+      <div id="tipsCard" style="display: none;">
+        <div class="entries-card" style="background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);">
+          <div class="entries-label">Today's Tips</div>
+          <div class="entries-count" id="tipsTotal">$0.00</div>
+          <div style="color: #fae8ff; font-size: 0.9rem; margin-top: 10px;">
+            <span id="tipCount">0</span> tips received | Last updated: <span id="tipsLastUpdated">-</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="info" onclick="fetchTips()">🔄 Get Tips</button>
+    </div>
+
+    <div class="section">
       <h2>📊 Current Draw Statistics</h2>
       <p class="description">Live view of the current draw entries</p>
 
@@ -757,12 +774,52 @@
       document.getElementById('status').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
     }
 
-    // Auto-refresh status and entries every 10 seconds
+    async function fetchTips() {
+      const button = event?.target;
+      if (button) {
+        button.classList.add('loading');
+        button.textContent = '⏳ Loading...';
+      }
+
+      try {
+        // Get current session ID from tournaments data
+        const tournamentsResponse = await fetch('/api/tournaments');
+        const tournamentsData = await tournamentsResponse.json();
+        const sessionId = tournamentsData.sessionId || tournamentsData.data?.sessionId;
+
+        if (!sessionId) {
+          console.log('No session ID found');
+          return;
+        }
+
+        const response = await fetch(`/api/tips?sessionId=${sessionId}`);
+        const data = await response.json();
+
+        if (data.success) {
+          // Show tips card
+          document.getElementById('tipsCard').style.display = 'block';
+          document.getElementById('tipsTotal').textContent = `$${(data.totalTips / 100).toFixed(2)}`;
+          document.getElementById('tipCount').textContent = data.tipCount || 0;
+          document.getElementById('tipsLastUpdated').textContent = new Date().toLocaleTimeString();
+        }
+      } catch (error) {
+        console.error('Error fetching tips:', error);
+      } finally {
+        if (button) {
+          button.classList.remove('loading');
+          button.textContent = '🔄 Get Tips';
+        }
+      }
+    }
+
+    // Auto-refresh status, entries, and tips every 10 seconds
     checkStatus();
     fetchCurrentEntries();
+    fetchTips();
     setInterval(() => {
       checkStatus();
       fetchCurrentEntries();
+      fetchTips();
     }, 10000);
   </script>
 </body>

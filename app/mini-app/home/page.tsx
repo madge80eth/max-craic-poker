@@ -2,10 +2,12 @@
 
 import { useAccount, useConnect } from 'wagmi';
 import { useState, useEffect } from 'react';
-import { Wallet, Ticket, Trophy } from 'lucide-react';
+import { Wallet, Ticket, Trophy, DollarSign } from 'lucide-react';
 import Link from 'next/link';
 import Madge from '../components/Madge';
 import CardHand from '../components/CardHand';
+import { parseUnits, formatUnits } from 'viem';
+import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 
 type GameState = 'welcome' | 'dealing' | 'result' | 'already_played_today';
 
@@ -36,6 +38,18 @@ export default function HomePage() {
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
   const [streamDate, setStreamDate] = useState<string>('');
 
+  // Tipping state
+  const [sessionId, setSessionId] = useState<string>('');
+  const [totalTips, setTotalTips] = useState(0);
+  const [customAmount, setCustomAmount] = useState('');
+  const [selectedAmount, setSelectedAmount] = useState<number | null>(null);
+  const [tipError, setTipError] = useState<string | null>(null);
+  const [tipSuccess, setTipSuccess] = useState<string | null>(null);
+  const [isTipping, setIsTipping] = useState(false);
+
+  const { writeContract, data: hash, isPending: isWritePending, error: writeError } = useWriteContract();
+  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({ hash });
+
   // Check stream timing and winners
   useEffect(() => {
     async function checkStreamAndWinners() {
@@ -59,6 +73,9 @@ export default function HomePage() {
           setStreamUrl(retakeUrl);
 
           setStreamDate(new Date(tournamentData.streamStartTime).toLocaleDateString('en-GB', { weekday: 'short', month: 'short', day: 'numeric' }));
+
+          // Store sessionId for tipping
+          setSessionId(tournamentData.sessionId || '');
         }
         const statusRes = await fetch('/api/status');
         const statusData = await statusRes.json();
@@ -67,6 +84,129 @@ export default function HomePage() {
     }
     checkStreamAndWinners();
   }, []);
+
+  // Fetch tips total
+  useEffect(() => {
+    if (!sessionId || !isWithinStreamWindow) return;
+
+    async function fetchTips() {
+      try {
+        const res = await fetch(`/api/tips?sessionId=${sessionId}`);
+        const data = await res.json();
+        if (data.success) {
+          setTotalTips(data.totalTips || 0);
+        }
+      } catch (err) {
+        console.error('Tips fetch error:', err);
+      }
+    }
+
+    fetchTips();
+    const interval = setInterval(fetchTips, 10000); // Refresh every 10s
+    return () => clearInterval(interval);
+  }, [sessionId, isWithinStreamWindow]);
+
+  // Handle successful tip transaction
+  useEffect(() => {
+    if (isConfirmed && hash) {
+      recordTip();
+    }
+  }, [isConfirmed, hash]);
+
+  const recordTip = async () => {
+    if (!selectedAmount || !address || !hash) return;
+
+    try {
+      const res = await fetch('/api/tip', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: selectedAmount,
+          walletAddress: address,
+          sessionId,
+          txHash: hash
+        })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        setTipSuccess(`Thanks for the ${(selectedAmount / 100).toFixed(2)} tip!`);
+        setTotalTips(data.totalTips);
+        setSelectedAmount(null);
+        setCustomAmount('');
+        setTimeout(() => setTipSuccess(null), 5000);
+      } else {
+        setTipError(data.message || 'Failed to record tip');
+      }
+    } catch (err) {
+      console.error('Record tip error:', err);
+      setTipError('Failed to record tip');
+    } finally {
+      setIsTipping(false);
+    }
+  };
+
+  const handleTip = async (amountInCents: number) => {
+    if (!address) {
+      setTipError('Please connect wallet first');
+      return;
+    }
+
+    setTipError(null);
+    setTipSuccess(null);
+    setSelectedAmount(amountInCents);
+    setIsTipping(true);
+
+    try {
+      const usdcContract = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
+      const tipWallet = process.env.NEXT_PUBLIC_TIP_WALLET_ADDRESS || '';
+
+      if (!tipWallet) {
+        setTipError('Tip wallet not configured');
+        setIsTipping(false);
+        return;
+      }
+
+      // Convert cents to USDC (6 decimals)
+      const amountInUSDC = parseUnits((amountInCents / 100).toString(), 6);
+
+      writeContract({
+        address: usdcContract as `0x${string}`,
+        abi: [
+          {
+            name: 'transfer',
+            type: 'function',
+            stateMutability: 'nonpayable',
+            inputs: [
+              { name: 'to', type: 'address' },
+              { name: 'amount', type: 'uint256' }
+            ],
+            outputs: [{ name: '', type: 'bool' }]
+          }
+        ],
+        functionName: 'transfer',
+        args: [tipWallet as `0x${string}`, amountInUSDC]
+      });
+    } catch (err: any) {
+      console.error('Tip error:', err);
+      setTipError(err.message || 'Transaction failed');
+      setIsTipping(false);
+    }
+  };
+
+  const handleCustomTip = () => {
+    const amount = parseFloat(customAmount);
+    if (isNaN(amount) || amount <= 0) {
+      setTipError('Please enter a valid amount');
+      return;
+    }
+    if (amount > 1000) {
+      setTipError('Maximum tip amount is $1000');
+      return;
+    }
+    handleTip(Math.round(amount * 100));
+  };
 
   // Check if user has already played today
   useEffect(() => {
@@ -197,6 +337,83 @@ export default function HomePage() {
               />
             </div>
           )}
+
+          {/* Tipping Section */}
+          <div className="bg-gradient-to-br from-pink-500/20 to-purple-500/20 rounded-xl p-5 border border-pink-400/30">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <DollarSign className="w-5 h-5 text-pink-400" />
+                <h2 className="text-white font-bold text-lg">Tip the Streamer</h2>
+              </div>
+              <div className="text-right">
+                <p className="text-pink-200/60 text-xs">Today's Tips</p>
+                <p className="text-white font-bold text-lg">${(totalTips / 100).toFixed(2)}</p>
+              </div>
+            </div>
+
+            {tipSuccess && (
+              <div className="bg-green-500/20 rounded-lg p-3 mb-3 border border-green-400/40">
+                <p className="text-green-200 text-sm text-center font-semibold">{tipSuccess}</p>
+              </div>
+            )}
+
+            {tipError && (
+              <div className="bg-red-500/20 rounded-lg p-3 mb-3 border border-red-400/40">
+                <p className="text-red-200 text-sm text-center">{tipError}</p>
+              </div>
+            )}
+
+            {!isConnected ? (
+              <button
+                onClick={() => connect({ connector: connectors[0] })}
+                className="w-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-lg flex items-center justify-center gap-2"
+              >
+                <Wallet className="w-5 h-5" />
+                Connect Wallet to Tip
+              </button>
+            ) : (
+              <div className="space-y-3">
+                {/* Preset amounts */}
+                <div className="grid grid-cols-4 gap-2">
+                  {[100, 500, 1000, 2500].map((cents) => (
+                    <button
+                      key={cents}
+                      onClick={() => handleTip(cents)}
+                      disabled={isTipping || isConfirming}
+                      className="bg-white/10 hover:bg-white/20 disabled:bg-white/5 disabled:cursor-not-allowed text-white font-semibold py-2 px-3 rounded-lg transition-all text-sm border border-white/20"
+                    >
+                      ${(cents / 100).toFixed(0)}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Custom amount */}
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    placeholder="Custom amount"
+                    value={customAmount}
+                    onChange={(e) => setCustomAmount(e.target.value)}
+                    disabled={isTipping || isConfirming}
+                    className="flex-1 bg-white/10 text-white placeholder:text-white/40 px-4 py-2 rounded-lg border border-white/20 focus:outline-none focus:border-pink-400/50 disabled:bg-white/5 disabled:cursor-not-allowed"
+                    step="0.01"
+                    min="0.01"
+                    max="1000"
+                  />
+                  <button
+                    onClick={handleCustomTip}
+                    disabled={!customAmount || isTipping || isConfirming}
+                    className="bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed text-white font-semibold py-2 px-6 rounded-lg transition-all"
+                  >
+                    {isTipping || isConfirming ? 'Sending...' : 'Send'}
+                  </button>
+                </div>
+
+                <p className="text-pink-200/60 text-xs text-center">Tips sent in USDC on Base</p>
+              </div>
+            )}
+          </div>
+
           {isUserWinner && (
             <div className="bg-green-500/20 rounded-xl p-4 border border-green-400/40">
               <p className="text-green-200 text-sm font-semibold text-center">You won! Check your assignment below</p>
