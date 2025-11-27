@@ -10,7 +10,6 @@ const redis = new Redis({
 export interface TournamentsData {
   sessionId: string;
   streamStartTime: string;
-  streamUrl?: string;
   tournaments: Array<{ name: string; buyIn: string }>;
 }
 

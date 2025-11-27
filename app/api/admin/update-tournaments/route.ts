@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     console.log('📦 Request body:', JSON.stringify(body, null, 2));
 
-    const { sessionId, streamStartTime, tournaments, resetDraw, streamUrl } = body;
+    const { sessionId, streamStartTime, tournaments, resetDraw } = body;
 
     // Validate required fields
     if (!sessionId || !streamStartTime || !tournaments || !Array.isArray(tournaments)) {
@@ -59,7 +59,6 @@ export async function POST(request: NextRequest) {
     const tournamentsData: TournamentsData = {
       sessionId,
       streamStartTime,
-      streamUrl: streamUrl || undefined,
       tournaments: tournaments.filter((t: any) => t.name && t.name.trim() !== '')
     };
 
