@@ -83,8 +83,9 @@ export async function addTip(tip: VideoTip): Promise<void> {
   // Add tip to video's tip list
   await redis.rpush(`video:${tip.videoId}:tips`, JSON.stringify(tip));
 
-  // Increment total tips on video
-  await redis.hincrby(`video:${tip.videoId}`, 'totalTips', tip.amount);
+  // Increment total tips on video (use usdValue for multi-asset support)
+  const tipValue = tip.usdValue || tip.amount;
+  await redis.hincrby(`video:${tip.videoId}`, 'totalTips', tipValue);
 }
 
 export async function getVideoTips(videoId: string): Promise<VideoTip[]> {
