@@ -533,10 +533,16 @@
       });
 
       // Show selected tab content
-      document.getElementById(tabName + '-tab').classList.add('active');
+      const tabContent = document.getElementById(tabName + '-tab');
+      if (tabContent) {
+        tabContent.classList.add('active');
+      }
 
-      // Add active class to clicked tab
-      event.target.classList.add('active');
+      // Add active class to clicked tab button
+      const clickedButton = window.event ? window.event.target : document.activeElement;
+      if (clickedButton && clickedButton.classList.contains('tab')) {
+        clickedButton.classList.add('active');
+      }
 
       // Auto-load data when switching to specific tabs
       if (tabName === 'revenue') {
