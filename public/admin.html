@@ -537,8 +537,14 @@
 
       // Add active class to clicked tab
       event.target.classList.add('active');
+
+      // Auto-load data when switching to specific tabs
+      if (tabName === 'revenue') {
+        fetchRevenueData();
+      } else if (tabName === 'membership') {
+        loadMembershipSettings();
+      }
     }
-// Auto-load data when switching to specific tabs      if (tabName === 'membership') {        loadMembershipSettings();      }
 
     // Tournament Manager Functions
     async function loadCurrentTournaments() {
