@@ -226,8 +226,8 @@ export async function getTransaction(id: string): Promise<Transaction | null> {
 }
 
 export async function getAllTransactions(limit: number = 100): Promise<Transaction[]> {
-  // Get most recent transaction IDs
-  const txIds = await redis.zrevrange('transactions:all', 0, limit - 1);
+  // Get most recent transaction IDs (using zrange with REV option)
+  const txIds = await redis.zrange('transactions:all', 0, limit - 1, { rev: true });
 
   if (!txIds || txIds.length === 0) {
     return [];
