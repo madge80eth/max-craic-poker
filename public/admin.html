@@ -362,9 +362,6 @@
     </div>
   </div>
 
-  <script>
-    let winnersData = null;
-    let tournamentsData = null;
 
   <!-- REVENUE TAB -->
   <div id="revenue-tab" class="tab-content">
@@ -373,71 +370,66 @@
       <p class="description">Track all transactions and calculate your 2% platform cut</p>
 
       <div id="revenueStatsCards" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 20px;">
-        <div class="entries-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-          <div class="entries-label">Total Volume</div>
-          <div class="entries-count" id="totalVolumeAmount" style="font-size: 2.5rem;">$0.00</div>
-          <div style="color: #d1fae5; font-size: 0.85rem; margin-top: 8px;">
-            All-time transactions
-          </div>
+        <div style="background: rgba(59, 130, 246, 0.1); padding: 20px; border-radius: 12px; border: 1px solid rgba(59, 130, 246, 0.3);">
+          <div style="color: #60a5fa; font-size: 0.875rem; margin-bottom: 8px;">Total Volume</div>
+          <div id="totalVolumeAmount" style="font-size: 1.875rem; font-weight: bold; color: #3b82f6;">$0.00</div>
         </div>
-        <div class="entries-card" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
-          <div class="entries-label">Your Cut (2%)</div>
-          <div class="entries-count" id="platformCutAmount" style="font-size: 2.5rem;">$0.00</div>
-          <div style="color: #ede9fe; font-size: 0.85rem; margin-top: 8px;">
-            Platform revenue
-          </div>
+        <div style="background: rgba(16, 185, 129, 0.1); padding: 20px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.3);">
+          <div style="color: #34d399; font-size: 0.875rem; margin-bottom: 8px;">Your Cut (2%)</div>
+          <div id="platformCutAmount" style="font-size: 1.875rem; font-weight: bold; color: #10b981;">$0.00</div>
         </div>
-        <div class="entries-card" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
-          <div class="entries-label">Active Members</div>
-          <div class="entries-count" id="activeMembersCount" style="font-size: 2.5rem;">0</div>
-          <div style="color: #dbeafe; font-size: 0.85rem; margin-top: 8px;">
-            Subscriptions
-          </div>
+        <div style="background: rgba(139, 92, 246, 0.1); padding: 20px; border-radius: 12px; border: 1px solid rgba(139, 92, 246, 0.3);">
+          <div style="color: #a78bfa; font-size: 0.875rem; margin-bottom: 8px;">Active Members</div>
+          <div id="activeMembersCount" style="font-size: 1.875rem; font-weight: bold; color: #8b5cf6;">0</div>
         </div>
-        <div class="entries-card" style="background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);">
-          <div class="entries-label">Transactions</div>
-          <div class="entries-count" id="transactionCount" style="font-size: 2.5rem;">0</div>
-          <div style="color: #fce7f3; font-size: 0.85rem; margin-top: 8px;">
-            All-time
+        <div style="background: rgba(245, 158, 11, 0.1); padding: 20px; border-radius: 12px; border: 1px solid rgba(245, 158, 11, 0.3);">
+          <div style="color: #fbbf24; font-size: 0.875rem; margin-bottom: 8px;">Total Transactions</div>
+          <div id="transactionCount" style="font-size: 1.875rem; font-weight: bold; color: #f59e0b;">0</div>
+        </div>
+      </div>
+
+      <div style="background: rgba(139, 92, 246, 0.1); padding: 20px; border-radius: 12px; border: 1px solid rgba(139, 92, 246, 0.3); margin-bottom: 20px;">
+        <h3 style="margin-top: 0; color: #a78bfa;">Revenue Breakdown</h3>
+        <div style="display: grid; gap: 10px;">
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #9ca3af;">Tips:</span>
+            <span id="totalTipsAmount" style="color: #e5e7eb; font-weight: 600;">$0.00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #9ca3af;">Memberships:</span>
+            <span id="totalMembershipsAmount" style="color: #e5e7eb; font-weight: 600;">$0.00</span>
+          </div>
+          <div style="display: flex; justify-content: space-between;">
+            <span style="color: #9ca3af;">Raffle Distributions:</span>
+            <span id="totalRaffleAmount" style="color: #e5e7eb; font-weight: 600;">$0.00</span>
           </div>
         </div>
       </div>
 
-      <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 20px;">
-        <button class="info" onclick="fetchRevenueData()">🔄 Refresh Revenue Data</button>
-        <span style="color: #a5b4fc; font-size: 0.9rem;" id="revenueLastUpdated">Last updated: Never</span>
-      </div>
-
-      <div style="background: rgba(59, 130, 246, 0.1); padding: 15px; border-radius: 12px; border: 1px solid rgba(59, 130, 246, 0.3); margin-bottom: 20px;">
-        <h3 style="color: #dbeafe; margin: 0 0 8px 0; font-size: 0.95rem; font-weight: 600;">💡 Revenue Breakdown</h3>
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; color: #93c5fd; font-size: 0.85rem;">
-          <div>
-            <div style="color: #bfdbfe; font-weight: 600; margin-bottom: 4px;">Tips</div>
-            <div id="totalTipsAmount">$0.00</div>
-          </div>
-          <div>
-            <div style="color: #bfdbfe; font-weight: 600; margin-bottom: 4px;">Memberships</div>
-            <div id="totalMembershipsAmount">$0.00</div>
-          </div>
-          <div>
-            <div style="color: #bfdbfe; font-weight: 600; margin-bottom: 4px;">Raffle Distributions</div>
-            <div id="totalRaffleAmount">$0.00</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="section">
-      <h2>📋 Transaction History</h2>
-      <p class="description">Recent transactions across all revenue streams (last 50)</p>
-
-      <div id="transactionsContainer" style="margin-top: 20px;">
-        <div style="text-align: center; color: #6b7280; padding: 40px;">
-          Click "Refresh Revenue Data" to load transactions
-        </div>
+      <h3>Recent Transactions</h3>
+      <div id="transactionsTable" style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="border-bottom: 1px solid rgba(139, 92, 246, 0.3);">
+              <th style="padding: 12px; text-align: left; color: #a78bfa;">Type</th>
+              <th style="padding: 12px; text-align: left; color: #a78bfa;">Amount</th>
+              <th style="padding: 12px; text-align: left; color: #a78bfa;">Wallet</th>
+              <th style="padding: 12px; text-align: left; color: #a78bfa;">Time</th>
+              <th style="padding: 12px; text-align: left; color: #a78bfa;">TX Hash</th>
+            </tr>
+          </thead>
+          <tbody id="transactionsTableBody">
+            <tr>
+              <td colspan="5" style="padding: 40px; text-align: center; color: #6b7280;">
+                Loading transactions...
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>
+
 
   <!-- MEMBERSHIP TAB -->
   <div id="membership-tab" class="tab-content">
@@ -447,67 +439,35 @@
 
       <div style="background: rgba(139, 92, 246, 0.1); padding: 20px; border-radius: 12px; border: 1px solid rgba(139, 92, 246, 0.3); margin-bottom: 20px;">
         <div style="margin-bottom: 20px;">
-          <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; color: #dbeafe; font-weight: 600;">
-            <input type="checkbox" id="membershipEnabled" style="width: 20px; height: 20px; cursor: pointer;">
-            <span>Enable Membership System</span>
+          <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+            <input type="checkbox" id="membershipEnabled" style="width: 20px; height: 20px;">
+            <span style="font-weight: 600; color: #e5e7eb;">Enable Membership System</span>
           </label>
-          <p style="color: #93c5fd; font-size: 0.85rem; margin: 8px 0 0 32px;">
-            Allow users to subscribe for exclusive benefits
-          </p>
         </div>
 
         <div style="margin-bottom: 20px;">
-          <label style="display: flex; align-items: center; gap: 12px; cursor: pointer; color: #dbeafe; font-weight: 600;">
-            <input type="checkbox" id="requireMembershipForRaffle" style="width: 20px; height: 20px; cursor: pointer;">
-            <span>Require Membership to Enter Raffle</span>
+          <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+            <input type="checkbox" id="requireMembershipForRaffle" style="width: 20px; height: 20px;">
+            <span style="font-weight: 600; color: #e5e7eb;">Require Membership for Raffle Entry</span>
           </label>
-          <p style="color: #93c5fd; font-size: 0.85rem; margin: 8px 0 0 32px;">
-            ⚠️ Only active members can participate in raffle draws
-          </p>
         </div>
 
         <div style="margin-bottom: 20px;">
-          <label style="color: #a5b4fc; font-size: 0.9rem; margin-bottom: 8px; display: block; font-weight: 600;">Monthly Fee (USD)</label>
-          <input type="number" id="monthlyFee" step="0.01" min="0" placeholder="10.00"
-            style="width: 200px; padding: 12px; font-size: 16px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(255,255,255,0.05); color: white;">
-          <p style="color: #6b7280; font-size: 0.85rem; margin-top: 6px;">
-            Users will be charged this amount monthly in USDC
-          </p>
+          <label style="display: block; margin-bottom: 8px; color: #a78bfa; font-weight: 600;">Monthly Fee (USD)</label>
+          <input type="number" id="monthlyFeeInput" step="0.01" min="0" placeholder="5.00"
+            style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(139, 92, 246, 0.5); border-radius: 8px; color: #e5e7eb; font-size: 16px;">
         </div>
 
         <div style="margin-bottom: 20px;">
-          <label style="color: #a5b4fc; font-size: 0.9rem; margin-bottom: 8px; display: block; font-weight: 600;">Membership Benefits (one per line)</label>
-          <textarea id="membershipBenefits" rows="5" placeholder="In-depth tournament hand history reviews&#10;Exclusive strategy content&#10;Early access to videos"
-            style="width: 100%; padding: 12px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(255,255,255,0.05); color: white; font-family: system-ui; resize: vertical;"></textarea>
-          <p style="color: #6b7280; font-size: 0.85rem; margin-top: 6px;">
-            Each line will be displayed as a separate benefit with a checkmark
-          </p>
+          <label style="display: block; margin-bottom: 8px; color: #a78bfa; font-weight: 600;">Member Benefits (one per line)</label>
+          <textarea id="benefitsInput" rows="5" placeholder="In-depth tournament hand history reviews&#10;Exclusive strategy content&#10;Priority support"
+            style="width: 100%; padding: 12px; background: rgba(0, 0, 0, 0.3); border: 1px solid rgba(139, 92, 246, 0.5); border-radius: 8px; color: #e5e7eb; font-size: 14px; font-family: inherit; resize: vertical;"></textarea>
         </div>
 
-        <button class="draw" onclick="saveMembershipSettings()">💾 Save Membership Settings</button>
-        <div id="membershipSettingsFeedback" style="margin-top: 15px;"></div>
-      </div>
-    </div>
-
-    <div class="section">
-      <h2>📊 Current Members</h2>
-      <p class="description">View all active and expired memberships</p>
-
-      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;" id="membershipStatsCards">
-        <div class="entries-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-          <div class="entries-label">Active Members</div>
-          <div class="entries-count" id="activeMembersCountDisplay">0</div>
-        </div>
-        <div class="entries-card" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
-          <div class="entries-label">Expired</div>
-          <div class="entries-count" id="expiredMembersCount">0</div>
-        </div>
-        <div class="entries-card" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
-          <div class="entries-label">Total Revenue</div>
-          <div class="entries-count" id="membershipRevenueTotal" style="font-size: 2rem;">$0.00</div>
-        </div>
+        <button class="confirm" onclick="saveMembershipSettings()">💾 Save Settings</button>
       </div>
 
+      <h3>Current Members</h3>
       <button class="info" onclick="fetchMemberships()">🔄 Refresh Members List</button>
 
       <div id="membersListContainer" style="margin-top: 20px;">
@@ -518,7 +478,9 @@
     </div>
   </div>
 
-
+  <script>
+    let winnersData = null;
+    let tournamentsData = null;
 
     // Tab switching function
     function switchTab(tabName) {
@@ -991,48 +953,11 @@
       fetchTips();
     }, 10000);
 
-    // ==========================================
-    // REVENUE TAB FUNCTIONS
-    // ==========================================
+    // ============================================
+    // REVENUE FUNCTIONS
+    // ============================================
 
     let revenueRefreshInterval = null;
-
-    function formatUSDC(cents) {
-      const dollars = cents / 100;
-      return '$' + dollars.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
-
-    function formatTimestamp(timestamp) {
-      const date = new Date(timestamp);
-      return date.toLocaleString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      });
-    }
-
-    function truncateAddress(address) {
-      if (!address || address.length < 10) return address;
-      return address.substring(0, 6) + '...' + address.substring(address.length - 4);
-    }
-
-    function getTypeBadge(type) {
-      const colorMap = {
-        'tip': 'background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid #10b981;',
-        'membership': 'background: rgba(59, 130, 246, 0.2); color: #3b82f6; border: 1px solid #3b82f6;',
-        'raffle_distribution': 'background: rgba(236, 72, 153, 0.2); color: #ec4899; border: 1px solid #ec4899;'
-      };
-      const labelMap = {
-        'tip': '💵 Tip',
-        'membership': '👑 Membership',
-        'raffle_distribution': '🎰 Raffle'
-      };
-      const style = colorMap[type] || '';
-      const label = labelMap[type] || type;
-      return '<span style="padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; ' + style + '">' + label + '</span>';
-    }
 
     async function fetchRevenueData() {
       try {
@@ -1046,90 +971,105 @@
           document.getElementById('activeMembersCount').textContent = data.stats.activeMemberships;
           document.getElementById('transactionCount').textContent = data.stats.transactionCount;
 
-          // Update breakdown
+          // Update revenue breakdown
           document.getElementById('totalTipsAmount').textContent = formatUSDC(data.stats.totalTips);
           document.getElementById('totalMembershipsAmount').textContent = formatUSDC(data.stats.totalMemberships);
           document.getElementById('totalRaffleAmount').textContent = formatUSDC(data.stats.totalRaffleDistributions);
 
-          // Update timestamp
-          document.getElementById('revenueLastUpdated').textContent = 'Last updated: ' + new Date().toLocaleTimeString();
-
           // Render transactions
           renderTransactions(data.transactions);
 
-          // Start auto-refresh if not already running
+          // Set up auto-refresh if not already running
           if (!revenueRefreshInterval) {
-            revenueRefreshInterval = setInterval(fetchRevenueData, 30000); // 30 seconds
+            revenueRefreshInterval = setInterval(fetchRevenueData, 30000);
           }
         }
       } catch (error) {
         console.error('Error fetching revenue data:', error);
-        document.getElementById('transactionsContainer').innerHTML = '<div style="text-align: center; color: #dc2626; padding: 40px;">❌ Error loading revenue data</div>';
+        document.getElementById('transactionsTableBody').innerHTML = `
+          <tr>
+            <td colspan="5" style="padding: 20px; text-align: center; color: #ef4444;">
+              Error loading revenue data
+            </td>
+          </tr>
+        `;
       }
     }
 
     function renderTransactions(transactions) {
-      const container = document.getElementById('transactionsContainer');
+      const tbody = document.getElementById('transactionsTableBody');
 
       if (!transactions || transactions.length === 0) {
-        container.innerHTML = '<div style="text-align: center; color: #6b7280; padding: 40px;">No transactions recorded yet</div>';
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="padding: 40px; text-align: center; color: #6b7280;">
+              No transactions yet
+            </td>
+          </tr>
+        `;
         return;
       }
 
-      let html = '<div style="overflow-x: auto;"><table style="width: 100%; border-collapse: separate; border-spacing: 0;">';
-      html += '<thead><tr style="background: rgba(139, 92, 246, 0.1); border-bottom: 2px solid rgba(139, 92, 246, 0.3);">';
-      html += '<th style="padding: 12px; text-align: left; color: #dbeafe; font-weight: 600; font-size: 0.85rem;">Type</th>';
-      html += '<th style="padding: 12px; text-align: left; color: #dbeafe; font-weight: 600; font-size: 0.85rem;">Amount</th>';
-      html += '<th style="padding: 12px; text-align: left; color: #dbeafe; font-weight: 600; font-size: 0.85rem;">Wallet</th>';
-      html += '<th style="padding: 12px; text-align: left; color: #dbeafe; font-weight: 600; font-size: 0.85rem;">Date</th>';
-      html += '<th style="padding: 12px; text-align: left; color: #dbeafe; font-weight: 600; font-size: 0.85rem;">Details</th>';
-      html += '<th style="padding: 12px; text-align: left; color: #dbeafe; font-weight: 600; font-size: 0.85rem;">Tx Hash</th>';
-      html += '</tr></thead><tbody>';
+      const typeColors = {
+        tip: '#3b82f6',
+        membership: '#8b5cf6',
+        raffle_distribution: '#10b981'
+      };
 
-      transactions.forEach(function(tx, index) {
-        const bgColor = index % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.01)';
-        const metadata = tx.metadata || {};
+      const typeLabels = {
+        tip: 'Tip',
+        membership: 'Membership',
+        raffle_distribution: 'Raffle'
+      };
 
-        let details = '-';
-        if (tx.type === 'tip' && metadata.videoTitle) {
-          details = 'Video: ' + metadata.videoTitle.substring(0, 30) + '...';
-        } else if (tx.type === 'raffle_distribution' && metadata.position) {
-          details = 'Position #' + metadata.position;
-        }
-
-        const txHashLink = tx.txHash
-          ? '<a href="https://basescan.org/tx/' + tx.txHash + '" target="_blank" style="color: #60a5fa; text-decoration: none;">' + truncateAddress(tx.txHash) + '</a>'
-          : '-';
-
-        html += '<tr style="background: ' + bgColor + '; border-bottom: 1px solid rgba(255,255,255,0.05);">';
-        html += '<td style="padding: 12px;">' + getTypeBadge(tx.type) + '</td>';
-        html += '<td style="padding: 12px; color: #10b981; font-weight: 600; font-size: 0.95rem;">' + formatUSDC(tx.amount) + '</td>';
-        html += '<td style="padding: 12px; color: #93c5fd; font-family: monospace; font-size: 0.85rem;">' + truncateAddress(tx.walletAddress) + '</td>';
-        html += '<td style="padding: 12px; color: #a5b4fc; font-size: 0.85rem;">' + formatTimestamp(tx.timestamp) + '</td>';
-        html += '<td style="padding: 12px; color: #c7d2fe; font-size: 0.85rem;">' + details + '</td>';
-        html += '<td style="padding: 12px; font-family: monospace; font-size: 0.85rem;">' + txHashLink + '</td>';
-        html += '</tr>';
-      });
-
-      html += '</tbody></table></div>';
-      container.innerHTML = html;
+      tbody.innerHTML = transactions.map(tx => `
+        <tr style="border-bottom: 1px solid rgba(139, 92, 246, 0.2);">
+          <td style="padding: 12px;">
+            <span style="background: ${typeColors[tx.type]}; color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
+              ${typeLabels[tx.type]}
+            </span>
+          </td>
+          <td style="padding: 12px; color: #e5e7eb; font-weight: 600;">${formatUSDC(tx.amount)}</td>
+          <td style="padding: 12px; font-family: monospace; color: #9ca3af;">${truncateAddress(tx.walletAddress)}</td>
+          <td style="padding: 12px; color: #9ca3af; font-size: 0.875rem;">${formatTimestamp(tx.timestamp)}</td>
+          <td style="padding: 12px;">
+            ${tx.txHash ? `<a href="https://basescan.org/tx/${tx.txHash}" target="_blank" style="color: #60a5fa; text-decoration: none; font-family: monospace; font-size: 0.75rem;">${truncateAddress(tx.txHash)}</a>` : '-'}
+          </td>
+        </tr>
+      `).join('');
     }
 
-    // ==========================================
-    // MEMBERSHIP TAB FUNCTIONS
-    // ==========================================
+    function formatUSDC(cents) {
+      return '
+</body>
+</html>
+ + (cents / 100).toFixed(2);
+    }
+
+    function formatTimestamp(timestamp) {
+      const date = new Date(timestamp);
+      return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    }
+
+    function truncateAddress(address) {
+      if (!address) return '-';
+      return address.substring(0, 6) + '...' + address.substring(address.length - 4);
+    }
+
+    // ============================================
+    // MEMBERSHIP FUNCTIONS
+    // ============================================
 
     async function loadMembershipSettings() {
       try {
         const response = await fetch('/api/admin/membership-settings');
         const data = await response.json();
 
-        if (data.success) {
-          const settings = data.settings;
-          document.getElementById('membershipEnabled').checked = settings.enabled;
-          document.getElementById('requireMembershipForRaffle').checked = settings.requireMembershipForRaffle;
-          document.getElementById('monthlyFee').value = (settings.monthlyFeeUSDC / 100).toFixed(2);
-          document.getElementById('membershipBenefits').value = settings.benefits.join('\n');
+        if (data.success && data.settings) {
+          document.getElementById('membershipEnabled').checked = data.settings.enabled;
+          document.getElementById('requireMembershipForRaffle').checked = data.settings.requireMembershipForRaffle;
+          document.getElementById('monthlyFeeInput').value = (data.settings.monthlyFeeUSDC / 100).toFixed(2);
+          document.getElementById('benefitsInput').value = data.settings.benefits.join('\n');
         }
       } catch (error) {
         console.error('Error loading membership settings:', error);
@@ -1137,48 +1077,34 @@
     }
 
     async function saveMembershipSettings() {
-      const enabled = document.getElementById('membershipEnabled').checked;
-      const requireMembershipForRaffle = document.getElementById('requireMembershipForRaffle').checked;
-      const monthlyFee = parseFloat(document.getElementById('monthlyFee').value);
-      const benefitsText = document.getElementById('membershipBenefits').value;
-
-      if (isNaN(monthlyFee) || monthlyFee < 0) {
-        document.getElementById('membershipSettingsFeedback').innerHTML = '<div class="error-msg">Please enter a valid monthly fee</div>';
-        return;
-      }
-
-      const benefits = benefitsText.split('\n').map(b => b.trim()).filter(b => b.length > 0);
-
-      if (benefits.length === 0) {
-        document.getElementById('membershipSettingsFeedback').innerHTML = '<div class="error-msg">Please add at least one benefit</div>';
-        return;
-      }
-
       try {
+        const enabled = document.getElementById('membershipEnabled').checked;
+        const requireMembershipForRaffle = document.getElementById('requireMembershipForRaffle').checked;
+        const monthlyFeeUSD = parseFloat(document.getElementById('monthlyFeeInput').value) || 0;
+        const benefitsText = document.getElementById('benefitsInput').value;
+        const benefits = benefitsText.split('\n').filter(b => b.trim().length > 0);
+
         const response = await fetch('/api/admin/membership-settings', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             enabled,
-            monthlyFeeUSDC: Math.round(monthlyFee * 100),
-            benefits,
-            requireMembershipForRaffle
+            requireMembershipForRaffle,
+            monthlyFeeUSDC: Math.round(monthlyFeeUSD * 100),
+            benefits
           })
         });
 
         const data = await response.json();
 
         if (data.success) {
-          document.getElementById('membershipSettingsFeedback').innerHTML = '<div class="success-msg">✅ Settings saved successfully!</div>';
-          setTimeout(() => {
-            document.getElementById('membershipSettingsFeedback').innerHTML = '';
-          }, 3000);
+          alert('✅ Membership settings saved successfully!');
         } else {
-          document.getElementById('membershipSettingsFeedback').innerHTML = '<div class="error-msg">❌ ' + (data.error || 'Failed to save settings') + '</div>';
+          alert('❌ Error: ' + data.error);
         }
       } catch (error) {
         console.error('Error saving membership settings:', error);
-        document.getElementById('membershipSettingsFeedback').innerHTML = '<div class="error-msg">❌ Network error</div>';
+        alert('❌ Error saving membership settings');
       }
     }
 
@@ -1192,7 +1118,11 @@
         }
       } catch (error) {
         console.error('Error fetching memberships:', error);
-        document.getElementById('membersListContainer').innerHTML = '<div style="text-align: center; color: #dc2626; padding: 40px;">❌ Error loading memberships</div>';
+        document.getElementById('membersListContainer').innerHTML = `
+          <div style="text-align: center; color: #ef4444; padding: 40px;">
+            Error loading memberships
+          </div>
+        `;
       }
     }
 
@@ -1200,59 +1130,44 @@
       const container = document.getElementById('membersListContainer');
 
       if (!memberships || memberships.length === 0) {
-        container.innerHTML = '<div style="text-align: center; color: #6b7280; padding: 40px;">No memberships yet</div>';
-        document.getElementById('activeMembersCountDisplay').textContent = '0';
-        document.getElementById('expiredMembersCount').textContent = '0';
-        document.getElementById('membershipRevenueTotal').textContent = '$0.00';
+        container.innerHTML = `
+          <div style="text-align: center; color: #6b7280; padding: 40px;">
+            No memberships yet
+          </div>
+        `;
         return;
       }
 
-      let activeCount = 0;
-      let expiredCount = 0;
-      let totalRevenue = 0;
-
-      memberships.forEach(function(m) {
-        if (m.status === 'active' && m.expiryDate > Date.now()) {
-          activeCount++;
-        } else {
-          expiredCount++;
-        }
-        totalRevenue += m.totalPaid;
-      });
-
-      document.getElementById('activeMembersCountDisplay').textContent = activeCount;
-      document.getElementById('expiredMembersCount').textContent = expiredCount;
-      document.getElementById('membershipRevenueTotal').textContent = formatUSDC(totalRevenue);
-
-      let html = '<div style="overflow-x: auto;"><table style="width: 100%; border-collapse: separate; border-spacing: 0;">';
-      html += '<thead><tr style="background: rgba(139, 92, 246, 0.1); border-bottom: 2px solid rgba(139, 92, 246, 0.3);">';
-      html += '<th style="padding: 12px; text-align: left; color: #dbeafe; font-weight: 600; font-size: 0.85rem;">Wallet</th>';
-      html += '<th style="padding: 12px; text-align: left; color: #dbeafe; font-weight: 600; font-size: 0.85rem;">Status</th>';
-      html += '<th style="padding: 12px; text-align: left; color: #dbeafe; font-weight: 600; font-size: 0.85rem;">Start Date</th>';
-      html += '<th style="padding: 12px; text-align: left; color: #dbeafe; font-weight: 600; font-size: 0.85rem;">Expiry Date</th>';
-      html += '<th style="padding: 12px; text-align: left; color: #dbeafe; font-weight: 600; font-size: 0.85rem;">Total Paid</th>';
-      html += '<th style="padding: 12px; text-align: left; color: #dbeafe; font-weight: 600; font-size: 0.85rem;">Payments</th>';
-      html += '</tr></thead><tbody>';
-
-      memberships.forEach(function(m, index) {
-        const bgColor = index % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.01)';
-        const isExpired = m.expiryDate < Date.now();
-        const statusColor = (m.status === 'active' && !isExpired) ? '#10b981' : '#f59e0b';
-        const statusText = (m.status === 'active' && !isExpired) ? '✅ Active' : '⏰ Expired';
-
-        html += '<tr style="background: ' + bgColor + '; border-bottom: 1px solid rgba(255,255,255,0.05);">';
-        html += '<td style="padding: 12px; color: #93c5fd; font-family: monospace; font-size: 0.85rem;">' + truncateAddress(m.walletAddress) + '</td>';
-        html += '<td style="padding: 12px; color: ' + statusColor + '; font-weight: 600; font-size: 0.9rem;">' + statusText + '</td>';
-        html += '<td style="padding: 12px; color: #a5b4fc; font-size: 0.85rem;">' + formatTimestamp(m.startDate) + '</td>';
-        html += '<td style="padding: 12px; color: #c7d2fe; font-size: 0.85rem;">' + formatTimestamp(m.expiryDate) + '</td>';
-        html += '<td style="padding: 12px; color: #10b981; font-weight: 600; font-size: 0.95rem;">' + formatUSDC(m.totalPaid) + '</td>';
-        html += '<td style="padding: 12px; color: #dbeafe; font-size: 0.85rem;">' + m.txHashes.length + ' payment(s)</td>';
-        html += '</tr>';
-      });
-
-      html += '</tbody></table></div>';
-      container.innerHTML = html;
+      container.innerHTML = `
+        <table style="width: 100%; border-collapse: collapse;">
+          <thead>
+            <tr style="border-bottom: 1px solid rgba(139, 92, 246, 0.3);">
+              <th style="padding: 12px; text-align: left; color: #a78bfa;">Wallet</th>
+              <th style="padding: 12px; text-align: left; color: #a78bfa;">Status</th>
+              <th style="padding: 12px; text-align: left; color: #a78bfa;">Start Date</th>
+              <th style="padding: 12px; text-align: left; color: #a78bfa;">Expiry Date</th>
+              <th style="padding: 12px; text-align: left; color: #a78bfa;">Total Paid</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${memberships.map(m => `
+              <tr style="border-bottom: 1px solid rgba(139, 92, 246, 0.2);">
+                <td style="padding: 12px; font-family: monospace; color: #9ca3af;">${truncateAddress(m.walletAddress)}</td>
+                <td style="padding: 12px;">
+                  <span style="background: ${m.status === 'active' ? '#10b981' : '#6b7280'}; color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">
+                    ${m.status}
+                  </span>
+                </td>
+                <td style="padding: 12px; color: #9ca3af; font-size: 0.875rem;">${new Date(m.startDate).toLocaleDateString()}</td>
+                <td style="padding: 12px; color: #9ca3af; font-size: 0.875rem;">${new Date(m.expiryDate).toLocaleDateString()}</td>
+                <td style="padding: 12px; color: #e5e7eb; font-weight: 600;">${formatUSDC(m.totalPaid)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      `;
     }
+
   </script>
 </body>
 </html>
