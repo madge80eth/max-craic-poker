@@ -34,15 +34,14 @@ export async function GET(
 
       if (!isMember) {
         return NextResponse.json({
-          error: 'Membership required',
+          ...membershipRequiredResponse(),
           video: {
             ...video,
             url: null, // Hide video URL from non-members
             isLocked: true,
             lockReason: isEarlyAccess ? 'early_access' : 'members_only',
             earlyAccessEndsAt: video.earlyAccessUntil
-          },
-          ...membershipRequiredResponse()
+          }
         }, { status: 403 });
       }
     }
