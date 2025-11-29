@@ -495,10 +495,17 @@
       });
 
       // Show selected tab content
-      document.getElementById(tabName + '-tab').classList.add('active');
+      const targetTab = document.getElementById(tabName + '-tab');
+      if (targetTab) {
+        targetTab.classList.add('active');
+      }
 
-      // Add active class to clicked tab
-      event.target.classList.add('active');
+      // Add active class to clicked tab button
+      document.querySelectorAll('.tab').forEach(tab => {
+        if (tab.onclick && tab.onclick.toString().includes(`'${tabName}'`)) {
+          tab.classList.add('active');
+        }
+      });
     }
 
     // Tournament Manager Functions
