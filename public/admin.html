@@ -414,6 +414,11 @@
       <p class="description">Recent transactions (last 50)</p>
 
       <div id="transactionsList" style="display: none; margin-top: 20px;"></div>
+
+      <div style="margin-top: 20px; display: flex; gap: 10px;">
+        <button class="draw" onclick="exportRevenue('csv')">📥 Export CSV</button>
+        <button class="draw" onclick="exportRevenue('json')">📥 Export JSON</button>
+      </div>
     </div>
   </div>
 
@@ -1085,6 +1090,12 @@
         console.error('Members fetch error:', error);
         alert('Failed to fetch members');
       }
+    }
+
+    // Revenue export function
+    function exportRevenue(format) {
+      const url = `/api/admin/revenue/export?format=${format}&download=true&limit=5000`;
+      window.open(url, '_blank');
     }
 
     // Load membership settings on page load

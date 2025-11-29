@@ -14,15 +14,15 @@
 ### 📊 Progress Tracker:
 
 #### Phase 1: Revenue Features (Prove It Works On Your Instance)
-**Status:** 3/8 Complete
+**Status:** 6/8 Complete
 
 - ✅ **Tipping System** - USDC UI (live streams only), Redis backend, admin counter
 - ✅ **Membership Purchase Flow** - USDC payment, 30-day validity, admin panel
 - ✅ **Revenue Dashboard (Admin)** - Transaction tracking, 2% calculation, admin view
-- ⏳ **Tip Leaderboard/Stats** - Public display of top tippers
-- ⏳ **Content Gating** - Membership paywall middleware
-- ⏳ **Early Video Access** - Members-only video release window
-- ⏳ **Exclusive Raffles** - Member-only raffle entries
+- ✅ **Tip Leaderboard/Stats** - Live rankings, top 5 display during streams
+- ✅ **Content Gating** - Membership middleware for video access
+- ✅ **Early Video Access** - Members get early access via earlyAccessUntil timestamp
+- ✅ **Exclusive Raffles** - Member-only raffle entry (requireMembershipForRaffle toggle)
 - ⏳ **Revenue Export** - CSV/JSON download for pitches/grants
 - ⏳ **User Transparency Dashboard** - Public revenue stats display
 
