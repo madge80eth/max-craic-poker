@@ -43,6 +43,8 @@ export interface Video {
   uploadedAt: number; // timestamp
   viewCount: number;
   totalTips: number; // USDC cents (e.g., 1000 = $10.00)
+  membersOnly?: boolean; // If true, requires active membership to view
+  earlyAccessUntil?: number; // Timestamp - members get early access until this time
 }
 
 export interface VideoTip {

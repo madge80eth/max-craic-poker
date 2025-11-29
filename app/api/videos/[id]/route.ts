@@ -1,6 +1,7 @@
 // app/api/videos/[id]/route.ts
 import { NextResponse } from 'next/server';
 import { getVideo } from '@/lib/video-redis';
+import { isActiveMember, membershipRequiredResponse } from '@/lib/membership-middleware';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,6 +11,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    const { searchParams } = new URL(request.url);
+    const walletAddress = searchParams.get('wallet');
+
     const video = await getVideo(id);
 
     if (!video) {
@@ -19,7 +23,31 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ video });
+    // Check if video requires membership (members-only or early access)
+    const now = Date.now();
+    const isEarlyAccess = video.earlyAccessUntil && now < video.earlyAccessUntil;
+    const isMembersOnly = video.membersOnly === true;
+
+    if (isMembersOnly || isEarlyAccess) {
+      // Check membership status
+      const isMember = walletAddress ? await isActiveMember(walletAddress) : false;
+
+      if (!isMember) {
+        return NextResponse.json({
+          error: 'Membership required',
+          video: {
+            ...video,
+            url: null, // Hide video URL from non-members
+            isLocked: true,
+            lockReason: isEarlyAccess ? 'early_access' : 'members_only',
+            earlyAccessEndsAt: video.earlyAccessUntil
+          },
+          ...membershipRequiredResponse()
+        }, { status: 403 });
+      }
+    }
+
+    return NextResponse.json({ video, isLocked: false });
   } catch (error) {
     console.error('Error fetching video:', error);
     return NextResponse.json(
