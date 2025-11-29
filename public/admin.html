@@ -632,10 +632,6 @@
     loadCurrentTournaments();
 
     async function fetchCurrentEntries() {
-      const button = event.target;
-      button.classList.add('loading');
-      button.textContent = '⏳ Loading...';
-
       try {
         const response = await fetch('/api/status');
         const data = await response.json();
@@ -679,9 +675,6 @@
         }
       } catch (error) {
         alert('Error fetching entries: ' + error.message);
-      } finally {
-        button.classList.remove('loading');
-        button.textContent = '🔄 Get Current Entries';
       }
     }
 
@@ -852,10 +845,6 @@
     }
 
     async function fetchPlatformStats() {
-      const button = event.target;
-      button.classList.add('loading');
-      button.textContent = '⏳ Loading...';
-
       try {
         const response = await fetch('/api/leaderboard');
         const data = await response.json();
@@ -872,9 +861,6 @@
         }
       } catch (error) {
         alert('Error fetching platform statistics: ' + error.message);
-      } finally {
-        button.classList.remove('loading');
-        button.textContent = '🔄 Get Platform Statistics';
       }
     }
 
