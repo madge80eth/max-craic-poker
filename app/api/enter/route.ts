@@ -3,6 +3,7 @@ import { Redis } from '@upstash/redis';
 import { checkAndResetSession } from '@/lib/session';
 import { checkAndResetMonthly } from '@/lib/monthly-reset';
 import { updateUserStats, useAllTickets, getUserTickets } from '@/lib/redis';
+import { getMembershipSettings, getMembership } from '@/lib/revenue-redis';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -31,6 +32,21 @@ export async function POST(request: NextRequest) {
 
     // Auto-check and reset monthly leaderboard if new month
     await checkAndResetMonthly();
+
+    // Check membership requirement (if enabled)
+    const membershipSettings = await getMembershipSettings();
+    if (membershipSettings.requireMembershipForRaffle) {
+      const membership = await getMembership(walletAddress.toLowerCase());
+      const isMember = membership?.status === 'active' && membership.expiryDate > Date.now();
+
+      if (!isMember) {
+        return NextResponse.json({
+          success: false,
+          error: 'Membership required to enter raffle. Please subscribe in the Info tab.',
+          requiresMembership: true
+        }, { status: 403 });
+      }
+    }
 
     // Block entries if winners already drawn
     const winnersData = await redis.get('raffle_winners');

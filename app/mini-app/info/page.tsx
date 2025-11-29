@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import MembershipCard from '../components/MembershipCard';
 
 export default function InfoPage() {
   return (
@@ -8,6 +9,9 @@ export default function InfoPage() {
       <div className="max-w-2xl mx-auto pt-8 space-y-6">
 
         <h1 className="text-3xl font-bold text-white text-center mb-6">How It Works</h1>
+
+        {/* Membership Card - Shows subscribe or status */}
+        <MembershipCard />
 
         {/* Community Game Card */}
         <Link href="/mini-app/community-game">
