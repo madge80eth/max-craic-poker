@@ -27,12 +27,12 @@
 - ✅ **User Transparency Dashboard** - Public revenue stats on Info page
 
 #### Phase 2: Multi-Tenant Architecture (Scale Beyond You)
-**Status:** 0/4 Complete
+**Status:** 2/4 Complete
 
-- ⏳ **Data Model Refactor** - Add creatorId to all Redis keys/schemas
-- ⏳ **Subdomain Routing** - weazel.craicprotocol.com → Weazel's instance
-- ⏳ **Creator Detection** - Middleware to detect creator from hostname
-- ⏳ **Creator Storage** - Redis schema for multiple creator records
+- ✅ **Creator Storage** - Redis schema for creator profiles, subdomain mapping
+- ✅ **Creator Detection** - Middleware detects creator from hostname, adds x-creator-id header
+- ⏳ **Data Model Refactor** - Migrate existing Redis keys to creator-scoped format
+- ⏳ **Subdomain Routing** - DNS/Vercel config for *.craicprotocol.com (manual setup required)
 
 #### Phase 3: Admin Panel Separation (Your Control + Their Control)
 **Status:** 1/3 Complete

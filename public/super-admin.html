@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Super Admin - Craic Protocol</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0;
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #312e81 100%);
+      min-height: 100vh;
+      color: #e0e7ff;
+    }
+    h1 { text-align: center; color: white; font-size: 2.5rem; margin: 40px 0 10px; }
+    .subtitle { text-align: center; color: #a5b4fc; margin-bottom: 30px; font-size: 1.1rem; }
+    .section {
+      margin: 30px 20px;
+      padding: 25px;
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    h2 { color: white; margin-top: 0; font-size: 1.5rem; }
+    button {
+      padding: 12px 24px;
+      font-size: 14px;
+      margin: 10px 5px;
+      cursor: pointer;
+      font-weight: 600;
+      border-radius: 8px;
+      border: none;
+      transition: all 0.3s ease;
+    }
+    button:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,0.3); }
+    .primary { background: #10b981; color: white; }
+    .secondary { background: #3b82f6; color: white; }
+    .danger { background: #dc2626; color: white; }
+    input, select, textarea {
+      width: 100%;
+      padding: 12px;
+      font-size: 14px;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.05);
+      color: white;
+      margin-bottom: 15px;
+      box-sizing: border-box;
+    }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: #8b5cf6;
+      background: rgba(255,255,255,0.1);
+    }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+    .card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .success { background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #10b981; padding: 15px; border-radius: 8px; margin: 15px 0; }
+    .error { background: rgba(220, 38, 38, 0.2); border: 1px solid #dc2626; color: #fca5a5; padding: 15px; border-radius: 8px; margin: 15px 0; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th { background: rgba(139, 92, 246, 0.2); padding: 12px; text-align: left; color: #c7d2fe; border-bottom: 2px solid rgba(255,255,255,0.2); }
+    td { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .status-active { color: #10b981; font-weight: bold; }
+    .status-inactive { color: #6b7280; }
+  </style>
+</head>
+<body>
+  <h1>🏛️ Craic Protocol Super Admin</h1>
+  <p class="subtitle">Platform-wide creator management and analytics</p>
+
+  <div class="section">
+    <h2>📊 Platform Overview</h2>
+    <div class="grid" id="platformStats">
+      <div class="card">
+        <h3 style="color: #a5b4fc; font-size: 0.9rem; margin: 0 0 10px;">Total Creators</h3>
+        <p style="color: white; font-size: 2.5rem; font-weight: bold; margin: 0;" id="totalCreators">-</p>
+      </div>
+      <div class="card">
+        <h3 style="color: #a5b4fc; font-size: 0.9rem; margin: 0 0 10px;">Platform Revenue (2%)</h3>
+        <p style="color: white; font-size: 2.5rem; font-weight: bold; margin: 0;" id="platformRevenue">$0.00</p>
+      </div>
+      <div class="card">
+        <h3 style="color: #a5b4fc; font-size: 0.9rem; margin: 0 0 10px;">Total Transactions</h3>
+        <p style="color: white; font-size: 2.5rem; font-weight: bold; margin: 0;" id="totalTransactions">0</p>
+      </div>
+    </div>
+    <button class="secondary" onclick="loadPlatformStats()">🔄 Refresh Stats</button>
+  </div>
+
+  <div class="section">
+    <h2>➕ Create New Creator</h2>
+    <div style="max-width: 600px;">
+      <input type="text" id="creatorName" placeholder="Creator Name (e.g., Weazel Poker)" />
+      <input type="text" id="creatorSubdomain" placeholder="Subdomain (e.g., weazel)" />
+      <input type="text" id="creatorWallet" placeholder="Payout Wallet Address (0x...)" />
+      <button class="primary" onclick="createCreator()">Create Creator</button>
+    </div>
+    <div id="createStatus"></div>
+  </div>
+
+  <div class="section">
+    <h2>👥 All Creators</h2>
+    <button class="secondary" onclick="loadCreators()">🔄 Refresh List</button>
+    <div id="creatorsList"></div>
+  </div>
+
+  <script>
+    async function loadPlatformStats() {
+      // Placeholder - implement aggregation across all creators
+      document.getElementById('totalCreators').textContent = '-';
+      document.getElementById('platformRevenue').textContent = '$0.00';
+      document.getElementById('totalTransactions').textContent = '0';
+
+      try {
+        const creators = await fetch('/api/super-admin/creators').then(r => r.json());
+        if (creators.success) {
+          document.getElementById('totalCreators').textContent = creators.creators.length;
+        }
+      } catch (err) {
+        console.error('Stats error:', err);
+      }
+    }
+
+    async function createCreator() {
+      const name = document.getElementById('creatorName').value;
+      const subdomain = document.getElementById('creatorSubdomain').value;
+      const wallet = document.getElementById('creatorWallet').value;
+
+      if (!name || !subdomain || !wallet) {
+        document.getElementById('createStatus').innerHTML = '<div class="error">All fields required</div>';
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/super-admin/creators', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, subdomain, walletAddress: wallet })
+        });
+
+        const data = await res.json();
+
+        if (data.success) {
+          document.getElementById('createStatus').innerHTML = '<div class="success">✅ Creator created! Subdomain: ' + subdomain + '.craicprotocol.com</div>';
+          document.getElementById('creatorName').value = '';
+          document.getElementById('creatorSubdomain').value = '';
+          document.getElementById('creatorWallet').value = '';
+          loadCreators();
+        } else {
+          document.getElementById('createStatus').innerHTML = '<div class="error">❌ ' + data.error + '</div>';
+        }
+      } catch (err) {
+        document.getElementById('createStatus').innerHTML = '<div class="error">Failed to create creator</div>';
+      }
+    }
+
+    async function loadCreators() {
+      try {
+        const res = await fetch('/api/super-admin/creators');
+        const data = await res.json();
+
+        if (data.success) {
+          let html = '<table><thead><tr><th>Name</th><th>Subdomain</th><th>Wallet</th><th>Status</th><th>Created</th></tr></thead><tbody>';
+
+          data.creators.forEach(c => {
+            const date = new Date(c.createdAt).toLocaleDateString();
+            const statusClass = c.isActive ? 'status-active' : 'status-inactive';
+            const statusText = c.isActive ? '✅ Active' : '⏸ Inactive';
+
+            html += `<tr>
+              <td>${c.name}</td>
+              <td>${c.subdomain}.craicprotocol.com</td>
+              <td style="font-family: monospace; font-size: 12px;">${c.walletAddress.slice(0, 6)}...${c.walletAddress.slice(-4)}</td>
+              <td class="${statusClass}">${statusText}</td>
+              <td>${date}</td>
+            </tr>`;
+          });
+
+          html += '</tbody></table>';
+          document.getElementById('creatorsList').innerHTML = html;
+        }
+      } catch (err) {
+        document.getElementById('creatorsList').innerHTML = '<p style="color: #fca5a5;">Failed to load creators</p>';
+      }
+    }
+
+    // Load on page load
+    loadPlatformStats();
+    loadCreators();
+  </script>
+</body>
+</html>
