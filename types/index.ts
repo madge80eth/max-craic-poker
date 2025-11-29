@@ -99,6 +99,7 @@ export interface Transaction {
     videoTitle?: string; // For tips
     raffleId?: string; // For distributions
     position?: number; // For raffle winners
+    monthlyFee?: number; // For memberships
   };
 }
 
