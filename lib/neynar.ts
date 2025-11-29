@@ -93,7 +93,7 @@ export async function getUserByFid(fid: number) {
  */
 export async function verifyWalletShared(
   walletAddress: string,
-  searchUrl: string = 'max-craic-poker.vercel.app'
+  searchUrl: string = 'maxcraicpoker.com'
 ): Promise<boolean> {
   try {
     // First, get user by wallet address

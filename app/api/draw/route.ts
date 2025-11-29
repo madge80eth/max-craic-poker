@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
           minute: '2-digit'
         });
 
-        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://max-craic-poker.vercel.app';
+        const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://maxcraicpoker.com';
         await fetch(`${baseUrl}/api/send-notification`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

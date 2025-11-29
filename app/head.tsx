@@ -8,7 +8,7 @@ export default function Head() {
       {/* Generic OpenGraph tags */}
       <meta
         property="og:image"
-        content="https://max-craic-poker.vercel.app/api/frame-image"
+        content="https://maxcraicpoker.com/api/frame-image"
       />
     </>
   );

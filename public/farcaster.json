@@ -1,5 +1,5 @@
 {
   "miniapp": {
-    "webhookUrl": "https://max-craic-poker.vercel.app/api/webhook"
+    "webhookUrl": "https://maxcraicpoker.com/api/webhook"
   }
 }

@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
 
           if (shouldAutoDraw) {
             console.log('Auto-triggering draw...');
-            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://max-craic-poker.vercel.app';
+            const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://maxcraicpoker.com';
             const drawRes = await fetch(`${baseUrl}/api/draw`, { method: 'POST' });
             const drawData = await drawRes.json();
             if (drawData.success && drawData.winners) {

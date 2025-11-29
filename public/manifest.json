@@ -1,15 +1,15 @@
 {
   "accountAssociation": {
     "header": "eyJmaWQiOjM5ODEwOSwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweDA4OTcyN...",
-    "payload": "eyJkb21haW4iOiJtYXgtY3JhaWMtcG9rZXIudmVyY2VsLmFwcCJ9", 
+    "payload": "eyJkb21haW4iOiJtYXhjcmFpY3Bva2VyLmNvbSJ9", 
     "signature": "MHg4YzU5NmY4NjNlNjU5ZGU0NjQzZGZjNGNhNGJhNjczYzU5YTgw..."
   },
   "frame": {
     "name": "Max Craic Poker",
-    "iconUrl": "https://max-craic-poker.vercel.app/mcp-logo.png",
-    "splashImageUrl": "https://max-craic-poker.vercel.app/mcp-logo.png", 
+    "iconUrl": "https://maxcraicpoker.com/mcp-logo.png",
+    "splashImageUrl": "https://maxcraicpoker.com/mcp-logo.png",
     "splashBackgroundColor": "#000000",
-    "homeUrl": "https://max-craic-poker.vercel.app/mini-app"
+    "homeUrl": "https://maxcraicpoker.com/mini-app"
   },
   "baseBuilder": {
     "allowedAddresses": ["0x849c78D6C4fB87d152d1Da384c353712E4b1c1C5"]

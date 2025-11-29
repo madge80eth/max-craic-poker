@@ -182,7 +182,7 @@ export default function DrawPage() {
       // Open the compose cast
       composeCast({
         text: "I just entered the Max Craic Poker community draw! 🎰\n\nWin poker tournament profit shares - paid in USDC onchain 💰",
-        embeds: ['https://max-craic-poker.vercel.app/share']
+        embeds: ['https://maxcraicpoker.com/share']
       });
 
       // Record the share in backend (apply +2% bonus)

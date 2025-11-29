@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>MCP Admin</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0;
+      background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%);
+      min-height: 100vh;
+      color: #e0e7ff;
+    }
+    h1 {
+      text-align: center;
+      color: white;
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+      padding-top: 40px;
+    }
+    .subtitle {
+      text-align: center;
+      color: #a5b4fc;
+      margin-bottom: 30px;
+    }
+    .tabs-container {
+      background: rgba(0, 0, 0, 0.3);
+      border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(10px);
+    }
+    .tabs {
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0;
+    }
+    .tab {
+      padding: 18px 32px;
+      cursor: pointer;
+      background: transparent;
+      color: #a5b4fc;
+      border: none;
+      border-bottom: 3px solid transparent;
+      font-size: 15px;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      position: relative;
+      flex: 1;
+      max-width: 200px;
+    }
+    .tab:hover {
+      background: rgba(255, 255, 255, 0.05);
+      color: white;
+      transform: none;
+      box-shadow: none;
+    }
+    .tab.active {
+      color: white;
+      background: rgba(139, 92, 246, 0.2);
+      border-bottom-color: #8b5cf6;
+    }
+    .tab-content {
+      display: none;
+      padding: 30px 20px;
+      animation: fadeIn 0.3s ease;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    button {
+      padding: 15px 30px;
+      font-size: 16px;
+      margin: 10px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s ease;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    }
+    .reset { background: #dc2626; color: white; border: none; border-radius: 8px; }
+    .draw { background: #10b981; color: white; border: none; border-radius: 8px; }
+    .test { background: #f59e0b; color: white; border: none; border-radius: 8px; }
+    .info { background: #3b82f6; color: white; border: none; border-radius: 8px; }
+    .status { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid rgba(255,255,255,0.2); }
+    pre { background: #1f2937; color: #10b981; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 14px; }
+    .section {
+      margin: 30px 0;
+      padding: 25px;
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+    h2 {
+      color: white;
+      margin-top: 0;
+      font-size: 1.5rem;
+    }
+    .description { color: #c7d2fe; margin-bottom: 15px; }
+    .entries-card {
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      padding: 30px;
+      border-radius: 16px;
+      text-align: center;
+      margin: 20px 0;
+      box-shadow: 0 10px 40px rgba(59, 130, 246, 0.3);
+    }
+    .entries-count {
+      font-size: 4rem;
+      font-weight: bold;
+      color: white;
+      margin: 10px 0;
+    }
+    .entries-label {
+      color: #ddd6fe;
+      font-size: 1.2rem;
+      margin-bottom: 5px;
+    }
+    .loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+    .tournament-form input {
+      width: 100%;
+      padding: 12px;
+      font-size: 14px;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 8px;
+      background: rgba(255,255,255,0.05);
+      color: white;
+      margin-bottom: 10px;
+      box-sizing: border-box;
+    }
+    .tournament-form input:focus {
+      outline: none;
+      border-color: #8b5cf6;
+      background: rgba(255,255,255,0.1);
+    }
+    .tournament-form input::placeholder {
+      color: #6b7280;
+    }
+    .tournament-entry {
+      display: grid;
+      grid-template-columns: 1fr 120px;
+      gap: 10px;
+      margin-bottom: 15px;
+      padding: 15px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .tournament-entry label {
+      color: #a5b4fc;
+      font-size: 12px;
+      margin-bottom: 5px;
+      display: block;
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    .form-group label {
+      color: #a5b4fc;
+      font-size: 12px;
+      margin-bottom: 5px;
+      display: block;
+    }
+    .success-msg {
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid #10b981;
+      color: #10b981;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 15px;
+    }
+    .error-msg {
+      background: rgba(220, 38, 38, 0.2);
+      border: 1px solid #dc2626;
+      color: #fca5a5;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 15px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎰 Max Craic Poker Admin</h1>
+  <p class="subtitle">Manage draws and view statistics</p>
+
+  <div class="tabs-container">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('general')">📊 General</button>
+      <button class="tab" onclick="switchTab('tournaments')">🎯 Tournaments</button>
+      <button class="tab" onclick="switchTab('draw')">🎲 Draw</button>
+      <button class="tab" onclick="switchTab('stats')">📈 Stats</button>
+    </div>
+  </div>
+
+  <!-- GENERAL TAB -->
+  <div id="general-tab" class="tab-content active">
+    <div class="section">
+      <h2>💰 Stream Tips</h2>
+      <p class="description">Live tips counter for the current session</p>
+
+      <div id="tipsCard" style="display: none;">
+        <div class="entries-card" style="background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);">
+          <div class="entries-label">Today's Tips</div>
+          <div class="entries-count" id="tipsTotal">$0.00</div>
+          <div style="color: #fae8ff; font-size: 0.9rem; margin-top: 10px;">
+            <span id="tipCount">0</span> tips received | Last updated: <span id="tipsLastUpdated">-</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="info" onclick="fetchTips()">🔄 Get Tips</button>
+    </div>
+
+    <div class="section">
+      <h2>📊 Current Draw Statistics</h2>
+      <p class="description">Live view of the current draw entries</p>
+
+      <div id="entriesCard" style="display: none;">
+        <div class="entries-card">
+          <div class="entries-label">Total Entries</div>
+          <div class="entries-count" id="entriesCount">-</div>
+          <div style="color: #ddd6fe; font-size: 0.9rem; margin-top: 10px;">
+            Last updated: <span id="lastUpdated">-</span>
+          </div>
+        </div>
+      </div>
+
+      <button class="info" onclick="fetchCurrentEntries()">🔄 Get Current Entries</button>
+
+      <div id="winnersInfo" style="margin-top: 20px; display: none;">
+        <h3 style="color: white; margin-bottom: 10px;">🏆 Current Winners</h3>
+        <div id="winnersList"></div>
+      </div>
+    </div>
+
+    <div class="section" id="payoutCalculator" style="display: none;">
+      <h2>💰 Winner Payout Calculator</h2>
+      <p class="description">Enter tournament results to calculate USDC payouts</p>
+      <div id="payoutCards"></div>
+    </div>
+
+    <div class="section">
+      <h2>📊 System Status</h2>
+      <div class="status" id="status"></div>
+    </div>
+  </div>
+
+  <!-- TOURNAMENTS TAB -->
+  <div id="tournaments-tab" class="tab-content">
+    <div class="section">
+      <h2>🎯 Tournament Manager</h2>
+    <p class="description">Update tournaments.json for the next stream without editing files</p>
+
+    <div class="tournament-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Session ID (keep same to preserve existing entries)</label>
+          <input type="text" id="sessionId" placeholder="2025-11-13">
+        </div>
+        <div class="form-group">
+          <label>Stream Start Date & Time (GMT)</label>
+          <input type="datetime-local" id="streamStartTime">
+        </div>
+      </div>
+
+      <div style="background: rgba(59, 130, 246, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid rgba(59, 130, 246, 0.3);">
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #dbeafe;">
+          <input type="checkbox" id="resetDraw" style="width: 18px; height: 18px; cursor: pointer;">
+          <span style="font-weight: 600;">Reset draw & clear entries</span>
+        </label>
+        <p style="color: #93c5fd; font-size: 0.85rem; margin: 8px 0 0 28px;">
+          ⚠️ Check this ONLY when starting a new session. Unchecked = update tournament names without clearing entries/winners.
+        </p>
+      </div>
+
+      <h3 style="color: white; margin: 20px 0 15px 0; font-size: 1.1rem;">Tournaments (up to 6)</h3>
+
+      <div id="tournamentEntries">
+        <!-- Tournament entries will be populated by JS -->
+      </div>
+
+      <button class="draw" onclick="updateTournaments()" style="width: 100%; margin: 20px 0 0 0;">
+        💾 Update Tournaments
+      </button>
+
+      <div id="tournamentStatus"></div>
+    </div>
+    </div>
+  </div>
+
+  <!-- DRAW TAB -->
+  <div id="draw-tab" class="tab-content">
+    <div class="section">
+      <h2>🎲 Draw Management</h2>
+      <p class="description">Trigger the draw to select winners or reset to start fresh</p>
+      <button class="draw" onclick="triggerDraw()">Trigger Draw</button>
+      <button class="reset" onclick="resetDraw()">Reset Draw</button>
+    </div>
+
+    <div class="section">
+      <h2>🧪 Testing</h2>
+      <p class="description">Add test wallets to quickly test the draw functionality without manual entries</p>
+      <button class="test" onclick="testDraw()">Add Test Entries</button>
+      <p style="color: #a5b4fc; font-size: 14px; margin-top: 10px;">Adds 10 test wallets to the current draw</p>
+    </div>
+  </div>
+
+  <!-- STATS TAB -->
+  <div id="stats-tab" class="tab-content">
+    <div class="section">
+      <h2>📈 Platform Statistics</h2>
+      <p class="description">Overview of all-time platform engagement</p>
+
+      <div id="statsCards" style="display: none; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+        <div class="entries-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+          <div class="entries-label">Unique Wallets</div>
+          <div class="entries-count" id="totalWalletsCount">-</div>
+          <div style="color: #d1fae5; font-size: 0.9rem; margin-top: 10px;">
+            All-time users
+          </div>
+        </div>
+        <div class="entries-card" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
+          <div class="entries-label">Total Draws</div>
+          <div class="entries-count" id="totalDrawsCount">-</div>
+          <div style="color: #dbeafe; font-size: 0.9rem; margin-top: 10px;">
+            All-time entries
+          </div>
+        </div>
+      </div>
+
+      <button class="info" onclick="fetchPlatformStats()">🔄 Get Platform Statistics</button>
+    </div>
+
+    <div class="section">
+      <h2>🏆 Monthly Leaderboard</h2>
+      <p class="description">Monthly snapshots happen automatically. Use this for manual override or testing.</p>
+      <button class="draw" onclick="snapshotLeaderboard()">Manual Snapshot (Override)</button>
+      <p style="color: #6b7280; font-size: 14px; margin-top: 10px;">
+        ⚠️ The system auto-snapshots at month end. Only use this for testing or manual override.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    let winnersData = null;
+    let tournamentsData = null;
+
+    // Tab switching function
+    function switchTab(tabName) {
+      // Hide all tab contents
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+      });
+
+      // Remove active class from all tabs
+      document.querySelectorAll('.tab').forEach(tab => {
+        tab.classList.remove('active');
+      });
+
+      // Show selected tab content
+      document.getElementById(tabName + '-tab').classList.add('active');
+
+      // Add active class to clicked tab
+      event.target.classList.add('active');
+    }
+
+    // Tournament Manager Functions
+    async function loadCurrentTournaments() {
+      try {
+        const response = await fetch('/api/tournaments');
+        const result = await response.json();
+        const data = result.data || result;
+        tournamentsData = data;
+
+        // Populate session ID
+        document.getElementById('sessionId').value = data.sessionId || '';
+
+        // Convert ISO string to datetime-local format (remove the 'Z' and seconds)
+        if (data.streamStartTime) {
+          const dt = new Date(data.streamStartTime);
+          // Format: YYYY-MM-DDTHH:MM
+          const localDateTime = dt.toISOString().slice(0, 16);
+          document.getElementById('streamStartTime').value = localDateTime;
+        }
+
+        // Populate tournament entries
+        renderTournamentEntries(data.tournaments || []);
+      } catch (error) {
+        console.error('Error loading tournaments:', error);
+        renderTournamentEntries([]);
+      }
+    }
+
+    function renderTournamentEntries(tournaments) {
+      const container = document.getElementById('tournamentEntries');
+      let html = '';
+
+      // Always show 6 slots
+      for (let i = 0; i < 6; i++) {
+        const tournament = tournaments[i] || { name: '', buyIn: '' };
+        html += `
+          <div class="tournament-entry">
+            <div>
+              <label>Tournament ${i + 1} Name</label>
+              <input type="text" id="tournament-name-${i}" value="${tournament.name || ''}" placeholder="PokerStars: Big $16.50, $1.5K Gtd">
+            </div>
+            <div>
+              <label>Buy-in</label>
+              <input type="text" id="tournament-buyin-${i}" value="${tournament.buyIn || ''}" placeholder="$16.50">
+            </div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+    }
+
+    async function updateTournaments() {
+      const statusDiv = document.getElementById('tournamentStatus');
+      statusDiv.innerHTML = '<div style="color: #a5b4fc; padding: 15px;">⏳ Updating tournaments...</div>';
+
+      try {
+        const sessionId = document.getElementById('sessionId').value.trim();
+        const streamStartTimeLocal = document.getElementById('streamStartTime').value;
+
+        if (!sessionId) {
+          statusDiv.innerHTML = '<div class="error-msg">Session ID is required</div>';
+          return;
+        }
+
+        if (!streamStartTimeLocal) {
+          statusDiv.innerHTML = '<div class="error-msg">Stream start time is required</div>';
+          return;
+        }
+
+        // Convert datetime-local to ISO string with Z (GMT)
+        const streamStartTime = new Date(streamStartTimeLocal).toISOString();
+
+        // Collect tournaments
+        const tournaments = [];
+        for (let i = 0; i < 6; i++) {
+          const name = document.getElementById(`tournament-name-${i}`).value.trim();
+          const buyIn = document.getElementById(`tournament-buyin-${i}`).value.trim();
+          if (name && buyIn) {
+            tournaments.push({ name, buyIn });
+          }
+        }
+
+        if (tournaments.length === 0) {
+          statusDiv.innerHTML = '<div class="error-msg">At least one tournament is required</div>';
+          return;
+        }
+
+        const resetDraw = document.getElementById('resetDraw').checked;
+
+        const response = await fetch('/api/admin/update-tournaments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ sessionId, streamStartTime, tournaments, resetDraw })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          const resetMessage = data.cleared && data.cleared.entries
+            ? '<small style="color: #fbbf24;">Entries & winners cleared - fresh draw started</small>'
+            : '<small style="color: #6ee7b7;">Entries & winners preserved</small>';
+
+          statusDiv.innerHTML = `
+            <div class="success-msg">
+              ✅ Tournaments updated!<br>
+              <small style="color: #6ee7b7;">Session: ${sessionId} | ${tournaments.length} tournaments | Stream: ${new Date(streamStartTime).toLocaleString()}</small><br>
+              ${resetMessage}
+            </div>
+          `;
+          // Reload the data and refresh entries
+          await loadCurrentTournaments();
+          fetchCurrentEntries();
+        } else {
+          statusDiv.innerHTML = `<div class="error-msg">❌ ${data.message}</div>`;
+        }
+      } catch (error) {
+        statusDiv.innerHTML = `<div class="error-msg">❌ Error: ${error.message}</div>`;
+      }
+    }
+
+    // Load tournaments on page load
+    loadCurrentTournaments();
+
+    async function fetchCurrentEntries() {
+      const button = event.target;
+      button.classList.add('loading');
+      button.textContent = '⏳ Loading...';
+
+      try {
+        const response = await fetch('/api/status');
+        const data = await response.json();
+
+        if (data.success) {
+          // Show entries card
+          document.getElementById('entriesCard').style.display = 'block';
+          document.getElementById('entriesCount').textContent = data.totalEntries || 0;
+          document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
+
+          // Show winners if available
+          if (data.winners && data.winners.length > 0) {
+            document.getElementById('winnersInfo').style.display = 'block';
+            let winnersHtml = '';
+            data.winners.forEach((winner, index) => {
+              winnersHtml += `
+                <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+                  <div style="color: white; font-weight: bold; margin-bottom: 5px;">
+                    Tournament ${index + 1}: ${winner.tournament || 'N/A'}
+                  </div>
+                  <div style="color: #c7d2fe; font-size: 0.9rem; font-family: monospace;">
+                    ${winner.walletAddress}
+                  </div>
+                  ${winner.percentage ? `<div style="color: #fbbf24; margin-top: 5px;">Prize: ${winner.percentage}%</div>` : ''}
+                </div>
+              `;
+            });
+            document.getElementById('winnersList').innerHTML = winnersHtml;
+
+            // Show payout calculator
+            winnersData = data.winners;
+            await loadPayoutCalculator();
+          } else {
+            document.getElementById('winnersInfo').style.display = 'none';
+            document.getElementById('payoutCalculator').style.display = 'none';
+            winnersData = null;
+          }
+
+          // Also update the status section
+          document.getElementById('status').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+        }
+      } catch (error) {
+        alert('Error fetching entries: ' + error.message);
+      } finally {
+        button.classList.remove('loading');
+        button.textContent = '🔄 Get Current Entries';
+      }
+    }
+
+    async function loadPayoutCalculator() {
+      if (!winnersData || winnersData.length === 0) {
+        document.getElementById('payoutCalculator').style.display = 'none';
+        return;
+      }
+
+      // Load tournaments data
+      try {
+        const response = await fetch('/api/tournaments');
+        const result = await response.json();
+        tournamentsData = result.data || result;
+
+        document.getElementById('payoutCalculator').style.display = 'block';
+        calculatePayouts();
+      } catch (error) {
+        console.error('Error loading tournaments:', error);
+      }
+    }
+
+    function parseBuyIn(buyInString) {
+      // Extract numeric value from strings like "$11" or "€10"
+      const match = buyInString.match(/[\d.]+/);
+      return match ? parseFloat(match[0]) : 0;
+    }
+
+    function getTournamentBuyIn(tournamentName) {
+      if (!tournamentsData || !tournamentsData.tournaments) return 0;
+
+      const tournament = tournamentsData.tournaments.find(t => t.name === tournamentName);
+      return tournament ? parseBuyIn(tournament.buyIn) : 0;
+    }
+
+    function calculatePayout(index) {
+      const winnings = parseFloat(document.getElementById(`winnings-${index}`).value) || 0;
+      const winner = winnersData[index];
+      const buyIn = getTournamentBuyIn(winner.assignedTournament);
+      const netProfit = Math.max(0, winnings - buyIn);
+      const finalPercentage = winner.finalPercentage || winner.basePercentage || 0;
+      const payout = netProfit * (finalPercentage / 100);
+
+      const payoutDisplay = document.getElementById(`payout-${index}`);
+      if (winnings > 0) {
+        payoutDisplay.textContent = `$${payout.toFixed(2)}`;
+        payoutDisplay.style.color = '#10b981';
+      } else {
+        payoutDisplay.textContent = '$0.00';
+        payoutDisplay.style.color = '#6b7280';
+      }
+    }
+
+    function calculatePayouts() {
+      if (!winnersData || winnersData.length === 0) return;
+
+      const payoutCardsDiv = document.getElementById('payoutCards');
+      let html = '';
+
+      winnersData.forEach((winner, index) => {
+        const position = winner.position;
+        const positionEmoji = position === 1 ? '🥇' : position === 2 ? '🥈' : position === 3 ? '🥉' : '🏅';
+        const positionText = ['1st', '2nd', '3rd', '4th', '5th', '6th'][position - 1];
+        const buyIn = getTournamentBuyIn(winner.assignedTournament);
+        const finalPercentage = winner.finalPercentage || winner.basePercentage || 0;
+
+        html += `
+          <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px;">
+              <div style="flex: 1;">
+                <div style="color: white; font-size: 1.1rem; font-weight: bold; margin-bottom: 8px;">
+                  ${positionEmoji} ${positionText} Place - ${finalPercentage.toFixed(1)}% share
+                </div>
+                <div style="color: #a5b4fc; font-size: 0.9rem; margin-bottom: 4px;">${winner.assignedTournament}</div>
+                <div style="color: #6b7280; font-size: 0.8rem; font-family: monospace;">${winner.walletAddress}</div>
+              </div>
+              <button
+                onclick="copyAddress('${winner.walletAddress}')"
+                style="background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.85rem; white-space: nowrap; margin-left: 15px;"
+              >
+                📋 Copy
+              </button>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; align-items: end;">
+              <div>
+                <label style="color: #a5b4fc; font-size: 0.75rem; display: block; margin-bottom: 5px;">Tournament Winnings</label>
+                <input
+                  type="number"
+                  id="winnings-${index}"
+                  placeholder="0.00"
+                  step="0.01"
+                  oninput="calculatePayout(${index})"
+                  style="width: 100%; padding: 10px; font-size: 1rem; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; background: rgba(255,255,255,0.05); color: white; font-weight: 600;"
+                />
+                <div style="color: #6b7280; font-size: 0.7rem; margin-top: 3px;">Buy-in: $${buyIn.toFixed(2)}</div>
+              </div>
+
+              <div style="text-align: center; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 6px;">
+                <div style="color: #a5b4fc; font-size: 0.7rem; margin-bottom: 3px;">×</div>
+                <div style="color: white; font-size: 1.1rem; font-weight: bold;">${finalPercentage.toFixed(1)}%</div>
+              </div>
+
+              <div style="text-align: right;">
+                <div style="color: #a5b4fc; font-size: 0.75rem; margin-bottom: 5px;">Payout (USDC)</div>
+                <div id="payout-${index}" style="font-size: 1.5rem; font-weight: bold; color: #6b7280;">$0.00</div>
+              </div>
+            </div>
+          </div>
+        `;
+      });
+
+      payoutCardsDiv.innerHTML = html;
+    }
+
+    function copyAddress(address) {
+      navigator.clipboard.writeText(address).then(() => {
+        alert('Address copied to clipboard!\n\n' + address);
+      }).catch(err => {
+        console.error('Failed to copy:', err);
+        prompt('Copy this address:', address);
+      });
+    }
+
+    async function testDraw() {
+      if (!confirm('Add 10 test wallets to the draw?\n\nThis will add test entries you can use to test the draw functionality.')) return;
+
+      const response = await fetch('/api/test-draw', { method: 'POST' });
+      const data = await response.json();
+      document.getElementById('status').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+
+      if (data.success) {
+        setTimeout(() => {
+          checkStatus();
+          fetchCurrentEntries();
+        }, 1000);
+      }
+    }
+
+    async function triggerDraw() {
+      if (!confirm('Trigger the draw now?\n\nThis will select 6 winners from current entries.')) return;
+
+      const response = await fetch('/api/draw', { method: 'POST' });
+      const data = await response.json();
+      document.getElementById('status').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+
+      if (data.success) {
+        setTimeout(() => {
+          checkStatus();
+          fetchCurrentEntries();
+        }, 1000);
+      }
+    }
+
+    async function resetDraw() {
+      if (!confirm('Reset the draw?\n\nThis clears:\n- All current entries\n- Winner data\n- Today\'s poker hands (Madge game)\n- Accumulated tickets\n\nPreserves:\n- Entry history (leaderboard)\n\nThe app will revert to showing the next stream countdown.')) return;
+
+      const response = await fetch('/api/reset', { method: 'POST' });
+      const data = await response.json();
+      document.getElementById('status').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+
+      if (data.success) {
+        setTimeout(() => {
+          checkStatus();
+          fetchCurrentEntries();
+        }, 1000);
+      }
+    }
+
+    async function fetchPlatformStats() {
+      const button = event.target;
+      button.classList.add('loading');
+      button.textContent = '⏳ Loading...';
+
+      try {
+        const response = await fetch('/api/leaderboard');
+        const data = await response.json();
+
+        if (data.success) {
+          const totalWallets = data.totalParticipants || 0;
+          const totalDraws = data.totalDraws || 0;
+
+          document.getElementById('statsCards').style.display = 'grid';
+          document.getElementById('totalWalletsCount').textContent = totalWallets;
+          document.getElementById('totalDrawsCount').textContent = totalDraws;
+        } else {
+          alert('Failed to fetch platform statistics');
+        }
+      } catch (error) {
+        alert('Error fetching platform statistics: ' + error.message);
+      } finally {
+        button.classList.remove('loading');
+        button.textContent = '🔄 Get Platform Statistics';
+      }
+    }
+
+    async function snapshotLeaderboard() {
+      if (!confirm('Manual snapshot override?\n\nNote: The system automatically snapshots at month end.\n\nThis manual action will:\n- Force snapshot current leaderboard top 3\n- Useful for testing or manual override\n\nContinue?')) return;
+
+      const response = await fetch('/api/leaderboard/snapshot', { method: 'POST' });
+      const data = await response.json();
+      document.getElementById('status').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+
+      if (data.success) {
+        setTimeout(() => {
+          checkStatus();
+          fetchCurrentEntries();
+        }, 1000);
+      }
+    }
+
+    async function checkStatus() {
+      const response = await fetch('/api/reset');
+      const data = await response.json();
+      document.getElementById('status').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+    }
+
+    async function fetchTips() {
+      const button = event?.target;
+      if (button) {
+        button.classList.add('loading');
+        button.textContent = '⏳ Loading...';
+      }
+
+      try {
+        // Get current session ID from tournaments data
+        const tournamentsResponse = await fetch('/api/tournaments');
+        const tournamentsData = await tournamentsResponse.json();
+        const sessionId = tournamentsData.sessionId || tournamentsData.data?.sessionId;
+
+        if (!sessionId) {
+          console.log('No session ID found');
+          return;
+        }
+
+        const response = await fetch(`/api/tips?sessionId=${sessionId}`);
+        const data = await response.json();
+
+        if (data.success) {
+          // Show tips card
+          document.getElementById('tipsCard').style.display = 'block';
+          document.getElementById('tipsTotal').textContent = `$${(data.totalTips / 100).toFixed(2)}`;
+          document.getElementById('tipCount').textContent = data.tipCount || 0;
+          document.getElementById('tipsLastUpdated').textContent = new Date().toLocaleTimeString();
+        }
+      } catch (error) {
+        console.error('Error fetching tips:', error);
+      } finally {
+        if (button) {
+          button.classList.remove('loading');
+          button.textContent = '🔄 Get Tips';
+        }
+      }
+    }
+
+    // Auto-refresh status, entries, and tips every 10 seconds
+    checkStatus();
+    fetchCurrentEntries();
+    fetchTips();
+    setInterval(() => {
+      checkStatus();
+      fetchCurrentEntries();
+      fetchTips();
+    }, 10000);
+  </script>
+</body>
+</html>
