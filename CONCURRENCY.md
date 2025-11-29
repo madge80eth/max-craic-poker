@@ -1,6 +1,72 @@
 # MAX CRAIC POKER - MASTER CONCURRENCY DOCUMENT
-**Last Updated:** November 28, 2025 - Session 31: Monetization Infrastructure Implementation
+**Last Updated:** November 29, 2025 - Active: Feature Branch Development
 **Purpose:** Single source of truth for sprint-based development with vision, stakeholders, and technical state
+
+---
+
+## 🏗️ ACTIVE FEATURE BRANCH: revenue-systems
+
+**Branch:** `feature/revenue-systems`
+**Status:** 🟡 In Progress - Building Full White-Label Platform
+**Started:** November 29, 2025
+**Target:** Complete revenue platform + multi-tenant architecture for creator onboarding
+
+### 📊 Progress Tracker:
+
+#### Phase 1: Revenue Features (Prove It Works On Your Instance)
+**Status:** 3/8 Complete
+
+- ✅ **Tipping System** - USDC UI (live streams only), Redis backend, admin counter
+- ✅ **Membership Purchase Flow** - USDC payment, 30-day validity, admin panel
+- ✅ **Revenue Dashboard (Admin)** - Transaction tracking, 2% calculation, admin view
+- ⏳ **Tip Leaderboard/Stats** - Public display of top tippers
+- ⏳ **Content Gating** - Membership paywall middleware
+- ⏳ **Early Video Access** - Members-only video release window
+- ⏳ **Exclusive Raffles** - Member-only raffle entries
+- ⏳ **Revenue Export** - CSV/JSON download for pitches/grants
+- ⏳ **User Transparency Dashboard** - Public revenue stats display
+
+#### Phase 2: Multi-Tenant Architecture (Scale Beyond You)
+**Status:** 0/4 Complete
+
+- ⏳ **Data Model Refactor** - Add creatorId to all Redis keys/schemas
+- ⏳ **Subdomain Routing** - weazel.craicprotocol.com → Weazel's instance
+- ⏳ **Creator Detection** - Middleware to detect creator from hostname
+- ⏳ **Creator Storage** - Redis schema for multiple creator records
+
+#### Phase 3: Admin Panel Separation (Your Control + Their Control)
+**Status:** 1/3 Complete
+
+- ✅ **Basic Admin Panel** - Single-tenant revenue/membership management
+- ⏳ **Super Admin Panel** - YOUR control center (create creators, view all stats, fee reconciliation)
+- ⏳ **Creator Admin Panel** - THEIR scoped panel (their data only, branding, payouts)
+
+### 📁 Files Changed on Branch:
+
+**Created:**
+- `app/api/membership/status/route.ts`
+- `app/api/membership/subscribe/route.ts`
+- `app/mini-app/components/MembershipCard.tsx`
+- `FEATURE_BRANCH_SUMMARY.md`
+
+**Modified:**
+- `app/mini-app/info/page.tsx` - Added MembershipCard
+- `app/api/enter/route.ts` - Added membership requirement check
+- `public/admin.html` - Added Revenue + Membership tabs
+
+**Existing (From Session 31):**
+- `lib/revenue-redis.ts` - Complete backend infrastructure
+- `app/api/admin/revenue/route.ts`
+- `app/api/admin/membership-settings/route.ts`
+- `app/api/tip/route.ts`, `app/api/tips/route.ts`
+
+### 🎯 Current Work:
+Building Phase 1 revenue features incrementally...
+
+### 📝 Commits on Branch:
+1. `b90ad76` - Add feature branch summary documentation
+2. `493fe0f` - Add complete admin UI for Revenue and Membership systems
+3. `b9687a7` - Add complete membership system with purchase flow and raffle integration
 
 ---
 

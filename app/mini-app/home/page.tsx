@@ -6,6 +6,7 @@ import { Wallet, Ticket, Trophy, DollarSign } from 'lucide-react';
 import Link from 'next/link';
 import Madge from '../components/Madge';
 import CardHand from '../components/CardHand';
+import TipLeaderboard from '../components/TipLeaderboard';
 import { parseUnits, formatUnits } from 'viem';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 
@@ -413,6 +414,9 @@ export default function HomePage() {
               </div>
             )}
           </div>
+
+          {/* Tip Leaderboard */}
+          {sessionId && <TipLeaderboard sessionId={sessionId} limit={5} />}
 
           {isUserWinner && (
             <div className="bg-green-500/20 rounded-xl p-4 border border-green-400/40">
