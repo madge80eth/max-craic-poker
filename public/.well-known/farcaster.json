@@ -10,7 +10,12 @@
     "subtitle": "Enter draw, get paid if I cash",
     "description": "Enter the daily draw from the Mini App. If I cash in a tournament, one entrant gets USDC automatically. I post a screenshot of the finish for transparency.",
     "primaryCategory": "social",
-    "tags": ["poker", "gambling", "crypto", "base", "tournament"]
+    "tags": ["poker", "gambling", "crypto", "base", "tournament"],
+    "screenshotUrls": [
+      "https://www.maxcraicpoker.com/www_maxcraicpoker_com_mini-app_home_iPhone_14_Pro_Max_.png",
+      "https://www.maxcraicpoker.com/www_maxcraicpoker_com_mini-app_home_iPhone_14_Pro_Max___1_.png",
+      "https://www.maxcraicpoker.com/www_maxcraicpoker_com_mini-app_draw_iPhone_14_Pro_Max_.png"
+    ]
   },
   "accountAssociation": {
     "header": "eyJmaWQiOjIzODE2OSwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweGEwMEFFZUZiZEJDNjY0NjMxNDdCZjFmZUIzMDU4NWZEZjRhNzgwODUifQ",
