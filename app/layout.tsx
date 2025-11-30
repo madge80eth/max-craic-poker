@@ -4,7 +4,24 @@ import { Providers } from './providers'
 
 export const metadata: Metadata = {
   title: "Max Craic Poker",
-  description: "Community-backed poker tournaments",
+  description: "Enter draw, get paid if I cash.",
+  openGraph: {
+    title: "Max Craic Poker",
+    description: "Enter draw, get paid if I cash.",
+    images: [
+      {
+        url: "https://www.maxcraicpoker.com/api/frame-image",
+        width: 1200,
+        height: 630,
+        alt: "Max Craic Poker - Win Real Poker Profits"
+      }
+    ],
+  },
+  other: {
+    "fc:frame": "vNext",
+    "fc:frame:image": "https://www.maxcraicpoker.com/api/frame-image",
+    "fc:frame:image:aspect_ratio": "1.91:1",
+  }
 };
 
 export default function RootLayout({
