@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
     const tournamentsData: TournamentsData = {
       sessionId,
       streamStartTime,
+      streamUrl: 'https://retake.tv/live/68b58fa755320f51930c9081',
       tournaments: tournaments.filter((t: any) => t.name && t.name.trim() !== '')
     };
 

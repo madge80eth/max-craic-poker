@@ -95,10 +95,10 @@ export default function DrawPage() {
       const now = new Date().getTime();
       const streamTime = streamStartTime.getTime();
       const difference = streamTime - now;
-      // Stream considered "passed" 6 hours after start time (covers 5-hour streams + buffer)
-      const sixHoursAfterStream = streamTime + (6 * 60 * 60 * 1000);
+      // Stream considered "passed" 24 hours after start time (aligns with home page logic)
+      const twentyFourHoursAfterStream = streamTime + (24 * 60 * 60 * 1000);
 
-      if (now > sixHoursAfterStream) {
+      if (now > twentyFourHoursAfterStream) {
         setStreamHasPassed(true);
         setTimeUntilStream('');
       } else if (difference > 0) {
@@ -216,7 +216,30 @@ export default function DrawPage() {
           </p>
         </div>
 
-        {/* Past Stream Message */}
+        {/* Message for when winners exist - stream is over */}
+        {winners && streamHasPassed && (
+          <div className="bg-gradient-to-br from-green-500/20 to-blue-500/20 backdrop-blur-lg rounded-xl p-6 border border-green-400/30">
+            <div className="text-center space-y-3">
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <Trophy className="w-6 h-6 text-yellow-400" />
+                <h3 className="text-xl font-bold text-white">Previous Draw Winners</h3>
+              </div>
+              <p className="text-blue-200 text-sm leading-relaxed">
+                Get notified when the next stream goes live and catch up on highlights in the Media tab
+              </p>
+              <div className="flex gap-2 justify-center mt-4">
+                <Link href="/mini-app/media">
+                  <button className="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded-lg text-sm transition-all">
+                    📺 Watch Highlights
+                  </button>
+                </Link>
+                <NotificationPrompt />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Past Stream Message (when NO winners yet) */}
         {streamHasPassed && !winners && (
           <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 border border-white/20">
             <div className="text-center">

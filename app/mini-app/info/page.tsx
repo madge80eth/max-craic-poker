@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import MembershipCard from '../components/MembershipCard';
 import RevenueTransparency from '../components/RevenueTransparency';
+import PreviousWinners from '../components/PreviousWinners';
 
 export default function InfoPage() {
   return (
@@ -16,6 +17,9 @@ export default function InfoPage() {
 
         {/* Revenue Transparency - Builds trust */}
         <RevenueTransparency />
+
+        {/* Previous Winners - Payout transparency */}
+        <PreviousWinners />
 
         {/* Community Game Card */}
         <Link href="/mini-app/community-game">

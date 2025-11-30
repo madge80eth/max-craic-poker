@@ -759,7 +759,7 @@
               </button>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; align-items: end;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; align-items: end; margin-bottom: 15px;">
               <div>
                 <label style="color: #a5b4fc; font-size: 0.75rem; display: block; margin-bottom: 5px;">Tournament Winnings</label>
                 <input
@@ -783,6 +783,26 @@
                 <div id="payout-${index}" style="font-size: 1.5rem; font-weight: bold; color: #6b7280;">$0.00</div>
               </div>
             </div>
+
+            <div style="background: rgba(59, 130, 246, 0.1); padding: 15px; border-radius: 8px; border: 1px solid rgba(59, 130, 246, 0.3);">
+              <label style="color: #a5b4fc; font-size: 0.75rem; display: block; margin-bottom: 5px;">Basescan Transaction URL (for transparency)</label>
+              <div style="display: flex; gap: 10px;">
+                <input
+                  type="text"
+                  id="basescan-${index}"
+                  placeholder="https://basescan.org/tx/0x..."
+                  style="flex: 1; padding: 10px; font-size: 0.85rem; border: 1px solid rgba(255,255,255,0.2); border-radius: 6px; background: rgba(255,255,255,0.05); color: white;"
+                />
+                <button
+                  onclick="submitPayoutRecord(${index}, '${winner.assignedTournament}', ${finalPercentage}, ${position})"
+                  id="submit-btn-${index}"
+                  style="background: #3b82f6; color: white; border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.85rem; white-space: nowrap;"
+                >
+                  Submit
+                </button>
+              </div>
+              <div id="submit-status-${index}" style="margin-top: 8px; font-size: 0.75rem;"></div>
+            </div>
           </div>
         `;
       });
@@ -797,6 +817,68 @@
         console.error('Failed to copy:', err);
         prompt('Copy this address:', address);
       });
+    }
+
+    async function submitPayoutRecord(index, tournament, percentage, position) {
+      const basescanUrl = document.getElementById(`basescan-${index}`).value.trim();
+      const usdcAmount = parseFloat(document.getElementById(`payout-${index}`).textContent.replace('$', ''));
+      const statusDiv = document.getElementById(`submit-status-${index}`);
+      const submitBtn = document.getElementById(`submit-btn-${index}`);
+
+      if (!basescanUrl) {
+        statusDiv.innerHTML = '<span style="color: #fca5a5;">Please enter a Basescan URL</span>';
+        return;
+      }
+
+      if (usdcAmount <= 0) {
+        statusDiv.innerHTML = '<span style="color: #fca5a5;">Please enter tournament winnings first</span>';
+        return;
+      }
+
+      // Validate Basescan URL format
+      if (!basescanUrl.includes('basescan.org')) {
+        statusDiv.innerHTML = '<span style="color: #fca5a5;">Invalid Basescan URL</span>';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Submitting...';
+      statusDiv.innerHTML = '<span style="color: #a5b4fc;">Saving...</span>';
+
+      try {
+        const response = await fetch('/api/admin/payout-records', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            tournament,
+            percentage,
+            usdcAmount,
+            basescanUrl,
+            position
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          statusDiv.innerHTML = '<span style="color: #10b981;">✅ Saved! Record will appear in Info tab</span>';
+          // Clear the input
+          document.getElementById(`basescan-${index}`).value = '';
+          submitBtn.textContent = 'Submitted';
+          setTimeout(() => {
+            submitBtn.textContent = 'Submit';
+            submitBtn.disabled = false;
+            statusDiv.innerHTML = '';
+          }, 3000);
+        } else {
+          throw new Error(data.message || 'Failed to save');
+        }
+      } catch (error) {
+        console.error('Submit error:', error);
+        statusDiv.innerHTML = '<span style="color: #fca5a5;">❌ Failed to save</span>';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit';
+      }
     }
 
     async function testDraw() {

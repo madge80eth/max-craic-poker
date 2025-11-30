@@ -57,17 +57,26 @@ export default function HomePage() {
       try {
         const tournamentRes = await fetch('/api/tournaments');
         const tournamentData = await tournamentRes.json();
+
+        let shouldShowWinnersOnHome = false;
+
         if (tournamentData.streamStartTime) {
           const streamStart = new Date(tournamentData.streamStartTime).getTime();
           const now = Date.now();
           const twelveHoursAfter = streamStart + (12 * 60 * 60 * 1000);
           const twentyFourHoursAfter = streamStart + (24 * 60 * 60 * 1000);
 
-          // Within 12h stream window
-          setIsWithinStreamWindow(now >= streamStart && now <= twelveHoursAfter);
+          // Within 12h stream window - show stream + winners on home
+          const withinStreamWindow = now >= streamStart && now <= twelveHoursAfter;
+          setIsWithinStreamWindow(withinStreamWindow);
 
-          // Post-stream window: 12h-24h after stream (stream ended but before draw)
-          setIsPostStreamWindow(now > twelveHoursAfter && now <= twentyFourHoursAfter);
+          // Post-stream window: 12h-24h after stream - show winners only (no stream) on home
+          const postStreamWindow = now > twelveHoursAfter && now <= twentyFourHoursAfter;
+          setIsPostStreamWindow(postStreamWindow);
+
+          // Show winners on HOME only during the 24-hour window
+          // After 24h, HOME reverts to Madge game, DRAW page keeps showing winners
+          shouldShowWinnersOnHome = withinStreamWindow || postStreamWindow;
 
           // Auto-set Retake embed URL if streamUrl is provided, otherwise use hardcoded one
           const retakeUrl = tournamentData.streamUrl || 'https://retake.tv/live/68b58fa755320f51930c9081';
@@ -78,9 +87,15 @@ export default function HomePage() {
           // Store sessionId for tipping
           setSessionId(tournamentData.sessionId || '');
         }
+
+        // Fetch winners and set based on whether we should show them on HOME
         const statusRes = await fetch('/api/status');
         const statusData = await statusRes.json();
-        if (statusData.success && statusData.winners?.length > 0) setWinners(statusData.winners);
+        if (statusData.success && statusData.winners?.length > 0 && shouldShowWinnersOnHome) {
+          setWinners(statusData.winners);
+        } else {
+          setWinners(null);
+        }
       } catch (err) { console.error('Stream check error:', err); }
     }
     checkStreamAndWinners();
