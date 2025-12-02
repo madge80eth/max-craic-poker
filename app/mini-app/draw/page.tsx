@@ -125,7 +125,11 @@ export default function DrawPage() {
     return () => clearInterval(interval);
   }, [streamStartTime]);
 
-  async function handleEnterDraw() {
+  async function handleEnterDraw(e?: React.MouseEvent) {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
     if (!address || isEntering) return;
 
     setIsEntering(true);
@@ -326,7 +330,7 @@ export default function DrawPage() {
                   Connect Wallet First
                 </button>
                 <p className="text-blue-200 text-xs text-center">
-                  Go to the <Link href="/mini-app/stats" className="underline font-semibold">Home</Link> tab to connect your wallet
+                  Go to the <Link href="/mini-app/home" className="underline font-semibold">Home</Link> tab to connect your wallet
                 </p>
               </div>
             ) : (
@@ -382,7 +386,7 @@ export default function DrawPage() {
 
             {/* User Winner Notification */}
             {isUserWinner && (
-              <div className="bg-green-500/20 backdrop-blur-lg rounded-xl p-4 border border-green-400/40">
+              <div className="bg-green-500/20 rounded-xl p-4 border border-green-400/40">
                 <p className="text-green-200 text-sm font-semibold text-center">
                   ✓ You won! Check your assignment below
                 </p>

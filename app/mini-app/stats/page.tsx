@@ -29,10 +29,14 @@ export default function StatsPage() {
     async function fetchStats() {
       try {
         const res = await fetch(`/api/user-stats?address=${address}`);
+        if (!res.ok) {
+          throw new Error('Failed to fetch stats');
+        }
         const data = await res.json();
-        setStats(data);
+        setStats(data || { totalEntries: 0, tournamentsAssigned: 0, currentStreak: 0 });
       } catch (error) {
         console.error('Stats fetch error:', error);
+        setStats({ totalEntries: 0, tournamentsAssigned: 0, currentStreak: 0 });
       } finally {
         setIsLoading(false);
       }
@@ -41,8 +45,11 @@ export default function StatsPage() {
     async function fetchNextStream() {
       try {
         const res = await fetch('/api/tournaments');
+        if (!res.ok) {
+          throw new Error('Failed to fetch tournaments');
+        }
         const data = await res.json();
-        if (data.streamStartTime) {
+        if (data && data.streamStartTime) {
           const streamDate = new Date(data.streamStartTime);
           setStreamStartTime(streamDate);
           setNextStreamTime(streamDate.toLocaleString('en-GB', {
@@ -61,8 +68,11 @@ export default function StatsPage() {
     async function checkWinners() {
       try {
         const res = await fetch('/api/status');
+        if (!res.ok) {
+          throw new Error('Failed to fetch status');
+        }
         const data = await res.json();
-        if (data.winners && Array.isArray(data.winners) && data.winners.length > 0) {
+        if (data && data.winners && Array.isArray(data.winners) && data.winners.length > 0) {
           setHasWinners(true);
         }
       } catch (error) {
