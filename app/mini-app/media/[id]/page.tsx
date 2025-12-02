@@ -4,17 +4,22 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Video } from '@/types';
-import { ArrowLeft, Play, Eye, DollarSign } from 'lucide-react';
+import { ArrowLeft, Play, Eye, DollarSign, Lock } from 'lucide-react';
+import { useAccount } from 'wagmi';
 
 export default function VideoPlayerPage() {
   const params = useParams();
   const router = useRouter();
   const videoId = params.id as string;
+  const { address } = useAccount();
 
   const [video, setVideo] = useState<Video | null>(null);
   const [loading, setLoading] = useState(true);
   const [tipping, setTipping] = useState(false);
   const [tipAmount, setTipAmount] = useState('');
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [urlLoading, setUrlLoading] = useState(false);
+  const [accessDenied, setAccessDenied] = useState(false);
 
   useEffect(() => {
     if (videoId) {
@@ -22,6 +27,12 @@ export default function VideoPlayerPage() {
       incrementView();
     }
   }, [videoId]);
+
+  useEffect(() => {
+    if (video && address) {
+      fetchSignedUrl();
+    }
+  }, [video, address]);
 
   const fetchVideo = async () => {
     setLoading(true);
@@ -38,6 +49,42 @@ export default function VideoPlayerPage() {
       console.error('Error fetching video:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchSignedUrl = async () => {
+    if (!video || !address) return;
+
+    setUrlLoading(true);
+    setAccessDenied(false);
+
+    try {
+      const res = await fetch('/api/videos/signed-url', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          videoId: video.id,
+          walletAddress: address
+        })
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        setSignedUrl(data.url);
+      } else if (res.status === 403) {
+        setAccessDenied(true);
+      } else {
+        console.error('Failed to get signed URL:', data.error);
+        // Fallback to public URL
+        setSignedUrl(`https://customer-{code}.cloudflarestream.com/${video.cloudflareVideoId}/iframe`);
+      }
+    } catch (error) {
+      console.error('Error fetching signed URL:', error);
+      // Fallback to public URL
+      setSignedUrl(`https://customer-{code}.cloudflarestream.com/${video.cloudflareVideoId}/iframe`);
+    } finally {
+      setUrlLoading(false);
     }
   };
 
@@ -135,13 +182,38 @@ export default function VideoPlayerPage() {
 
         {/* Video Player */}
         <div className="bg-black rounded-xl overflow-hidden mb-6">
-          <div className="aspect-video">
-            <iframe
-              src={`https://customer-{code}.cloudflarestream.com/${video.cloudflareVideoId}/iframe`}
-              style={{ border: 'none', width: '100%', height: '100%' }}
-              allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-              allowFullScreen
-            />
+          <div className="aspect-video relative">
+            {accessDenied ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-900 to-blue-900">
+                <div className="text-center p-8">
+                  <Lock className="w-16 h-16 text-purple-400 mx-auto mb-4" />
+                  <h3 className="text-2xl font-bold text-white mb-2">Members Only</h3>
+                  <p className="text-blue-200 mb-4">
+                    This video requires an active membership to watch.
+                  </p>
+                  <button
+                    onClick={() => router.push('/mini-app/media')}
+                    className="bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold py-3 px-6 rounded-lg hover:opacity-90 transition"
+                  >
+                    Subscribe to Watch
+                  </button>
+                </div>
+              </div>
+            ) : urlLoading || !signedUrl ? (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-900">
+                <div className="text-center">
+                  <div className="inline-block w-8 h-8 border-4 border-purple-400 border-t-transparent rounded-full animate-spin mb-3"></div>
+                  <p className="text-blue-200">Loading video...</p>
+                </div>
+              </div>
+            ) : (
+              <iframe
+                src={signedUrl}
+                style={{ border: 'none', width: '100%', height: '100%' }}
+                allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                allowFullScreen
+              />
+            )}
           </div>
         </div>
 
