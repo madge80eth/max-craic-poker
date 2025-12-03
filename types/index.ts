@@ -100,6 +100,7 @@ export interface Transaction {
     raffleId?: string; // For distributions
     position?: number; // For raffle winners
     monthlyFee?: number; // For memberships
+    sessionId?: string; // For tips (track which session the tip was sent during)
   };
 }
 
