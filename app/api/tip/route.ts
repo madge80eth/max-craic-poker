@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
+import { recordTransaction } from '@/lib/revenue-redis';
 
 const redis = new Redis({
   url: process.env.UPSTASH_REDIS_REST_URL!,
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
       txHash
     };
 
-    // Store tip in Redis
+    // Store tip in Redis (session-scoped for backward compatibility)
     const tipKey = `session:${sessionId}:tips`;
     const totalKey = `session:${sessionId}:tips_total`;
 
@@ -46,6 +47,17 @@ export async function POST(request: NextRequest) {
     const currentTotal = await redis.get(totalKey);
     const newTotal = (parseInt(currentTotal as string || '0')) + amount;
     await redis.set(totalKey, newTotal);
+
+    // ALSO record in revenue tracking system (for Revenue tab)
+    await recordTransaction({
+      type: 'tip',
+      amount, // in cents
+      walletAddress,
+      timestamp: Date.now(),
+      txHash,
+      tokenSymbol: 'USDC',
+      metadata: { sessionId }
+    });
 
     console.log(`💰 Tip recorded: ${walletAddress} tipped $${(amount / 100).toFixed(2)} (session: ${sessionId})`);
 
