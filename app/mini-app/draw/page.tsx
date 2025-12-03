@@ -358,6 +358,13 @@ export default function DrawPage() {
                   {isEntering ? 'Entering...' : 'Enter Draw (Free)'}
                 </button>
 
+                {/* Free Entry Disclaimer */}
+                <div className="bg-blue-900/30 border border-blue-400/20 rounded-lg p-3 mt-3">
+                  <p className="text-blue-200/80 text-xs leading-relaxed text-center">
+                    <strong>FREE Entry:</strong> No purchase necessary. All community members can enter. Members receive bonus tickets.
+                  </p>
+                </div>
+
                 {/* Streak Progress */}
                 {userStats && (
                   <div className="mt-4 text-center">

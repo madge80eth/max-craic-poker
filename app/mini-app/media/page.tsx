@@ -375,9 +375,16 @@ export default function MediaPage() {
                     </div>
                     <div className="flex items-start gap-3">
                       <CheckCircle className="w-5 h-5 text-green-300 mt-0.5 flex-shrink-0" />
-                      <p className="text-white">Priority access to community features</p>
+                      <p className="text-white">Bonus raffle tickets (entry always free)</p>
                     </div>
                   </div>
+                </div>
+
+                {/* Regulatory Disclaimer */}
+                <div className="bg-blue-900/40 border border-blue-400/30 rounded-lg p-4">
+                  <p className="text-blue-100 text-xs leading-relaxed">
+                    <strong>Disclaimer:</strong> Max Craic Poker membership provides access to exclusive strategy content, community features, and bonus raffle entries. Membership is sold based on content value and is not an investment product. Members have no contractual claim to prize distributions or revenue sharing. All community rewards are discretionary and not guaranteed.
+                  </p>
                 </div>
 
                 {address ? (

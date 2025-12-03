@@ -454,15 +454,13 @@
 
         <div style="margin-bottom: 20px;">
           <label style="color: #a5b4fc; font-size: 14px; margin-bottom: 8px; display: block;">Benefits (one per line)</label>
-          <textarea id="membershipBenefits" rows="4" placeholder="In-depth tournament hand history reviews&#10;Exclusive strategy content&#10;Early access to videos" style="width: 100%; padding: 12px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(255,255,255,0.05); color: white; box-sizing: border-box; font-family: system-ui, sans-serif;"></textarea>
+          <textarea id="membershipBenefits" rows="4" placeholder="In-depth tournament hand history reviews&#10;Exclusive strategy content&#10;Early access to videos&#10;Bonus raffle tickets" style="width: 100%; padding: 12px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(255,255,255,0.05); color: white; box-sizing: border-box; font-family: system-ui, sans-serif;"></textarea>
         </div>
 
-        <div style="margin-bottom: 20px;">
-          <label style="color: #a5b4fc; font-size: 14px; display: flex; align-items: center; gap: 10px; cursor: pointer;">
-            <input type="checkbox" id="requireMembershipForRaffle" style="width: auto; cursor: pointer;" />
-            <span>Require Membership for Raffle Entry</span>
-          </label>
-          <p style="color: #6b7280; font-size: 12px; margin-top: 5px; margin-left: 30px;">Only members can enter raffle draws</p>
+        <div style="background: rgba(59, 130, 246, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid rgba(59, 130, 246, 0.3);">
+          <p style="color: #93c5fd; font-size: 0.85rem; margin: 0;">
+            ⚠️ <strong>Regulatory Note:</strong> Raffle entry must remain FREE for all users. Members can receive bonus tickets as a benefit, but cannot be required to pay for raffle access.
+          </p>
         </div>
 
         <button class="draw" onclick="saveMembershipSettings()">💾 Save Settings</button>
@@ -1107,7 +1105,7 @@
           document.getElementById('membershipEnabled').checked = settings.enabled;
           document.getElementById('monthlyFee').value = (settings.monthlyFeeUSDC / 100).toFixed(2);
           document.getElementById('membershipBenefits').value = settings.benefits.join('\n');
-          document.getElementById('requireMembershipForRaffle').checked = settings.requireMembershipForRaffle;
+          // Removed: requireMembershipForRaffle (regulatory compliance)
         }
       } catch (error) {
         console.error('Failed to load membership settings:', error);
@@ -1118,7 +1116,7 @@
       const enabled = document.getElementById('membershipEnabled').checked;
       const monthlyFee = parseFloat(document.getElementById('monthlyFee').value);
       const benefitsText = document.getElementById('membershipBenefits').value;
-      const requireMembershipForRaffle = document.getElementById('requireMembershipForRaffle').checked;
+      // Removed: requireMembershipForRaffle (regulatory compliance - raffle must be free)
 
       const benefits = benefitsText.split('\n').filter(b => b.trim() !== '');
       const monthlyFeeUSDC = Math.round(monthlyFee * 100);
@@ -1131,7 +1129,7 @@
             enabled,
             monthlyFeeUSDC,
             benefits,
-            requireMembershipForRaffle
+            requireMembershipForRaffle: false // Always false for regulatory compliance
           })
         });
 

@@ -697,6 +697,13 @@ export default function HomePage() {
             <p className="text-center text-blue-200/60 text-xs">
               Resets daily at midnight UTC
             </p>
+
+            {/* Raffle Entry Disclaimer */}
+            <div className="bg-blue-900/30 border border-blue-400/20 rounded-lg p-3">
+              <p className="text-blue-200/80 text-xs leading-relaxed text-center">
+                <strong>FREE Raffle Entry:</strong> No purchase necessary. Play the daily poker game to earn entry tickets. Members receive bonus tickets as a membership benefit, but all community members can participate without payment.
+              </p>
+            </div>
           </div>
         )}
 
