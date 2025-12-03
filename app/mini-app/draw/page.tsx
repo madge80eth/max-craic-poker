@@ -138,15 +138,21 @@ export default function DrawPage() {
     const willActivateStreak = userStats?.currentStreak === 2;
 
     try {
-      // Submit entry
+      // Submit entry with 10 second timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
       const res = await fetch('/api/enter', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           walletAddress: address,
           platform: 'farcaster'
-        })
+        }),
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
 
       const data = await res.json();
 
@@ -171,9 +177,18 @@ export default function DrawPage() {
         const statsRes = await fetch(`/api/user-stats?address=${address}`);
         const newStats = await statsRes.json();
         setUserStats(newStats);
+      } else {
+        // Handle error response
+        console.error('Entry failed:', data);
+        alert(data.error || 'Failed to enter draw. Please try again.');
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Entry error:', error);
+      if (error.name === 'AbortError') {
+        alert('Request timed out. Please check your connection and try again.');
+      } else {
+        alert('Failed to enter draw. Please try again.');
+      }
     } finally {
       setIsEntering(false);
     }
