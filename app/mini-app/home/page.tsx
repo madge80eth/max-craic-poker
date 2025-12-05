@@ -59,25 +59,29 @@ export default function HomePage() {
         const tournamentRes = await fetch('/api/tournaments');
         const tournamentData = await tournamentRes.json();
 
+        // Fetch winners data first to check if draw has happened
+        const statusRes = await fetch('/api/status');
+        const statusData = await statusRes.json();
+        const hasWinners = statusData.success && statusData.winners?.length > 0;
+
         let shouldShowWinnersOnHome = false;
 
-        if (tournamentData.streamStartTime) {
+        if (tournamentData.streamStartTime && hasWinners) {
           const streamStart = new Date(tournamentData.streamStartTime).getTime();
           const now = Date.now();
           const twelveHoursAfter = streamStart + (12 * 60 * 60 * 1000);
-          const twentyFourHoursAfter = streamStart + (24 * 60 * 60 * 1000);
 
-          // Within 12h stream window - show stream + winners on home
+          // CRITICAL: Only show winners for 12 hours after draw
+          // After 12h, home page goes back to Madge game
           const withinStreamWindow = now >= streamStart && now <= twelveHoursAfter;
           setIsWithinStreamWindow(withinStreamWindow);
 
-          // Post-stream window: 12h-24h after stream - show winners only (no stream) on home
-          const postStreamWindow = now > twelveHoursAfter && now <= twentyFourHoursAfter;
-          setIsPostStreamWindow(postStreamWindow);
+          // REMOVED: Post-stream window (12-24h) - this was causing winners + Madge to show together
+          // After 12h, we revert to Madge game immediately
+          setIsPostStreamWindow(false);
 
-          // Show winners on HOME only during the 24-hour window
-          // After 24h, HOME reverts to Madge game, DRAW page keeps showing winners
-          shouldShowWinnersOnHome = withinStreamWindow || postStreamWindow;
+          // Show winners on HOME only during the 12-hour window after draw
+          shouldShowWinnersOnHome = withinStreamWindow;
 
           // Auto-set Retake embed URL if streamUrl is provided, otherwise use hardcoded one
           const retakeUrl = tournamentData.streamUrl || 'https://retake.tv/live/68b58fa755320f51930c9081';
@@ -87,15 +91,17 @@ export default function HomePage() {
 
           // Store sessionId for tipping
           setSessionId(tournamentData.sessionId || '');
+        } else {
+          // No winners drawn yet, or no stream time set
+          setIsWithinStreamWindow(false);
+          setIsPostStreamWindow(false);
         }
 
-        // Fetch winners and set based on whether we should show them on HOME
-        const statusRes = await fetch('/api/status');
-        const statusData = await statusRes.json();
-        if (statusData.success && statusData.winners?.length > 0 && shouldShowWinnersOnHome) {
+        // Set winners state based on whether we should show them on HOME
+        if (hasWinners && shouldShowWinnersOnHome) {
           setWinners(statusData.winners);
         } else {
-          setWinners(null);
+          setWinners(null); // Clear winners to show Madge game
         }
       } catch (err) { console.error('Stream check error:', err); }
     }
@@ -344,7 +350,8 @@ export default function HomePage() {
     }
   };
 
-  // STATE 1: WITHIN 12-HOUR STREAM WINDOW - Show Winners + Stream
+  // STATE 1: WITHIN 12-HOUR WINDOW AFTER DRAW - Show Winners + Stream
+  // After 12 hours, home page reverts to Madge game (winners still visible on /draw page)
   if (isWithinStreamWindow && winners && winners.length > 0) {
     const isUserWinner = address && winners.some((w: any) => w.walletAddress.toLowerCase() === address.toLowerCase());
     return (
@@ -508,99 +515,9 @@ export default function HomePage() {
     );
   }
 
-  // STATE 2: POST-STREAM WINDOW (12h-24h after stream) - Show recap + encourage ticket stacking
-  if (isPostStreamWindow && winners && winners.length > 0) {
-    const isUserWinner = address && winners.some((w: any) => w.walletAddress.toLowerCase() === address.toLowerCase());
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-800 p-4 pb-24">
-        <div className="max-w-md mx-auto pt-4 space-y-4">
-          <div className="text-center">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <Trophy className="w-6 h-6 text-yellow-400" />
-              <h1 className="text-2xl font-bold text-white">Stream Complete!</h1>
-            </div>
-            <p className="text-blue-200 text-sm">{streamDate} winners announced</p>
-          </div>
-
-          {/* Post-Stream Message */}
-          <div className="bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-xl p-5 border border-blue-400/30">
-            <h2 className="text-white font-bold text-lg mb-3 text-center">Stream has ended! 🎉</h2>
-            <div className="space-y-3 text-blue-100 text-sm">
-              <div className="flex items-start gap-3">
-                <span className="text-xl">📺</span>
-                <div>
-                  <p className="font-semibold">Catch the highlights</p>
-                  <p className="text-blue-200/70 text-xs">Check out the best moments in the Media tab</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="text-xl">🎴</span>
-                <div>
-                  <p className="font-semibold">Stack tickets for next draw</p>
-                  <p className="text-blue-200/70 text-xs">Play Madge daily to accumulate more entries</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <span className="text-xl">🔔</span>
-                <div>
-                  <p className="font-semibold">Turn on notifications</p>
-                  <p className="text-blue-200/70 text-xs">Don't miss the next stream announcement</p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {isUserWinner && (
-            <div className="bg-green-500/20 rounded-xl p-4 border border-green-400/40">
-              <p className="text-green-200 text-sm font-semibold text-center">You won! Check your assignment below</p>
-            </div>
-          )}
-
-          {/* Winners List */}
-          <div className="bg-white/10 rounded-xl p-4 border border-white/20">
-            <h2 className="text-lg font-bold text-white mb-3 text-center">Winners</h2>
-            <div className="space-y-2">
-              {winners.map((w: any, i: number) => {
-                const isCurrent = address && w.walletAddress.toLowerCase() === address.toLowerCase();
-                return (
-                  <div key={i} className={`p-3 rounded-lg ${isCurrent ? 'bg-green-500/20 border border-green-400/40' : 'bg-white/5'}`}>
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">{w.position === 1 ? '🥇' : w.position === 2 ? '🥈' : w.position === 3 ? '🥉' : '🏅'}</span>
-                        <p className="text-white/60 text-xs font-mono">
-                          {w.walletAddress.slice(0, 6)}...{w.walletAddress.slice(-4)}
-                          {isCurrent && <span className="ml-1 text-green-300">(You)</span>}
-                        </p>
-                      </div>
-                      <p className="text-white font-bold text-sm">{w.finalPercentage.toFixed(1)}%</p>
-                    </div>
-                    <p className="text-white/80 text-xs pl-8">{w.assignedTournament}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Action Buttons */}
-          <div className="space-y-2">
-            <Link href="/mini-app/more" className="block w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-lg text-center">
-              📺 View Highlights in Media
-            </Link>
-            <Link href="/mini-app/draw" className="block w-full bg-white/10 hover:bg-white/15 text-white font-semibold py-3 px-6 rounded-lg text-center text-sm">
-              View Full Draw Details
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // STATE 3: OUTSIDE STREAM WINDOWS - Show Madge Game
-
-  // If winners have been drawn, don't show Madge game section (should be caught by STATE 1/2, but safety check)
-  if (winners && winners.length > 0 && (isWithinStreamWindow || isPostStreamWindow)) {
-    return null; // This shouldn't happen, but prevents Madge from showing if STATE 1/2 failed
-  }
+  // REMOVED: STATE 2 (Post-stream window 12-24h)
+  // Winners now only show for 12 hours, then home reverts to Madge game
+  // This prevents winners + Madge showing simultaneously
 
   // Not connected state
   if (!address) {
