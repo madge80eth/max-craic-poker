@@ -1,3 +1,8 @@
+// DEPRECATED: Share bonus feature has been removed
+// This endpoint is no longer used - share bonus is not offered
+// Entry equity calculations now based only on: base entry + streak bonus + membership bonus
+// Keeping file for reference, but can be deleted in future cleanup
+
 import { NextRequest, NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 

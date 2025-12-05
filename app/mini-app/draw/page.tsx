@@ -3,7 +3,7 @@
 import { useAccount, useConnect } from 'wagmi';
 import { useState, useEffect } from 'react';
 import confetti from 'canvas-confetti';
-import { Clock, Trophy, Wallet, Share2, Flame } from 'lucide-react';
+import { Clock, Trophy, Wallet, Flame } from 'lucide-react';
 import Link from 'next/link';
 import { useComposeCast } from '@coinbase/onchainkit/minikit';
 import NotificationPrompt from '@/components/NotificationPrompt';
@@ -194,32 +194,9 @@ export default function DrawPage() {
     }
   }
 
-  const handleShare = async () => {
-    if (!address) return;
-
-    try {
-      // Open the compose cast
-      composeCast({
-        text: "I just entered the Max Craic Poker community draw! 🎰\n\nWin poker tournament profit shares - paid in USDC onchain 💰",
-        embeds: ['https://maxcraicpoker.com/share']
-      });
-
-      // Record the share in backend (apply +2% bonus)
-      const shareRes = await fetch('/api/share', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ walletAddress: address })
-      });
-
-      const shareData = await shareRes.json();
-
-      if (shareData.success) {
-        alert('✅ Share recorded! +2% bonus applied to your entry');
-      }
-    } catch (error) {
-      console.error('Share error:', error);
-    }
-  };
+  // REMOVED: Share bonus feature (no longer offering +2% bonus for sharing)
+  // Previous implementation tracked shares via /api/share endpoint
+  // Equity calculations now based only on: base entry + streak bonus + membership bonus
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-purple-800 p-4 pb-24">
@@ -387,7 +364,7 @@ export default function DrawPage() {
                 )}
 
                 <p className="text-white/60 text-xs text-center mt-4">
-                  Winners earn 3-6% base profit share + bonuses
+                  Winners earn 3-6% base profit share
                 </p>
               </>
             )}
@@ -502,25 +479,7 @@ export default function DrawPage() {
               )}
             </div>
 
-            {/* Share CTA */}
-            <div className="bg-gradient-to-r from-yellow-600 to-orange-600 rounded-xl p-6 border border-yellow-400/30">
-              <div className="flex items-start gap-3">
-                <Share2 className="w-6 h-6 text-white flex-shrink-0 mt-1" />
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold text-white mb-2">Share for +2% Bonus!</h3>
-                  <p className="text-white/90 text-sm mb-3">
-                    Share this post and if you win, get an extra +2% on your profit share
-                  </p>
-                  <button
-                    onClick={handleShare}
-                    className="w-full bg-white/20 hover:bg-white/30 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
-                  >
-                    <Share2 className="w-5 h-5" />
-                    Share Now
-                  </button>
-                </div>
-              </div>
-            </div>
+            {/* REMOVED: Share bonus CTA - no longer offering +2% bonus for sharing */}
 
             {/* View Stats Link */}
             <Link

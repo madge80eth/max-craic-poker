@@ -307,6 +307,12 @@
 
   <!-- DRAW & PRIZES TAB -->
   <div id="draw-tab" class="tab-content">
+    <div class="section" id="payoutCalculator" style="display: none;">
+      <h2>💰 Winner Payout Calculator</h2>
+      <p class="description">Enter tournament results to calculate USDC payouts</p>
+      <div id="payoutCards"></div>
+    </div>
+
     <div class="section">
       <h2>🎲 Draw Management</h2>
       <p class="description">Trigger the draw to select winners or reset to start fresh</p>
@@ -330,12 +336,6 @@
       <p class="description">Add test wallets to quickly test the draw functionality without manual entries</p>
       <button class="test" onclick="testDraw()">Add Test Entries</button>
       <p style="color: #a5b4fc; font-size: 14px; margin-top: 10px;">Adds 10 test wallets to the current draw</p>
-    </div>
-
-    <div class="section" id="payoutCalculator" style="display: none;">
-      <h2>💰 Winner Payout Calculator</h2>
-      <p class="description">Enter tournament results to calculate USDC payouts</p>
-      <div id="payoutCards"></div>
     </div>
   </div>
 
@@ -489,12 +489,12 @@
       <div style="max-width: 600px; margin: 20px 0;">
         <div style="margin-bottom: 20px;">
           <label style="color: #a5b4fc; font-size: 14px; margin-bottom: 8px; display: block;">Streaming Platform</label>
-          <select id="streamingPlatform" style="width: 100%; padding: 12px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(255,255,255,0.05); color: white; box-sizing: border-box;">
-            <option value="retake">Retake</option>
-            <option value="twitch">Twitch</option>
-            <option value="youtube">YouTube Live</option>
-            <option value="kick">Kick</option>
-            <option value="custom">Custom Embed URL</option>
+          <select id="streamingPlatform" style="width: 100%; padding: 12px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: #1a1a2e; color: white; box-sizing: border-box;">
+            <option value="retake" style="background: #1a1a2e; color: white;">Retake</option>
+            <option value="twitch" style="background: #1a1a2e; color: white;">Twitch</option>
+            <option value="youtube" style="background: #1a1a2e; color: white;">YouTube Live</option>
+            <option value="kick" style="background: #1a1a2e; color: white;">Kick</option>
+            <option value="custom" style="background: #1a1a2e; color: white;">Custom Embed URL</option>
           </select>
         </div>
 

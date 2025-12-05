@@ -68,11 +68,11 @@ export async function POST(request: NextRequest) {
     const entryCount = Math.max(ticketsToUse, 1);
 
     // Create new entry with ticket count
+    // REMOVED: hasShared field (share bonus feature no longer offered)
     const entry = {
       walletAddress,
       platform,
       timestamp: Date.now(),
-      hasShared: false,  // Track if user shared for bonus calculation
       ticketCount: entryCount  // Number of raffle entries this user has
     };
 
