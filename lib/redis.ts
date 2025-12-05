@@ -122,7 +122,8 @@ export async function useAllTickets(walletAddress: string): Promise<number> {
 }
 
 // Store user's daily hand and add tickets to accumulation
-export async function storeDailyHand(walletAddress: string): Promise<{ handResult: HandResult; totalTickets: number }> {
+// ticketMultiplier: 2 for Base app users, 1 for others
+export async function storeDailyHand(walletAddress: string, ticketMultiplier: number = 1): Promise<{ handResult: HandResult; totalTickets: number }> {
   const dateKey = getTodayKey();
 
   // Generate hand
@@ -149,7 +150,10 @@ export async function storeDailyHand(walletAddress: string): Promise<{ handResul
   const placement = (rank ?? totalUsers - 1) + 1;
 
   // Calculate tickets based on hand strength (not placement)
-  const ticketsEarned = calculateTickets(rankValue);
+  const baseTickets = calculateTickets(rankValue);
+
+  // Apply multiplier (2x for Base app users)
+  const ticketsEarned = Math.floor(baseTickets * ticketMultiplier);
 
   // Create full result
   const handResult: HandResult = {
@@ -170,7 +174,8 @@ export async function storeDailyHand(walletAddress: string): Promise<{ handResul
   // Add tickets to user's accumulated total
   const totalTickets = await addUserTickets(walletAddress, ticketsEarned);
 
-  console.log(`🎴 Daily hand for ${walletAddress}: ${rankName} - Earned ${ticketsEarned} tickets - Total: ${totalTickets}`);
+  const multiplierText = ticketMultiplier > 1 ? ` (${ticketMultiplier}x multiplier)` : '';
+  console.log(`🎴 Daily hand for ${walletAddress}: ${rankName} - Earned ${ticketsEarned} tickets${multiplierText} - Total: ${totalTickets}`);
 
   return { handResult, totalTickets };
 }

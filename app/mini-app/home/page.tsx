@@ -7,8 +7,11 @@ import Link from 'next/link';
 import Madge from '../components/Madge';
 import CardHand from '../components/CardHand';
 import TipLeaderboard from '../components/TipLeaderboard';
+import TierBadge from '../components/TierBadge';
+import BaseAppCTA from '../components/BaseAppCTA';
 import { parseUnits, formatUnits } from 'viem';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useAppContext } from '@/hooks/useAppContext';
 
 type GameState = 'welcome' | 'dealing' | 'result' | 'already_played_today';
 
@@ -25,6 +28,7 @@ interface HandResult {
 export default function HomePage() {
   const { address, isConnected } = useAccount();
   const { connect, connectors } = useConnect();
+  const { context: appContext, ticketMultiplier, isBaseApp } = useAppContext();
 
   const [gameState, setGameState] = useState<GameState>('welcome');
   const [handResult, setHandResult] = useState<HandResult | null>(null);
@@ -296,7 +300,7 @@ export default function HomePage() {
       const res = await fetch('/api/home/deal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ walletAddress: address })
+        body: JSON.stringify({ walletAddress: address, appContext })
       });
 
       const data = await res.json();
@@ -652,17 +656,21 @@ export default function HomePage() {
 
               {/* Tickets Earned Today */}
               <div className="bg-yellow-500/20 rounded-lg p-4 border border-yellow-400/30">
-                <div className="flex items-center justify-center gap-2">
+                <div className="flex items-center justify-center gap-2 flex-wrap">
                   <Ticket className="w-6 h-6 text-yellow-400" />
                   <span className="text-yellow-200 text-lg font-bold">
                     +{handResult.ticketsEarned} ticket{handResult.ticketsEarned !== 1 ? 's' : ''} added!
                   </span>
+                  <TierBadge size="sm" />
                 </div>
                 <p className="text-yellow-200/70 text-xs text-center mt-2">
                   Total: {totalTickets} tickets for the next draw
                 </p>
               </div>
             </div>
+
+            {/* Base App CTA */}
+            <BaseAppCTA />
 
             {/* Stack Tip */}
             <div className="bg-blue-500/20 rounded-lg p-3 border border-blue-400/30 text-center">

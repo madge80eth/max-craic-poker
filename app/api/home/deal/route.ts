@@ -3,12 +3,13 @@ import { hasUserPlayedToday, storeDailyHand, getTodayHandResult, getUserTickets 
 
 interface DealRequest {
   walletAddress: string;
+  appContext?: 'base-app' | 'farcaster' | 'website'; // For 2x ticket multiplier
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body: DealRequest = await request.json();
-    const { walletAddress } = body;
+    const { walletAddress, appContext = 'website' } = body;
 
     if (!walletAddress) {
       return NextResponse.json({
@@ -16,6 +17,9 @@ export async function POST(request: NextRequest) {
         error: 'Wallet address required'
       }, { status: 400 });
     }
+
+    // Base app users get 2x ticket multiplier
+    const ticketMultiplier = appContext === 'base-app' ? 2 : 1;
 
     // Check if user already played today
     const alreadyPlayed = await hasUserPlayedToday(walletAddress);
@@ -30,18 +34,22 @@ export async function POST(request: NextRequest) {
         alreadyPlayed: true,
         result: existingResult,
         totalTickets,
+        ticketMultiplier,
+        appContext,
         message: "You've already played today! Come back tomorrow."
       });
     }
 
-    // Generate and store new daily hand
-    const { handResult, totalTickets } = await storeDailyHand(walletAddress);
+    // Generate and store new daily hand with multiplier
+    const { handResult, totalTickets } = await storeDailyHand(walletAddress, ticketMultiplier);
 
     return NextResponse.json({
       success: true,
       alreadyPlayed: false,
       result: handResult,
       totalTickets,
+      ticketMultiplier,
+      appContext,
       message: 'Hand dealt successfully!'
     });
 
