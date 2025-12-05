@@ -427,15 +427,7 @@ export default function DrawPage() {
               </div>
             </div>
 
-            {/* Stream CTA - Live Red */}
-            <a
-              href="https://retake.tv/live/68b58fa755320f51930c9081"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors text-center text-sm shadow-lg"
-            >
-              Watch Stream →
-            </a>
+            {/* REMOVED: "Watch Stream" button - stream is embedded on home page when active */}
 
             <Link
               href="/mini-app/stats"
