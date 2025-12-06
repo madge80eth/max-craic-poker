@@ -9,6 +9,8 @@ import CardHand from '../components/CardHand';
 import TipLeaderboard from '../components/TipLeaderboard';
 import TierBadge from '../components/TierBadge';
 import BaseAppCTA from '../components/BaseAppCTA';
+import HandOfTheHour from '../components/HandOfTheHour';
+import HothLeaderboard from '../components/HothLeaderboard';
 import { parseUnits, formatUnits } from 'viem';
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { useAppContext } from '@/hooks/useAppContext';
@@ -413,6 +415,9 @@ export default function HomePage() {
             />
           </div>
 
+          {/* Hand of the Hour */}
+          <HandOfTheHour isLiveStreamActive={isWithinStreamWindow} />
+
           {/* Tipping Section */}
           <div className="bg-gradient-to-br from-pink-500/20 to-purple-500/20 rounded-xl p-5 border border-pink-400/30">
             <div className="flex items-center justify-between mb-4">
@@ -514,6 +519,9 @@ export default function HomePage() {
           </div>
 
           <Link href="/mini-app/draw" className="block w-full bg-white/10 hover:bg-white/15 text-white font-semibold py-3 px-6 rounded-lg text-center text-sm">View Full Draw Details</Link>
+
+          {/* Hand of the Hour Leaderboard */}
+          <HothLeaderboard />
         </div>
       </div>
     );

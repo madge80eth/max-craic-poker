@@ -210,6 +210,7 @@
       <button class="tab" onclick="switchTab('revenue')">💰 Revenue & Stats</button>
       <button class="tab" onclick="switchTab('membership')">👑 Members</button>
       <button class="tab" onclick="switchTab('settings')">⚙️ Settings</button>
+      <button class="tab" onclick="switchTab('engagement')">🎴 Engagement</button>
     </div>
   </div>
 
@@ -524,6 +525,83 @@
           <p><strong>Custom:</strong> Provide the full embed iframe URL from your streaming service</p>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- ENGAGEMENT TAB -->
+  <div id="engagement-tab" class="tab-content">
+    <div class="section">
+      <h2>🎴 Hand of the Hour</h2>
+      <p class="description">Pre-load historical poker hands and release them during stream for viewer voting</p>
+
+      <!-- Enable/Disable Toggle -->
+      <div style="background: rgba(59, 130, 246, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid rgba(59, 130, 246, 0.3);">
+        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #dbeafe;">
+          <input type="checkbox" id="hothEnabled" style="width: 18px; height: 18px; cursor: pointer;">
+          <span style="font-weight: 600;">Enable Hand of the Hour Feature</span>
+        </label>
+        <p style="color: #93c5fd; font-size: 0.85rem; margin: 8px 0 0 28px;">
+          When enabled, viewers can vote on historical poker hands during your stream
+        </p>
+      </div>
+
+      <!-- Current Status -->
+      <div id="hothStatusCard" style="background: rgba(139, 92, 246, 0.1); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(139, 92, 246, 0.3);">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <div>
+            <div style="color: #c7d2fe; font-size: 0.9rem;">Status</div>
+            <div id="hothStatus" style="color: white; font-size: 1.5rem; font-weight: bold; margin-top: 5px;">No active hand</div>
+          </div>
+          <button class="info" onclick="loadHothStatus()" style="margin: 0;">🔄 Refresh</button>
+        </div>
+        <div id="hothTimeRemaining" style="display: none; margin-top: 15px; color: #ddd6fe;">
+          <span style="color: #a5b4fc;">Time remaining:</span> <span id="hothTimer" style="font-weight: bold; color: white;">90s</span>
+        </div>
+      </div>
+
+      <!-- Add Hand to Queue -->
+      <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1);">
+        <h3 style="color: white; margin-top: 0; font-size: 1.1rem;">Add Hand to Queue</h3>
+        <div style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 10px; align-items: end;">
+          <div>
+            <label style="color: #a5b4fc; font-size: 12px; margin-bottom: 5px; display: block;">Hole Cards (e.g., "Ac Jh")</label>
+            <input type="text" id="hothCards" placeholder="Ac Jh" style="width: 100%; padding: 12px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(255,255,255,0.05); color: white; box-sizing: border-box;" />
+            <p style="color: #6b7280; font-size: 11px; margin: 5px 0 0 0;">Format: Rank (A,K,Q,J,T,9-2) + Suit (s,h,d,c)</p>
+          </div>
+          <div>
+            <label style="color: #a5b4fc; font-size: 12px; margin-bottom: 5px; display: block;">Outcome</label>
+            <select id="hothOutcome" style="width: 100%; padding: 12px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: #1a1a2e; color: white; box-sizing: border-box;">
+              <option value="win" style="background: #1a1a2e; color: white;">Win</option>
+              <option value="lose" style="background: #1a1a2e; color: white;">Lose</option>
+            </select>
+          </div>
+          <button class="draw" onclick="addHandToQueue()" style="margin: 0; white-space: nowrap;">➕ Add to Queue</button>
+        </div>
+      </div>
+
+      <!-- Queue Display -->
+      <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+          <h3 style="color: white; margin: 0; font-size: 1.1rem;">Queued Hands (<span id="queueCount">0</span>/6)</h3>
+          <button class="draw" onclick="releaseNextHand()" id="releaseBtn" style="margin: 0; background: #10b981;">🎴 Release Next Hand</button>
+        </div>
+        <div id="queueList" style="display: flex; flex-direction: column; gap: 10px;">
+          <p style="color: #6b7280; text-align: center; padding: 20px;">No hands in queue</p>
+        </div>
+      </div>
+
+      <!-- Session Leaderboard -->
+      <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+          <h3 style="color: white; margin: 0; font-size: 1.1rem;">Session Leaderboard</h3>
+          <button class="reset" onclick="clearHothSession()" style="margin: 0; font-size: 13px; padding: 10px 15px;">🔄 Clear Session</button>
+        </div>
+        <div id="hothLeaderboard">
+          <p style="color: #6b7280; text-align: center; padding: 20px;">No results yet</p>
+        </div>
+      </div>
+
+      <div id="hothStatusMsg"></div>
     </div>
   </div>
 
@@ -1319,6 +1397,235 @@
       fetchCurrentEntries();
       fetchTips();
     }, 10000);
+
+    // ===== HAND OF THE HOUR FUNCTIONS =====
+
+    async function loadHothStatus() {
+      try {
+        const response = await fetch('/api/hoth/status');
+        const data = await response.json();
+
+        // Update status display
+        if (data.active) {
+          document.getElementById('hothStatus').textContent = `Hand #${data.active.id.split('_')[1]} Active`;
+          document.getElementById('hothTimeRemaining').style.display = 'block';
+          document.getElementById('hothTimer').textContent = `${data.active.timeRemaining}s`;
+        } else {
+          document.getElementById('hothStatus').textContent = 'No active hand';
+          document.getElementById('hothTimeRemaining').style.display = 'none';
+        }
+
+        // Update queue
+        updateQueueDisplay(data.queue || []);
+
+        // Load leaderboard
+        loadHothLeaderboard();
+
+      } catch (error) {
+        console.error('Error loading HOTH status:', error);
+        showHothMsg('Failed to load status', true);
+      }
+    }
+
+    async function addHandToQueue() {
+      const cards = document.getElementById('hothCards').value.trim();
+      const outcome = document.getElementById('hothOutcome').value;
+
+      if (!cards) {
+        showHothMsg('Please enter hole cards', true);
+        return;
+      }
+
+      try {
+        const response = await fetch('/api/hoth/add', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cards, outcome })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showHothMsg(`✅ Added ${cards} (${outcome}) to queue`, false);
+          document.getElementById('hothCards').value = '';
+          loadHothStatus(); // Refresh
+        } else {
+          showHothMsg(data.error || 'Failed to add hand', true);
+        }
+      } catch (error) {
+        console.error('Error adding hand:', error);
+        showHothMsg('Failed to add hand', true);
+      }
+    }
+
+    async function releaseNextHand() {
+      if (!confirm('Release next hand in queue? Voting will be open for 90 seconds.')) return;
+
+      try {
+        const response = await fetch('/api/hoth/release', {
+          method: 'POST'
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showHothMsg(`✅ Released hand: ${data.hand.cards}`, false);
+          loadHothStatus(); // Refresh
+          startHothTimer();
+        } else {
+          showHothMsg(data.error || 'Failed to release hand', true);
+        }
+      } catch (error) {
+        console.error('Error releasing hand:', error);
+        showHothMsg('Failed to release hand', true);
+      }
+    }
+
+    async function deleteHandFromQueue(handId) {
+      if (!confirm('Delete this hand from queue?')) return;
+
+      try {
+        const response = await fetch('/api/hoth/delete', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ handId })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showHothMsg('✅ Hand deleted', false);
+          loadHothStatus(); // Refresh
+        } else {
+          showHothMsg(data.error || 'Failed to delete hand', true);
+        }
+      } catch (error) {
+        console.error('Error deleting hand:', error);
+        showHothMsg('Failed to delete hand', true);
+      }
+    }
+
+    async function clearHothSession() {
+      if (!confirm('Clear all session results? This will reset the leaderboard.')) return;
+
+      try {
+        const response = await fetch('/api/hoth/clear-session', {
+          method: 'POST'
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          showHothMsg('✅ Session cleared', false);
+          loadHothStatus(); // Refresh
+        } else {
+          showHothMsg('Failed to clear session', true);
+        }
+      } catch (error) {
+        console.error('Error clearing session:', error);
+        showHothMsg('Failed to clear session', true);
+      }
+    }
+
+    async function loadHothLeaderboard() {
+      try {
+        const response = await fetch('/api/hoth/results');
+        const data = await response.json();
+
+        const leaderboardDiv = document.getElementById('hothLeaderboard');
+
+        if (data.leaderboard && data.leaderboard.length > 0) {
+          let html = '<div style="display: flex; flex-direction: column; gap: 10px;">';
+
+          data.leaderboard.forEach((entry, index) => {
+            const medal = index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉';
+            html += `
+              <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center;">
+                <div style="display: flex; align-items: center; gap: 15px;">
+                  <span style="font-size: 1.5rem;">${medal}</span>
+                  <div>
+                    <div style="color: white; font-weight: bold; font-family: monospace;">
+                      ${entry.wallet.slice(0, 8)}...${entry.wallet.slice(-6)}
+                    </div>
+                  </div>
+                </div>
+                <div style="background: rgba(16, 185, 129, 0.2); padding: 8px 16px; border-radius: 6px; color: #10b981; font-weight: bold;">
+                  ${entry.correctPredictions} correct
+                </div>
+              </div>
+            `;
+          });
+
+          html += '</div>';
+          leaderboardDiv.innerHTML = html;
+        } else {
+          leaderboardDiv.innerHTML = '<p style="color: #6b7280; text-align: center; padding: 20px;">No results yet</p>';
+        }
+      } catch (error) {
+        console.error('Error loading leaderboard:', error);
+      }
+    }
+
+    function updateQueueDisplay(queue) {
+      const queueList = document.getElementById('queueList');
+      const queueCount = document.getElementById('queueCount');
+
+      queueCount.textContent = queue.length;
+
+      if (queue.length === 0) {
+        queueList.innerHTML = '<p style="color: #6b7280; text-align: center; padding: 20px;">No hands in queue</p>';
+        document.getElementById('releaseBtn').disabled = true;
+        return;
+      }
+
+      document.getElementById('releaseBtn').disabled = false;
+
+      let html = '';
+      queue.forEach((hand, index) => {
+        const outcomeColor = hand.outcome === 'win' ? '#10b981' : '#ef4444';
+        html += `
+          <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid rgba(255,255,255,0.1);">
+            <div style="display: flex; align-items: center; gap: 15px;">
+              <div style="background: rgba(139, 92, 246, 0.2); width: 35px; height: 35px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #a78bfa; font-weight: bold;">
+                ${index + 1}
+              </div>
+              <div>
+                <div style="color: white; font-weight: bold; font-size: 1.1rem;">${hand.cards}</div>
+                <div style="color: ${outcomeColor}; font-size: 0.9rem; margin-top: 3px; text-transform: capitalize;">
+                  ${hand.outcome}
+                </div>
+              </div>
+            </div>
+            <button onclick="deleteHandFromQueue('${hand.id}')" style="background: #dc2626; color: white; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px;">
+              🗑️ Delete
+            </button>
+          </div>
+        `;
+      });
+
+      queueList.innerHTML = html;
+    }
+
+    function startHothTimer() {
+      // Auto-refresh status every 5 seconds to update timer
+      const interval = setInterval(() => {
+        loadHothStatus();
+      }, 5000);
+
+      // Stop after 100 seconds
+      setTimeout(() => clearInterval(interval), 100000);
+    }
+
+    function showHothMsg(message, isError) {
+      const statusDiv = document.getElementById('hothStatusMsg');
+      statusDiv.innerHTML = `<div class="${isError ? 'error-msg' : 'success-msg'}">${message}</div>`;
+      setTimeout(() => {
+        statusDiv.innerHTML = '';
+      }, 5000);
+    }
+
+    // Load HOTH status on page load
+    loadHothStatus();
   </script>
 </body>
 </html>
