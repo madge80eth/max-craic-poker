@@ -12,7 +12,8 @@ export async function GET(req: NextRequest) {
 
     if (activeHandJson) {
       const hand = JSON.parse(activeHandJson as string);
-      timeRemaining = Math.max(0, 90 - Math.floor((Date.now() - hand.releaseTime) / 1000));
+      const timeElapsed = Math.floor((Date.now() - hand.releaseTime) / 1000);
+      timeRemaining = Math.max(0, 90 - timeElapsed);
 
       if (timeRemaining > 0) {
         activeHand = {
@@ -24,8 +25,25 @@ export async function GET(req: NextRequest) {
           // NOTE: outcome not included
         };
       } else {
-        // Voting window closed, clear active hand
+        // Voting window closed, auto-finalize
+        // Get session results
+        const resultsJson = await redis.get('hoth:session_results');
+        const results = resultsJson ? JSON.parse(resultsJson as string) : {};
+
+        // Check votes against outcome
+        for (const [wallet, vote] of Object.entries(hand.votes)) {
+          if (vote === hand.outcome) {
+            results[wallet] = (results[wallet] || 0) + 1;
+          }
+        }
+
+        // Update session results
+        await redis.set('hoth:session_results', JSON.stringify(results));
+
+        // Clear active hand
         await redis.del('hoth:active');
+
+        console.log(`✅ Auto-finalized hand ${hand.id}: ${Object.keys(hand.votes).length} votes, outcome was ${hand.outcome}`);
       }
     }
 

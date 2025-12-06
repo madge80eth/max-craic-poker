@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
 
     const hand = JSON.parse(activeHandJson as string);
 
-    // Check voting window (90 seconds)
+    // Check voting window (90 seconds - enforced)
     const timeElapsed = Math.floor((Date.now() - hand.releaseTime) / 1000);
     if (timeElapsed > 90) {
       return NextResponse.json(
@@ -58,8 +58,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      vote,
-      timeRemaining: 90 - timeElapsed
+      vote
     });
 
   } catch (error) {

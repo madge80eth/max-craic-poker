@@ -556,6 +556,10 @@
         </div>
         <div id="hothTimeRemaining" style="display: none; margin-top: 15px; color: #ddd6fe;">
           <span style="color: #a5b4fc;">Time remaining:</span> <span id="hothTimer" style="font-weight: bold; color: white;">90s</span>
+          <div style="font-size: 0.8rem; color: #a5b4fc; margin-top: 5px;">Auto-closes and tallies votes after 90s</div>
+        </div>
+        <div id="hothVoteCount" style="display: none; margin-top: 10px; color: #ddd6fe;">
+          <span style="color: #a5b4fc;">Votes received:</span> <span id="hothVotes" style="font-weight: bold; color: white;">0</span>
         </div>
       </div>
 
@@ -1410,9 +1414,12 @@
           document.getElementById('hothStatus').textContent = `Hand #${data.active.id.split('_')[1]} Active`;
           document.getElementById('hothTimeRemaining').style.display = 'block';
           document.getElementById('hothTimer').textContent = `${data.active.timeRemaining}s`;
+          document.getElementById('hothVoteCount').style.display = 'block';
+          document.getElementById('hothVotes').textContent = data.active.voteCount || 0;
         } else {
           document.getElementById('hothStatus').textContent = 'No active hand';
           document.getElementById('hothTimeRemaining').style.display = 'none';
+          document.getElementById('hothVoteCount').style.display = 'none';
         }
 
         // Update queue
