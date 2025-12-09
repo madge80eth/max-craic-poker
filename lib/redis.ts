@@ -10,11 +10,23 @@ export const redis = new Redis({
 export async function getUserStats(walletAddress: string): Promise<UserStats> {
   const data = await redis.hgetall(`user:${walletAddress}`);
 
+  // Safely parse lastThreeDrawIds with fallback for empty/invalid values
+  let lastThreeDrawIds: string[] = [];
+  try {
+    const rawValue = data?.lastThreeDrawIds as string;
+    if (rawValue && rawValue.trim() !== '') {
+      lastThreeDrawIds = JSON.parse(rawValue);
+    }
+  } catch (err) {
+    console.warn(`Failed to parse lastThreeDrawIds for ${walletAddress}:`, err);
+    lastThreeDrawIds = [];
+  }
+
   return {
     walletAddress,
     totalEntries: parseInt((data?.totalEntries as string) || '0'),
     tournamentsAssigned: parseInt((data?.tournamentsAssigned as string) || '0'),
-    lastThreeDrawIds: JSON.parse((data?.lastThreeDrawIds as string) || '[]'),
+    lastThreeDrawIds,
     currentStreak: parseInt((data?.currentStreak as string) || '0')
   };
 }

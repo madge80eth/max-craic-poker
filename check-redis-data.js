@@ -5,29 +5,49 @@ const redis = new Redis({
   token: process.env.UPSTASH_REDIS_REST_TOKEN,
 });
 
-async function checkData() {
-  console.log('🔍 Checking Redis for any data...\n');
+async function checkRedisData() {
+  console.log('🔍 Checking Redis Data\n');
 
-  try {
-    // Check for winners
-    const winners = await redis.get('raffle_winners');
-    console.log('raffle_winners:', winners ? JSON.stringify(winners, null, 2) : 'EMPTY');
+  // Check raffle_winners
+  console.log('1. Checking raffle_winners...');
+  const raffleWinners = await redis.get('raffle_winners');
+  console.log('   Type:', typeof raffleWinners);
+  console.log('   Value:', raffleWinners);
 
-    // Check for entries
-    const entries = await redis.hgetall('raffle_entries');
-    console.log('\nraffle_entries:', entries ? JSON.stringify(entries, null, 2) : 'EMPTY');
+  // Check current_draw_result
+  console.log('\n2. Checking current_draw_result...');
+  const currentDraw = await redis.get('current_draw_result');
+  console.log('   Type:', typeof currentDraw);
+  console.log('   Value:', currentDraw);
 
-    // Check for current draw
-    const currentDraw = await redis.get('current_draw_result');
-    console.log('\ncurrent_draw_result:', currentDraw ? JSON.stringify(currentDraw, null, 2) : 'EMPTY');
-
-    // Scan for all keys
-    const keys = await redis.keys('*');
-    console.log('\n📋 All Redis keys:', keys);
-
-  } catch (error) {
-    console.error('❌ Error:', error);
+  // Check tournaments_data
+  console.log('\n3. Checking tournaments_data...');
+  const tournamentsData = await redis.get('tournaments_data');
+  console.log('   Type:', typeof tournamentsData);
+  if (tournamentsData) {
+    try {
+      const parsed = typeof tournamentsData === 'string' ? JSON.parse(tournamentsData) : tournamentsData;
+      console.log('   Parsed:', JSON.stringify(parsed, null, 2));
+    } catch (err) {
+      console.log('   Parse error:', err.message);
+    }
   }
+
+  // Clean up corrupted data
+  console.log('\n4. Cleaning up any corrupted draw data...');
+  if (typeof raffleWinners === 'string' && !raffleWinners.startsWith('{')) {
+    console.log('   ⚠️  Corrupted raffle_winners detected, deleting...');
+    await redis.del('raffle_winners');
+    console.log('   ✅ Deleted corrupted raffle_winners');
+  }
+
+  if (typeof currentDraw === 'string' && !currentDraw.startsWith('{')) {
+    console.log('   ⚠️  Corrupted current_draw_result detected, deleting...');
+    await redis.del('current_draw_result');
+    console.log('   ✅ Deleted corrupted current_draw_result');
+  }
+
+  console.log('\n✅ Redis data check complete');
 }
 
-checkData();
+checkRedisData();
