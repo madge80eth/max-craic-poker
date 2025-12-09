@@ -72,14 +72,15 @@ export default function HomePage() {
 
         let shouldShowWinnersOnHome = false;
 
-        if (tournamentData.streamStartTime && hasWinners) {
-          const streamStart = new Date(tournamentData.streamStartTime).getTime();
+        if (hasWinners) {
+          // CRITICAL FIX: Use draw timestamp, NOT stream start time
+          // The 12-hour window starts when the draw happens, not when the stream is scheduled
+          const drawTimestamp = statusData.timestamp; // Draw result includes timestamp
           const now = Date.now();
-          const twelveHoursAfter = streamStart + (12 * 60 * 60 * 1000);
+          const twelveHoursAfterDraw = drawTimestamp + (12 * 60 * 60 * 1000);
 
-          // CRITICAL: Only show winners for 12 hours after draw
-          // After 12h, home page goes back to Madge game
-          const withinStreamWindow = now >= streamStart && now <= twelveHoursAfter;
+          // Show winners on HOME for 12 hours after draw was triggered
+          const withinStreamWindow = now <= twelveHoursAfterDraw;
           setIsWithinStreamWindow(withinStreamWindow);
 
           // REMOVED: Post-stream window (12-24h) - this was causing winners + Madge to show together
@@ -89,16 +90,15 @@ export default function HomePage() {
           // Show winners on HOME only during the 12-hour window after draw
           shouldShowWinnersOnHome = withinStreamWindow;
 
-          // Auto-set Retake embed URL if streamUrl is provided, otherwise use hardcoded one
-          const retakeUrl = tournamentData.streamUrl || 'https://retake.tv/live/68b58fa755320f51930c9081';
-          setStreamUrl(retakeUrl);
-
-          setStreamDate(new Date(tournamentData.streamStartTime).toLocaleDateString('en-GB', { weekday: 'short', month: 'short', day: 'numeric' }));
-
-          // Store sessionId for tipping
-          setSessionId(tournamentData.sessionId || '');
+          // Auto-set Retake embed URL and stream info
+          if (tournamentData.streamStartTime) {
+            const retakeUrl = tournamentData.streamUrl || 'https://retake.tv/live/68b58fa755320f51930c9081';
+            setStreamUrl(retakeUrl);
+            setStreamDate(new Date(tournamentData.streamStartTime).toLocaleDateString('en-GB', { weekday: 'short', month: 'short', day: 'numeric' }));
+            setSessionId(tournamentData.sessionId || '');
+          }
         } else {
-          // No winners drawn yet, or no stream time set
+          // No winners drawn yet
           setIsWithinStreamWindow(false);
           setIsPostStreamWindow(false);
         }
