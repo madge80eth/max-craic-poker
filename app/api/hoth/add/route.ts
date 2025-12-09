@@ -81,8 +81,20 @@ export async function POST(req: NextRequest) {
     }
 
     // Get current queue
-    const queueJson = await redis.get('hoth:queue');
-    const queue = queueJson ? JSON.parse(queueJson as string) : [];
+    const queueData = await redis.get('hoth:queue');
+    let queue = [];
+
+    if (queueData) {
+      // Handle both string and object responses from Redis
+      if (typeof queueData === 'string') {
+        queue = JSON.parse(queueData);
+      } else if (Array.isArray(queueData)) {
+        queue = queueData;
+      } else {
+        console.warn('Unexpected queue data type:', typeof queueData);
+        queue = [];
+      }
+    }
 
     // Check max queue size
     if (queue.length >= 6) {
