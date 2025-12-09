@@ -356,7 +356,7 @@ export default function HomePage() {
     }
   };
 
-  // STATE 1: WITHIN 12-HOUR WINDOW AFTER DRAW - Show Winners + Stream
+  // STATE 1: WITHIN 12-HOUR WINDOW AFTER DRAW - Show Stream + Tip + HOTH + View Winners Button
   // After 12 hours, home page reverts to Madge game (winners still visible on /draw page)
   if (isWithinStreamWindow && winners && winners.length > 0) {
     const isUserWinner = address && winners.some((w: any) => w.walletAddress.toLowerCase() === address.toLowerCase());
@@ -366,39 +366,16 @@ export default function HomePage() {
           <div className="text-center">
             <div className="flex items-center justify-center gap-2 mb-2">
               <Trophy className="w-6 h-6 text-yellow-400" />
-              <h1 className="text-2xl font-bold text-white">Winners for {streamDate}!</h1>
+              <h1 className="text-2xl font-bold text-white">Live Now: {streamDate}</h1>
             </div>
+            {isUserWinner && (
+              <div className="bg-green-500/20 rounded-xl p-3 border border-green-400/40 mt-2">
+                <p className="text-green-200 text-sm font-semibold">🎉 You won! View your assignment below</p>
+              </div>
+            )}
           </div>
 
-          {isUserWinner && (
-            <div className="bg-green-500/20 rounded-xl p-4 border border-green-400/40">
-              <p className="text-green-200 text-sm font-semibold text-center">You won! Check your assignment below</p>
-            </div>
-          )}
-          <div className="bg-white/10 rounded-xl p-4 border border-white/20">
-            <h2 className="text-lg font-bold text-white mb-3 text-center">Winners</h2>
-            <div className="space-y-2">
-              {winners.map((w: any, i: number) => {
-                const isCurrent = address && w.walletAddress.toLowerCase() === address.toLowerCase();
-                return (
-                  <div key={i} className={`p-3 rounded-lg ${isCurrent ? 'bg-green-500/20 border border-green-400/40' : 'bg-white/5'}`}>
-                    <div className="flex items-start justify-between gap-2 mb-1">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">{w.position === 1 ? '🥇' : w.position === 2 ? '🥈' : w.position === 3 ? '🥉' : '🏅'}</span>
-                        <p className="text-white/60 text-xs font-mono">
-                          {w.walletAddress.slice(0, 6)}...{w.walletAddress.slice(-4)}
-                          {isCurrent && <span className="ml-1 text-green-300">(You)</span>}
-                        </p>
-                      </div>
-                      <p className="text-white font-bold text-sm">{w.finalPercentage.toFixed(1)}%</p>
-                    </div>
-                    <p className="text-white/80 text-xs pl-8">{w.assignedTournament}</p>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
+          {/* 1. STREAM */}
           <p className="text-blue-200 text-sm text-center">Watch the action live:</p>
           <div className="bg-black rounded-xl overflow-hidden border border-white/20 relative" style={{ height: '400px' }}>
             <iframe
@@ -415,10 +392,7 @@ export default function HomePage() {
             />
           </div>
 
-          {/* Hand of the Hour */}
-          <HandOfTheHour isLiveStreamActive={isWithinStreamWindow} />
-
-          {/* Tipping Section */}
+          {/* 2. TIPPING */}
           <div className="bg-gradient-to-br from-pink-500/20 to-purple-500/20 rounded-xl p-5 border border-pink-400/30">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
@@ -518,10 +492,18 @@ export default function HomePage() {
             )}
           </div>
 
-          <Link href="/mini-app/draw" className="block w-full bg-white/10 hover:bg-white/15 text-white font-semibold py-3 px-6 rounded-lg text-center text-sm">View Full Draw Details</Link>
-
-          {/* Hand of the Hour Leaderboard */}
+          {/* 3. ENGAGEMENT GAME (HOTH) */}
+          <HandOfTheHour isLiveStreamActive={isWithinStreamWindow} />
           <HothLeaderboard />
+
+          {/* 4. VIEW WINNERS BUTTON */}
+          <Link
+            href="/mini-app/draw"
+            className="block w-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-bold py-4 px-6 rounded-xl text-center shadow-lg border border-yellow-400/30 flex items-center justify-center gap-2"
+          >
+            <Trophy className="w-5 h-5" />
+            View Winners & Tournament Assignments
+          </Link>
         </div>
       </div>
     );
