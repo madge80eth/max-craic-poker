@@ -3,27 +3,54 @@ import { redis } from '@/lib/redis';
 
 export const runtime = 'edge';
 
-// Validate card format (e.g., "Ac Jh")
-function isValidCardFormat(cards: string): boolean {
-  const parts = cards.trim().split(' ');
-  if (parts.length !== 2) return false;
+// Normalize and validate card format
+// Accepts: "Ac Jh", "AcJh", "AC JH", "ac jh", etc.
+// Returns: normalized format like "Ac Jh" or throws error
+function normalizeCards(input: string): string {
+  const cleaned = input.trim().toUpperCase();
 
-  const validRanks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
-  const validSuits = ['s', 'h', 'd', 'c'];
+  // Remove all spaces
+  const noSpaces = cleaned.replace(/\s+/g, '');
 
-  for (const card of parts) {
-    if (card.length !== 2) return false;
-    const rank = card[0];
-    const suit = card[1];
-    if (!validRanks.includes(rank) || !validSuits.includes(suit)) return false;
+  // Should be exactly 4 characters (2 cards, 2 chars each)
+  if (noSpaces.length !== 4) {
+    throw new Error(`Invalid format: expected 4 characters (2 cards), got ${noSpaces.length}`);
   }
 
-  return true;
+  const validRanks = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'];
+  const validSuits = ['S', 'H', 'D', 'C'];
+
+  // Parse first card
+  const card1Rank = noSpaces[0];
+  const card1Suit = noSpaces[1];
+
+  if (!validRanks.includes(card1Rank)) {
+    throw new Error(`Invalid rank '${card1Rank}' in first card. Use: A,K,Q,J,T,9-2`);
+  }
+  if (!validSuits.includes(card1Suit)) {
+    throw new Error(`Invalid suit '${card1Suit}' in first card. Use: s,h,d,c`);
+  }
+
+  // Parse second card
+  const card2Rank = noSpaces[2];
+  const card2Suit = noSpaces[3];
+
+  if (!validRanks.includes(card2Rank)) {
+    throw new Error(`Invalid rank '${card2Rank}' in second card. Use: A,K,Q,J,T,9-2`);
+  }
+  if (!validSuits.includes(card2Suit)) {
+    throw new Error(`Invalid suit '${card2Suit}' in second card. Use: s,h,d,c`);
+  }
+
+  // Return normalized format: "Ac Jh" (capital rank, lowercase suit, space separated)
+  return `${card1Rank}${card1Suit.toLowerCase()} ${card2Rank}${card2Suit.toLowerCase()}`;
 }
 
 export async function POST(req: NextRequest) {
   try {
     const { cards, outcome } = await req.json();
+
+    console.log('🎴 HOTH Add Request:', { cards, outcome });
 
     // Validate input
     if (!cards || !outcome) {
@@ -33,9 +60,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!isValidCardFormat(cards)) {
+    // Normalize and validate cards (accepts flexible formats)
+    let normalizedCards: string;
+    try {
+      normalizedCards = normalizeCards(cards);
+      console.log('✅ Normalized cards:', normalizedCards);
+    } catch (err: any) {
+      console.error('❌ Card validation failed:', err.message);
       return NextResponse.json(
-        { error: 'Invalid card format. Use format like "Ac Jh" (rank: A,K,Q,J,T,9-2, suit: s,h,d,c)' },
+        { error: err.message || 'Invalid card format' },
         { status: 400 }
       );
     }
@@ -62,7 +95,7 @@ export async function POST(req: NextRequest) {
     // Create new hand
     const newHand = {
       id: `hand_${Date.now()}`,
-      cards: cards.trim(),
+      cards: normalizedCards,  // Use normalized format
       outcome,
       released: false,
       votes: {}
