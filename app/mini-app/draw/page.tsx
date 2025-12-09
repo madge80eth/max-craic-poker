@@ -1,12 +1,13 @@
 'use client';
 
 import { useAccount, useConnect } from 'wagmi';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { Clock, Trophy, Wallet, Flame } from 'lucide-react';
 import Link from 'next/link';
 import { useComposeCast } from '@coinbase/onchainkit/minikit';
 import NotificationPrompt from '@/components/NotificationPrompt';
+import { useAppContext } from '@/hooks/useAppContext';
 
 interface UserStats {
   totalEntries: number;
@@ -35,6 +36,7 @@ export default function DrawPage() {
   const { address, isConnected } = useAccount();
   const { connect, connectors } = useConnect();
   const { composeCast } = useComposeCast();
+  const { isFarcaster } = useAppContext();
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [isEntering, setIsEntering] = useState(false);
   const [hasEntered, setHasEntered] = useState(false);
@@ -44,6 +46,7 @@ export default function DrawPage() {
   const [winners, setWinners] = useState<Winner[] | null>(null);
   const [isUserWinner, setIsUserWinner] = useState(false);
   const [streamHasPassed, setStreamHasPassed] = useState(false);
+  const hasAutoEntered = useRef(false); // Track if we've auto-entered already
 
   useEffect(() => {
     if (!address) return;
@@ -124,6 +127,22 @@ export default function DrawPage() {
     const interval = setInterval(updateCountdown, 60000);
     return () => clearInterval(interval);
   }, [streamStartTime]);
+
+  // AUTO-ENTRY for Farcaster users (one-click flow)
+  // When user clicks frame button in Farcaster desktop, auto-trigger entry
+  useEffect(() => {
+    // Only auto-enter once per session
+    if (hasAutoEntered.current) return;
+
+    // Wait for all required data to be ready
+    if (!address || !isConnected || !isFarcaster) return;
+    if (hasEntered || isEntering) return;
+
+    // Auto-trigger entry for Farcaster users
+    console.log('🎯 Auto-entering Farcaster user:', address);
+    hasAutoEntered.current = true;
+    handleEnterDraw();
+  }, [address, isConnected, isFarcaster, hasEntered, isEntering]);
 
   async function handleEnterDraw(e?: React.MouseEvent) {
     if (e) {
