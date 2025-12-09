@@ -83,7 +83,10 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Error adding hand to queue:', error);
     return NextResponse.json(
-      { error: 'Failed to add hand to queue' },
+      {
+        error: 'Failed to add hand to queue',
+        details: error instanceof Error ? error.message : String(error)
+      },
       { status: 500 }
     );
   }
