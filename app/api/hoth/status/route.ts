@@ -6,12 +6,13 @@ export const runtime = 'edge';
 export async function GET(req: NextRequest) {
   try {
     // Get active hand
-    const activeHandJson = await redis.get('hoth:active');
+    const activeHandData = await redis.get('hoth:active');
     let activeHand = null;
     let timeRemaining = 0;
 
-    if (activeHandJson) {
-      const hand = JSON.parse(activeHandJson as string);
+    if (activeHandData) {
+      // Handle both string and object responses
+      const hand = typeof activeHandData === 'string' ? JSON.parse(activeHandData) : activeHandData;
       const timeElapsed = Math.floor((Date.now() - hand.releaseTime) / 1000);
       timeRemaining = Math.max(0, 90 - timeElapsed);
 
@@ -27,8 +28,11 @@ export async function GET(req: NextRequest) {
       } else {
         // Voting window closed, auto-finalize
         // Get session results
-        const resultsJson = await redis.get('hoth:session_results');
-        const results = resultsJson ? JSON.parse(resultsJson as string) : {};
+        const resultsData = await redis.get('hoth:session_results');
+        let results: Record<string, number> = {};
+        if (resultsData) {
+          results = typeof resultsData === 'string' ? JSON.parse(resultsData) : resultsData;
+        }
 
         // Check votes against outcome
         for (const [wallet, vote] of Object.entries(hand.votes)) {
@@ -48,8 +52,15 @@ export async function GET(req: NextRequest) {
     }
 
     // Get queue
-    const queueJson = await redis.get('hoth:queue');
-    const queue = queueJson ? JSON.parse(queueJson as string) : [];
+    const queueData = await redis.get('hoth:queue');
+    let queue = [];
+    if (queueData) {
+      if (typeof queueData === 'string') {
+        queue = JSON.parse(queueData);
+      } else if (Array.isArray(queueData)) {
+        queue = queueData;
+      }
+    }
 
     return NextResponse.json({
       active: activeHand,
