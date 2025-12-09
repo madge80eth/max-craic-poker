@@ -22,10 +22,12 @@ export async function GET(request: NextRequest) {
     // Get winners data
     const winnersData = await redis.get('raffle_winners');
     let winners = null;
+    let drawTimestamp = null;
 
     if (winnersData) {
       const parsed = typeof winnersData === 'string' ? JSON.parse(winnersData) : winnersData;
       winners = parsed.winners || null;
+      drawTimestamp = parsed.timestamp || null; // Include draw timestamp for 12-hour window
     }
 
     // AUTO-DRAW: Check if we should auto-trigger draw (30 mins before stream, no winners yet)
@@ -82,7 +84,8 @@ export async function GET(request: NextRequest) {
         userEntry,
         isWinner: !!userWinnerInfo,
         winnerInfo: userWinnerInfo,
-        winners
+        winners,
+        timestamp: drawTimestamp
       });
     }
 
@@ -90,7 +93,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       totalEntries,
-      winners
+      winners,
+      timestamp: drawTimestamp
     });
 
   } catch (error) {
