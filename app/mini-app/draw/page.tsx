@@ -460,29 +460,34 @@ export default function DrawPage() {
         {/* Entered Confirmation (only show if no winners yet) */}
         {hasEntered && !winners && (
           <div className="space-y-4">
-            <div className="bg-gradient-to-r from-green-600 to-blue-600 rounded-xl p-6 border border-white/20 text-center">
-              <div className="text-5xl mb-3">✅</div>
-              <h2 className="text-2xl font-bold text-white mb-2">You're Entered!</h2>
-              <p className="text-white/90 text-sm mb-4">
+            {/* Simple confirmation message */}
+            <div className="text-center mb-4">
+              <div className="text-3xl mb-2">✅</div>
+              <h2 className="text-xl font-bold text-white">You're Entered!</h2>
+            </div>
+
+            {/* Static info tile - replaced animated banner */}
+            <div className="bg-white/10 rounded-xl p-4 border border-white/20">
+              <p className="text-white/90 text-sm text-center mb-3">
                 You'll be assigned to a tournament when winners are drawn 30 mins before stream
               </p>
 
               {/* Streak Status Display */}
               {userStats && (
-                <div className="bg-white/10 rounded-lg p-3 border border-white/20 mb-3">
+                <div className="bg-white/5 rounded-lg p-3 border border-white/10 mt-3">
                   <div className="flex items-center justify-center gap-2 mb-1">
-                    <Flame className={`w-5 h-5 ${userStats.currentStreak === 3 ? 'text-orange-300' : 'text-blue-300'}`} />
+                    <Flame className={`w-4 h-4 ${userStats.currentStreak === 3 ? 'text-orange-300' : 'text-blue-300'}`} />
                     <p className="text-white text-sm font-semibold">
                       Streak: {userStats.currentStreak}/3 consecutive entries
                     </p>
                   </div>
                   {userStats.currentStreak === 3 && (
-                    <p className="text-orange-200 text-xs font-semibold mt-1">
+                    <p className="text-orange-200 text-xs font-semibold mt-1 text-center">
                       🔥 Your next win gets 1.5x multiplier! 🔥
                     </p>
                   )}
                   {userStats.currentStreak === 2 && (
-                    <p className="text-yellow-200 text-xs mt-1">
+                    <p className="text-yellow-200 text-xs mt-1 text-center">
                       💪 One more entry to activate 1.5x bonus!
                     </p>
                   )}
