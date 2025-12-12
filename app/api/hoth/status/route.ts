@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
       // Handle both string and object responses
       const hand = typeof activeHandData === 'string' ? JSON.parse(activeHandData) : activeHandData;
       const timeElapsed = Math.floor((Date.now() - hand.releaseTime) / 1000);
-      timeRemaining = Math.max(0, 90 - timeElapsed);
+      timeRemaining = Math.max(0, 120 - timeElapsed);
 
       if (timeRemaining > 0) {
         activeHand = {

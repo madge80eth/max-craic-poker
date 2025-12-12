@@ -23,19 +23,22 @@ export async function POST(req: NextRequest) {
     }
 
     // Get active hand
-    const activeHandJson = await redis.get('hoth:active');
-    if (!activeHandJson) {
+    const activeHandData = await redis.get('hoth:active');
+    if (!activeHandData) {
       return NextResponse.json(
         { error: 'No active hand to vote on' },
         { status: 400 }
       );
     }
 
-    const hand = JSON.parse(activeHandJson as string);
+    // Handle both string and object responses from Redis
+    const hand = typeof activeHandData === 'string'
+      ? JSON.parse(activeHandData)
+      : activeHandData;
 
-    // Check voting window (90 seconds - enforced)
+    // Check voting window (120 seconds - enforced)
     const timeElapsed = Math.floor((Date.now() - hand.releaseTime) / 1000);
-    if (timeElapsed > 90) {
+    if (timeElapsed > 120) {
       return NextResponse.json(
         { error: 'Voting window closed' },
         { status: 400 }

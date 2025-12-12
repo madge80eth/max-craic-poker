@@ -534,15 +534,45 @@
       <h2>🎴 Hand of the Hour</h2>
       <p class="description">Pre-load historical poker hands and release them during stream for viewer voting</p>
 
-      <!-- Enable/Disable Toggle -->
+      <!-- Settings Row: Enable Toggle + Stream Delay -->
       <div style="background: rgba(59, 130, 246, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid rgba(59, 130, 246, 0.3);">
-        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #dbeafe;">
-          <input type="checkbox" id="hothEnabled" style="width: 18px; height: 18px; cursor: pointer;">
-          <span style="font-weight: 600;">Enable Hand of the Hour Feature</span>
-        </label>
-        <p style="color: #93c5fd; font-size: 0.85rem; margin: 8px 0 0 28px;">
-          When enabled, viewers can vote on historical poker hands during your stream
-        </p>
+        <div style="display: grid; grid-template-columns: 1fr 250px; gap: 20px; align-items: start;">
+          <!-- Enable Toggle -->
+          <div>
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #dbeafe;">
+              <input type="checkbox" id="hothEnabled" style="width: 18px; height: 18px; cursor: pointer;">
+              <span style="font-weight: 600;">Enable Hand of the Hour Feature</span>
+            </label>
+            <p style="color: #93c5fd; font-size: 0.85rem; margin: 8px 0 0 28px;">
+              When enabled, viewers can vote on historical poker hands during your stream
+            </p>
+          </div>
+
+          <!-- Stream Delay Input -->
+          <div>
+            <label style="color: #dbeafe; font-size: 0.9rem; font-weight: 600; display: block; margin-bottom: 5px;">
+              Stream Delay (seconds)
+            </label>
+            <input
+              type="number"
+              id="streamDelaySeconds"
+              min="0"
+              max="600"
+              step="0.5"
+              placeholder="0"
+              style="width: 100%; padding: 10px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(255,255,255,0.05); color: white; box-sizing: border-box;"
+            />
+            <p style="color: #93c5fd; font-size: 0.75rem; margin: 5px 0 0 0;">
+              Hand shows to viewers after this delay (e.g., 2.5 mins = 150 seconds)
+            </p>
+          </div>
+        </div>
+
+        <!-- Save Button -->
+        <button class="draw" onclick="saveHothSettings()" style="margin-top: 15px; width: auto;">
+          💾 Save Settings
+        </button>
+        <div id="hothSettingsSaveStatus" style="margin-top: 10px;"></div>
       </div>
 
       <!-- Current Status -->
@@ -555,8 +585,8 @@
           <button class="info" onclick="loadHothStatus()" style="margin: 0;">🔄 Refresh</button>
         </div>
         <div id="hothTimeRemaining" style="display: none; margin-top: 15px; color: #ddd6fe;">
-          <span style="color: #a5b4fc;">Time remaining:</span> <span id="hothTimer" style="font-weight: bold; color: white;">90s</span>
-          <div style="font-size: 0.8rem; color: #a5b4fc; margin-top: 5px;">Auto-closes and tallies votes after 90s</div>
+          <span style="color: #a5b4fc;">Time remaining:</span> <span id="hothTimer" style="font-weight: bold; color: white;">120s</span>
+          <div style="font-size: 0.8rem; color: #a5b4fc; margin-top: 5px;">Auto-closes and tallies votes after 120s</div>
         </div>
         <div id="hothVoteCount" style="display: none; margin-top: 10px; color: #ddd6fe;">
           <span style="color: #a5b4fc;">Votes received:</span> <span id="hothVotes" style="font-weight: bold; color: white;">0</span>
@@ -1631,8 +1661,59 @@
       }, 5000);
     }
 
-    // Load HOTH status on page load
+    // Load and save HOTH settings
+    async function loadHothSettings() {
+      try {
+        const response = await fetch('/api/admin/hoth-settings');
+        const data = await response.json();
+
+        if (data.success && data.settings) {
+          document.getElementById('hothEnabled').checked = data.settings.enabled || false;
+          document.getElementById('streamDelaySeconds').value = data.settings.streamDelaySeconds || 0;
+        }
+      } catch (error) {
+        console.error('Error loading HOTH settings:', error);
+      }
+    }
+
+    async function saveHothSettings() {
+      const statusDiv = document.getElementById('hothSettingsSaveStatus');
+      statusDiv.innerHTML = '<div style="color: #a5b4fc;">Saving...</div>';
+
+      try {
+        const enabled = document.getElementById('hothEnabled').checked;
+        const streamDelaySeconds = parseFloat(document.getElementById('streamDelaySeconds').value) || 0;
+
+        const response = await fetch('/api/admin/hoth-settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled, streamDelaySeconds })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          statusDiv.innerHTML = `
+            <div class="success-msg">
+              ✅ Settings saved!<br>
+              <small style="color: #6ee7b7;">HOTH ${enabled ? 'Enabled' : 'Disabled'} | Stream Delay: ${streamDelaySeconds}s</small>
+            </div>
+          `;
+        } else {
+          statusDiv.innerHTML = `<div class="error-msg">❌ ${data.message}</div>`;
+        }
+      } catch (error) {
+        statusDiv.innerHTML = `<div class="error-msg">❌ Error: ${error.message}</div>`;
+      }
+
+      setTimeout(() => {
+        statusDiv.innerHTML = '';
+      }, 5000);
+    }
+
+    // Load HOTH status and settings on page load
     loadHothStatus();
+    loadHothSettings();
   </script>
 </body>
 </html>
