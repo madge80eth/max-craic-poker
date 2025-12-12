@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAccount } from 'wagmi';
 
 interface ActiveHand {
@@ -22,12 +22,14 @@ export default function HandOfTheHour({ isLiveStreamActive }: HandOfTheHourProps
   const [voteSubmitted, setVoteSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [timeRemaining, setTimeRemaining] = useState(0);
+  const previousHandIdRef = useRef<string | null>(null);
 
   // Fetch active hand status
   useEffect(() => {
     // Only fetch if stream is active
     if (!isLiveStreamActive) {
       setActiveHand(null);
+      previousHandIdRef.current = null;
       return;
     }
 
@@ -37,17 +39,21 @@ export default function HandOfTheHour({ isLiveStreamActive }: HandOfTheHourProps
         const data = await response.json();
 
         if (data.active) {
-          // Check if this is a new hand (different ID)
-          if (activeHand && activeHand.id !== data.active.id) {
+          // Check if this is a new hand (different ID from previous)
+          if (previousHandIdRef.current && previousHandIdRef.current !== data.active.id) {
             // New hand detected - reset voting state
+            console.log('New hand detected, resetting vote state');
             setHasVoted(false);
             setVoteSubmitted(false);
             setError(null);
           }
+          // Update the previous hand ID
+          previousHandIdRef.current = data.active.id;
           setActiveHand(data.active);
           setTimeRemaining(data.active.timeRemaining);
         } else {
           setActiveHand(null);
+          previousHandIdRef.current = null;
         }
       } catch (error) {
         console.error('Error fetching HOTH status:', error);
@@ -58,7 +64,7 @@ export default function HandOfTheHour({ isLiveStreamActive }: HandOfTheHourProps
     // Poll every 5 seconds
     const interval = setInterval(fetchStatus, 5000);
     return () => clearInterval(interval);
-  }, [isLiveStreamActive, activeHand]);
+  }, [isLiveStreamActive]);
 
   // Countdown timer
   useEffect(() => {
