@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
 
     // Get current session results
     const resultsData = await redis.get('hoth:session_results');
-    let results = {};
+    let results: Record<string, number> = {};
     if (resultsData) {
       results = typeof resultsData === 'string'
         ? JSON.parse(resultsData)

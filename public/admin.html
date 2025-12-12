@@ -593,9 +593,6 @@
           </div>
           <div style="display: flex; gap: 10px;">
             <button class="info" onclick="loadHothStatus()" style="margin: 0;">🔄 Refresh</button>
-            <button id="closeTallyBtn" class="draw" onclick="closeAndTallyVotes()" style="margin: 0; display: none; background: #f59e0b;">
-              ✅ Close & Tally
-            </button>
           </div>
         </div>
         <div id="hothTimeRemaining" style="display: none; margin-top: 15px; color: #ddd6fe;">
@@ -642,7 +639,10 @@
       <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
           <h3 style="color: white; margin: 0; font-size: 1.1rem;">Session Leaderboard</h3>
-          <button class="reset" onclick="clearHothSession()" style="margin: 0; font-size: 13px; padding: 10px 15px;">🔄 Clear Session</button>
+          <div style="display: flex; gap: 10px;">
+            <button class="draw" onclick="endHothGame()" style="margin: 0; font-size: 13px; padding: 10px 15px; background: #10b981;">🏁 End Game</button>
+            <button class="reset" onclick="clearHothSession()" style="margin: 0; font-size: 13px; padding: 10px 15px;">🔄 Clear Session</button>
+          </div>
         </div>
         <div id="hothLeaderboard">
           <p style="color: #6b7280; text-align: center; padding: 20px;">No results yet</p>
@@ -1461,14 +1461,10 @@
           document.getElementById('hothTimer').textContent = `${data.active.timeRemaining}s`;
           document.getElementById('hothVoteCount').style.display = 'block';
           document.getElementById('hothVotes').textContent = data.active.voteCount || 0;
-          // Show close/tally button when hand is active
-          document.getElementById('closeTallyBtn').style.display = 'block';
         } else {
           document.getElementById('hothStatus').textContent = 'No active hand';
           document.getElementById('hothTimeRemaining').style.display = 'none';
           document.getElementById('hothVoteCount').style.display = 'none';
-          // Hide close/tally button when no active hand
-          document.getElementById('closeTallyBtn').style.display = 'none';
         }
 
         // Update queue
@@ -1744,27 +1740,26 @@
       }
     }
 
-    // Manually close and tally votes
-    async function closeAndTallyVotes() {
-      if (!confirm('Close voting and tally results now?\n\nThis will:\n• End voting immediately\n• Count all votes\n• Update session leaderboard\n• Clear active hand\n\nContinue?')) return;
+    // End HOTH game and push winners to listing
+    async function endHothGame() {
+      if (!confirm('End the Hand of the Hour game?\n\nThis will:\n• Finalize any active hand\n• Push top 5 winners to the Winners listing\n• Clear the session results\n\nContinue?')) return;
 
       try {
-        // Call the results endpoint which triggers tallying
-        const response = await fetch('/api/hoth/results', {
+        const response = await fetch('/api/hoth/end-game', {
           method: 'POST'
         });
 
         const data = await response.json();
 
         if (response.ok) {
-          showHothMsg('✅ Votes tallied! Check leaderboard below.', false);
-          loadHothStatus(); // Refresh to clear active hand
+          showHothMsg(`✅ ${data.message}`, false);
+          loadHothStatus(); // Refresh
         } else {
-          showHothMsg(data.error || 'Failed to tally votes', true);
+          showHothMsg(data.error || 'Failed to end game', true);
         }
       } catch (error) {
-        console.error('Error tallying votes:', error);
-        showHothMsg('Failed to tally votes', true);
+        console.error('Error ending game:', error);
+        showHothMsg('Failed to end game', true);
       }
     }
 
