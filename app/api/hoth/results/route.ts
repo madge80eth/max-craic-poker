@@ -31,23 +31,31 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST endpoint to finalize a hand (called when voting window closes)
+// POST endpoint to finalize a hand (called when voting window closes or manually closed)
 export async function POST(req: NextRequest) {
   try {
     // Get active hand
-    const activeHandJson = await redis.get('hoth:active');
-    if (!activeHandJson) {
+    const activeHandData = await redis.get('hoth:active');
+    if (!activeHandData) {
       return NextResponse.json(
         { error: 'No active hand to finalize' },
         { status: 400 }
       );
     }
 
-    const hand = JSON.parse(activeHandJson as string);
+    // Handle both string and object responses from Redis
+    const hand = typeof activeHandData === 'string'
+      ? JSON.parse(activeHandData)
+      : activeHandData;
 
     // Get current session results
-    const resultsJson = await redis.get('hoth:session_results');
-    const results = resultsJson ? JSON.parse(resultsJson as string) : {};
+    const resultsData = await redis.get('hoth:session_results');
+    let results = {};
+    if (resultsData) {
+      results = typeof resultsData === 'string'
+        ? JSON.parse(resultsData)
+        : resultsData;
+    }
 
     // Check votes against outcome
     for (const [wallet, vote] of Object.entries(hand.votes)) {
