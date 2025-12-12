@@ -37,6 +37,13 @@ export default function HandOfTheHour({ isLiveStreamActive }: HandOfTheHourProps
         const data = await response.json();
 
         if (data.active) {
+          // Check if this is a new hand (different ID)
+          if (activeHand && activeHand.id !== data.active.id) {
+            // New hand detected - reset voting state
+            setHasVoted(false);
+            setVoteSubmitted(false);
+            setError(null);
+          }
           setActiveHand(data.active);
           setTimeRemaining(data.active.timeRemaining);
         } else {
@@ -51,7 +58,7 @@ export default function HandOfTheHour({ isLiveStreamActive }: HandOfTheHourProps
     // Poll every 5 seconds
     const interval = setInterval(fetchStatus, 5000);
     return () => clearInterval(interval);
-  }, [isLiveStreamActive]);
+  }, [isLiveStreamActive, activeHand]);
 
   // Countdown timer
   useEffect(() => {
