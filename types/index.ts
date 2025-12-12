@@ -45,6 +45,7 @@ export interface Video {
   totalTips: number; // USDC cents (e.g., 1000 = $10.00)
   membersOnly?: boolean; // If true, requires active membership to view
   earlyAccessUntil?: number; // Timestamp - members get early access until this time
+  isShort?: boolean; // If true, display as vertical 9:16 Short (TikTok/Reels style)
 }
 
 export interface VideoTip {

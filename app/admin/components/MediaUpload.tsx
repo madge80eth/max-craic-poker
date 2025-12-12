@@ -12,6 +12,7 @@ export default function MediaUpload() {
   const [duration, setDuration] = useState('');
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [membersOnly, setMembersOnly] = useState(false);
+  const [isShort, setIsShort] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,7 +40,8 @@ export default function MediaUpload() {
           category,
           duration: duration ? parseInt(duration) : 0,
           thumbnailUrl: thumbnailUrl || undefined,
-          membersOnly
+          membersOnly,
+          isShort
         })
       });
 
@@ -57,6 +59,7 @@ export default function MediaUpload() {
       setDuration('');
       setThumbnailUrl('');
       setMembersOnly(false);
+      setIsShort(false);
 
       // Clear success message after 5 seconds
       setTimeout(() => setSuccess(false), 5000);
@@ -231,6 +234,23 @@ export default function MediaUpload() {
         </div>
         <p className="text-blue-300 text-sm -mt-4 ml-8">
           Check this to make the video exclusive to paying members
+        </p>
+
+        {/* Is Short Toggle */}
+        <div className="flex items-center gap-3">
+          <input
+            type="checkbox"
+            id="isShort"
+            checked={isShort}
+            onChange={(e) => setIsShort(e.target.checked)}
+            className="w-5 h-5 rounded border-white/20 bg-white/10 text-purple-600 focus:ring-purple-400 focus:ring-2"
+          />
+          <label htmlFor="isShort" className="text-white font-semibold cursor-pointer">
+            Short Video (9:16 Vertical)
+          </label>
+        </div>
+        <p className="text-blue-300 text-sm -mt-4 ml-8">
+          Check this for vertical short-form content (TikTok/Reels style). Will display in Highlights section with portrait layout.
         </p>
 
         {/* Submit Button */}

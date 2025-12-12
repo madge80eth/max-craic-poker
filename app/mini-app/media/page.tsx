@@ -170,8 +170,15 @@ export default function MediaPage() {
   ];
 
   const isMemberActive = membership?.status === 'active' && membership?.expiryDate > Date.now();
-  const highlightVideos = videos.filter(v => !v.membersOnly);
-  const memberVideos = videos.filter(v => v.membersOnly);
+
+  // Separate videos by type and membership
+  const shortVideos = videos.filter(v => v.isShort);
+  const mainVideos = videos.filter(v => !v.isShort);
+
+  const freeShorts = shortVideos.filter(v => !v.membersOnly);
+  const memberShorts = shortVideos.filter(v => v.membersOnly);
+  const freeMainVideos = mainVideos.filter(v => !v.membersOnly);
+  const memberMainVideos = mainVideos.filter(v => v.membersOnly);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-950 via-purple-900 to-blue-900 pb-24">
@@ -196,155 +203,280 @@ export default function MediaPage() {
         {/* Content when loaded */}
         {!loading && (
           <>
-            {/* FREE HIGHLIGHTS SECTION */}
-            <div className="mb-12">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-white">🎬 Free Highlights</h2>
-              </div>
-
-              {highlightVideos.length === 0 ? (
-                <div className="text-center py-8 bg-white/5 rounded-xl border border-white/10">
-                  <Play className="w-12 h-12 text-purple-400 mx-auto mb-3" />
-                  <p className="text-blue-200 text-sm">No free highlights yet. Check back soon!</p>
+            {/* SHORTS SECTION (HIGHLIGHTS) - Vertical 9:16 Layout */}
+            {(freeShorts.length > 0 || memberShorts.length > 0) && (
+              <div className="mb-12">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold text-white">🎬 Highlights (Shorts)</h2>
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {highlightVideos.map(video => (
-                    <Link
-                      key={video.id}
-                      href={`/mini-app/media/${video.id}`}
-                      className="group bg-white/5 rounded-xl overflow-hidden border border-white/10 hover:border-purple-400 transition-all hover:scale-105"
-                    >
-                      <div className="relative aspect-video bg-gradient-to-br from-purple-900 to-blue-900">
-                        {video.thumbnailUrl ? (
-                          <img src={video.thumbnailUrl} alt={video.title} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="flex items-center justify-center h-full">
-                            <Play className="w-16 h-16 text-white/50" />
-                          </div>
-                        )}
-                        {video.duration > 0 && (
-                          <div className="absolute bottom-2 right-2 bg-black/80 px-2 py-1 rounded flex items-center gap-1">
-                            <Clock className="w-3 h-3 text-white" />
-                            <span className="text-xs text-white font-medium">{formatDuration(video.duration)}</span>
-                          </div>
-                        )}
-                        <div className="absolute top-2 left-2 bg-purple-600 px-2 py-1 rounded">
-                          <span className="text-xs text-white font-medium capitalize">{video.category}</span>
-                        </div>
-                      </div>
-                      <div className="p-4">
-                        <h3 className="font-bold text-white mb-2 line-clamp-2 group-hover:text-purple-400 transition-colors">
-                          {video.title}
-                        </h3>
-                        <div className="flex items-center justify-between text-sm text-blue-200">
-                          <div className="flex items-center gap-1">
-                            <Play className="w-4 h-4" />
-                            <span>{video.viewCount.toLocaleString()} views</span>
-                          </div>
-                          {video.totalTips > 0 && (
-                            <div className="flex items-center gap-1 text-green-400">
-                              <DollarSign className="w-4 h-4" />
-                              <span>{formatTips(video.totalTips)}</span>
+
+                {/* Free Shorts */}
+                {freeShorts.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-blue-200 mb-3">Free Shorts</h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {freeShorts.map(video => (
+                        <Link
+                          key={video.id}
+                          href={`/mini-app/media/${video.id}`}
+                          className="group bg-white/5 rounded-xl overflow-hidden border border-white/10 hover:border-purple-400 transition-all hover:scale-105"
+                        >
+                          <div className="relative aspect-[9/16] bg-gradient-to-br from-purple-900 to-blue-900">
+                            {video.thumbnailUrl ? (
+                              <img src={video.thumbnailUrl} alt={video.title} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="flex items-center justify-center h-full">
+                                <Play className="w-12 h-12 text-white/50" />
+                              </div>
+                            )}
+                            {video.duration > 0 && (
+                              <div className="absolute bottom-2 right-2 bg-black/80 px-2 py-1 rounded flex items-center gap-1">
+                                <Clock className="w-3 h-3 text-white" />
+                                <span className="text-xs text-white font-medium">{formatDuration(video.duration)}</span>
+                              </div>
+                            )}
+                            <div className="absolute top-2 left-2 bg-red-600 px-2 py-1 rounded text-xs">
+                              <span className="text-white font-bold">SHORT</span>
                             </div>
-                          )}
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
+                          </div>
+                          <div className="p-3">
+                            <h3 className="font-bold text-white text-sm mb-1 line-clamp-2 group-hover:text-purple-400 transition-colors">
+                              {video.title}
+                            </h3>
+                            <div className="flex items-center gap-2 text-xs text-blue-200">
+                              <Play className="w-3 h-3" />
+                              <span>{video.viewCount.toLocaleString()}</span>
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-            {/* MEMBERS-ONLY SECTION */}
-            <div className="mb-12">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <h2 className="text-2xl font-bold text-white">👑 Members Exclusive</h2>
-                  {isMemberActive && <CheckCircle className="w-6 h-6 text-green-400" />}
-                </div>
-                {isMemberActive && membership && (
-                  <span className="text-xs text-green-300 bg-green-500/20 px-3 py-1 rounded-full border border-green-400/30">
-                    Active until {new Date(membership.expiryDate).toLocaleDateString()}
-                  </span>
+                {/* Member Shorts */}
+                {memberShorts.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-blue-200 mb-3 flex items-center gap-2">
+                      Members Shorts
+                      {isMemberActive && <CheckCircle className="w-5 h-5 text-green-400" />}
+                    </h3>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {memberShorts.map(video => {
+                        const isLocked = !isMemberActive;
+                        return (
+                          <div
+                            key={video.id}
+                            className={`group bg-white/5 rounded-xl overflow-hidden border border-white/10 ${isLocked ? 'opacity-60' : 'hover:border-purple-400 hover:scale-105'} transition-all relative`}
+                          >
+                            {isLocked ? (
+                              <>
+                                <div className="relative aspect-[9/16] bg-gradient-to-br from-purple-900 to-blue-900 blur-sm">
+                                  {video.thumbnailUrl ? (
+                                    <img src={video.thumbnailUrl} alt={video.title} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="flex items-center justify-center h-full">
+                                      <Play className="w-12 h-12 text-white/50" />
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <div className="bg-black/80 p-3 rounded-xl text-center">
+                                    <Lock className="w-6 h-6 text-purple-400 mx-auto mb-1" />
+                                    <p className="text-white font-bold text-xs">Members</p>
+                                  </div>
+                                </div>
+                                <div className="p-3">
+                                  <h3 className="font-bold text-white text-sm mb-1 line-clamp-2 blur-sm">{video.title}</h3>
+                                </div>
+                              </>
+                            ) : (
+                              <Link href={`/mini-app/media/${video.id}`}>
+                                <div className="relative aspect-[9/16] bg-gradient-to-br from-purple-900 to-blue-900">
+                                  {video.thumbnailUrl ? (
+                                    <img src={video.thumbnailUrl} alt={video.title} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="flex items-center justify-center h-full">
+                                      <Play className="w-12 h-12 text-white/50" />
+                                    </div>
+                                  )}
+                                  {video.duration > 0 && (
+                                    <div className="absolute bottom-2 right-2 bg-black/80 px-2 py-1 rounded flex items-center gap-1">
+                                      <Clock className="w-3 h-3 text-white" />
+                                      <span className="text-xs text-white font-medium">{formatDuration(video.duration)}</span>
+                                    </div>
+                                  )}
+                                  <div className="absolute top-2 left-2 bg-gradient-to-r from-purple-600 to-pink-600 px-2 py-1 rounded flex items-center gap-1">
+                                    <Lock className="w-3 h-3 text-white" />
+                                    <span className="text-xs text-white font-bold">SHORT</span>
+                                  </div>
+                                </div>
+                                <div className="p-3">
+                                  <h3 className="font-bold text-white text-sm mb-1 line-clamp-2 group-hover:text-purple-400 transition-colors">
+                                    {video.title}
+                                  </h3>
+                                  <div className="flex items-center gap-2 text-xs text-blue-200">
+                                    <Play className="w-3 h-3" />
+                                    <span>{video.viewCount.toLocaleString()}</span>
+                                  </div>
+                                </div>
+                              </Link>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 )}
               </div>
+            )}
 
-              {memberVideos.length === 0 ? (
-                <div className="text-center py-8 bg-white/5 rounded-xl border border-white/10">
-                  <Lock className="w-12 h-12 text-purple-400 mx-auto mb-3" />
-                  <p className="text-blue-200 text-sm">No exclusive content yet. Check back soon!</p>
+            {/* MAIN VIDEOS SECTION - Horizontal 16:9 Layout */}
+            {(freeMainVideos.length > 0 || memberMainVideos.length > 0) && (
+              <div className="mb-12">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-2xl font-bold text-white">📺 Main Videos</h2>
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {memberVideos.map(video => {
-                    const isLocked = !isMemberActive;
-                    return (
-                      <div
-                        key={video.id}
-                        className={`group bg-white/5 rounded-xl overflow-hidden border border-white/10 ${isLocked ? 'opacity-60' : 'hover:border-purple-400 hover:scale-105'} transition-all relative`}
-                      >
-                        {isLocked ? (
-                          <>
-                            <div className="relative aspect-video bg-gradient-to-br from-purple-900 to-blue-900 blur-sm">
-                              {video.thumbnailUrl ? (
-                                <img src={video.thumbnailUrl} alt={video.title} className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="flex items-center justify-center h-full">
-                                  <Play className="w-16 h-16 text-white/50" />
+
+                {/* Free Main Videos */}
+                {freeMainVideos.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-blue-200 mb-3">Free Videos</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      {freeMainVideos.map(video => (
+                        <Link
+                          key={video.id}
+                          href={`/mini-app/media/${video.id}`}
+                          className="group bg-white/5 rounded-xl overflow-hidden border border-white/10 hover:border-purple-400 transition-all hover:scale-105"
+                        >
+                          <div className="relative aspect-video bg-gradient-to-br from-purple-900 to-blue-900">
+                            {video.thumbnailUrl ? (
+                              <img src={video.thumbnailUrl} alt={video.title} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="flex items-center justify-center h-full">
+                                <Play className="w-16 h-16 text-white/50" />
+                              </div>
+                            )}
+                            {video.duration > 0 && (
+                              <div className="absolute bottom-2 right-2 bg-black/80 px-2 py-1 rounded flex items-center gap-1">
+                                <Clock className="w-3 h-3 text-white" />
+                                <span className="text-xs text-white font-medium">{formatDuration(video.duration)}</span>
+                              </div>
+                            )}
+                            <div className="absolute top-2 left-2 bg-purple-600 px-2 py-1 rounded">
+                              <span className="text-xs text-white font-medium capitalize">{video.category}</span>
+                            </div>
+                          </div>
+                          <div className="p-4">
+                            <h3 className="font-bold text-white mb-2 line-clamp-2 group-hover:text-purple-400 transition-colors">
+                              {video.title}
+                            </h3>
+                            <div className="flex items-center justify-between text-sm text-blue-200">
+                              <div className="flex items-center gap-1">
+                                <Play className="w-4 h-4" />
+                                <span>{video.viewCount.toLocaleString()} views</span>
+                              </div>
+                              {video.totalTips > 0 && (
+                                <div className="flex items-center gap-1 text-green-400">
+                                  <DollarSign className="w-4 h-4" />
+                                  <span>{formatTips(video.totalTips)}</span>
                                 </div>
                               )}
                             </div>
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <div className="bg-black/80 p-4 rounded-xl text-center">
-                                <Lock className="w-8 h-8 text-purple-400 mx-auto mb-2" />
-                                <p className="text-white font-bold text-sm">Members Only</p>
-                              </div>
-                            </div>
-                            <div className="p-4">
-                              <h3 className="font-bold text-white mb-2 line-clamp-2 blur-sm">{video.title}</h3>
-                            </div>
-                          </>
-                        ) : (
-                          <Link href={`/mini-app/media/${video.id}`}>
-                            <div className="relative aspect-video bg-gradient-to-br from-purple-900 to-blue-900">
-                              {video.thumbnailUrl ? (
-                                <img src={video.thumbnailUrl} alt={video.title} className="w-full h-full object-cover" />
-                              ) : (
-                                <div className="flex items-center justify-center h-full">
-                                  <Play className="w-16 h-16 text-white/50" />
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Member Main Videos */}
+                {memberMainVideos.length > 0 && (
+                  <div className="mb-6">
+                    <h3 className="text-lg font-semibold text-blue-200 mb-3 flex items-center gap-2">
+                      Members Videos
+                      {isMemberActive && <CheckCircle className="w-5 h-5 text-green-400" />}
+                    </h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      {memberMainVideos.map(video => {
+                        const isLocked = !isMemberActive;
+                        return (
+                          <div
+                            key={video.id}
+                            className={`group bg-white/5 rounded-xl overflow-hidden border border-white/10 ${isLocked ? 'opacity-60' : 'hover:border-purple-400 hover:scale-105'} transition-all relative`}
+                          >
+                            {isLocked ? (
+                              <>
+                                <div className="relative aspect-video bg-gradient-to-br from-purple-900 to-blue-900 blur-sm">
+                                  {video.thumbnailUrl ? (
+                                    <img src={video.thumbnailUrl} alt={video.title} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="flex items-center justify-center h-full">
+                                      <Play className="w-16 h-16 text-white/50" />
+                                    </div>
+                                  )}
                                 </div>
-                              )}
-                              {video.duration > 0 && (
-                                <div className="absolute bottom-2 right-2 bg-black/80 px-2 py-1 rounded flex items-center gap-1">
-                                  <Clock className="w-3 h-3 text-white" />
-                                  <span className="text-xs text-white font-medium">{formatDuration(video.duration)}</span>
+                                <div className="absolute inset-0 flex items-center justify-center">
+                                  <div className="bg-black/80 p-4 rounded-xl text-center">
+                                    <Lock className="w-8 h-8 text-purple-400 mx-auto mb-2" />
+                                    <p className="text-white font-bold text-sm">Members Only</p>
+                                  </div>
                                 </div>
-                              )}
-                              <div className="absolute top-2 left-2 bg-gradient-to-r from-purple-600 to-pink-600 px-2 py-1 rounded flex items-center gap-1">
-                                <Lock className="w-3 h-3 text-white" />
-                                <span className="text-xs text-white font-medium capitalize">Members</span>
-                              </div>
-                            </div>
-                            <div className="p-4">
-                              <h3 className="font-bold text-white mb-2 line-clamp-2 group-hover:text-purple-400 transition-colors">
-                                {video.title}
-                              </h3>
-                              <div className="flex items-center justify-between text-sm text-blue-200">
-                                <div className="flex items-center gap-1">
-                                  <Play className="w-4 h-4" />
-                                  <span>{video.viewCount.toLocaleString()} views</span>
+                                <div className="p-4">
+                                  <h3 className="font-bold text-white mb-2 line-clamp-2 blur-sm">{video.title}</h3>
                                 </div>
-                              </div>
-                            </div>
-                          </Link>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
+                              </>
+                            ) : (
+                              <Link href={`/mini-app/media/${video.id}`}>
+                                <div className="relative aspect-video bg-gradient-to-br from-purple-900 to-blue-900">
+                                  {video.thumbnailUrl ? (
+                                    <img src={video.thumbnailUrl} alt={video.title} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="flex items-center justify-center h-full">
+                                      <Play className="w-16 h-16 text-white/50" />
+                                    </div>
+                                  )}
+                                  {video.duration > 0 && (
+                                    <div className="absolute bottom-2 right-2 bg-black/80 px-2 py-1 rounded flex items-center gap-1">
+                                      <Clock className="w-3 h-3 text-white" />
+                                      <span className="text-xs text-white font-medium">{formatDuration(video.duration)}</span>
+                                    </div>
+                                  )}
+                                  <div className="absolute top-2 left-2 bg-gradient-to-r from-purple-600 to-pink-600 px-2 py-1 rounded flex items-center gap-1">
+                                    <Lock className="w-3 h-3 text-white" />
+                                    <span className="text-xs text-white font-medium capitalize">Members</span>
+                                  </div>
+                                </div>
+                                <div className="p-4">
+                                  <h3 className="font-bold text-white mb-2 line-clamp-2 group-hover:text-purple-400 transition-colors">
+                                    {video.title}
+                                  </h3>
+                                  <div className="flex items-center justify-between text-sm text-blue-200">
+                                    <div className="flex items-center gap-1">
+                                      <Play className="w-4 h-4" />
+                                      <span>{video.viewCount.toLocaleString()} views</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </Link>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* EMPTY STATE - No videos at all */}
+            {videos.length === 0 && (
+              <div className="text-center py-16 bg-white/5 rounded-xl border border-white/10">
+                <Play className="w-16 h-16 text-purple-400 mx-auto mb-4" />
+                <h3 className="text-xl font-bold text-white mb-2">No Videos Yet</h3>
+                <p className="text-blue-200 text-sm">Check back soon for poker strategy content!</p>
+              </div>
+            )}
 
             {/* MEMBERSHIP PURCHASE CARD */}
             {!isMemberActive && (

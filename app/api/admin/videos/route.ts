@@ -16,7 +16,8 @@ export async function POST(request: Request) {
       category,
       duration,
       thumbnailUrl,
-      membersOnly
+      membersOnly,
+      isShort
     } = body;
 
     // Validation
@@ -46,7 +47,8 @@ export async function POST(request: Request) {
       thumbnailUrl: thumbnailUrl || `https://customer-{code}.cloudflarestream.com/${cloudflareVideoId}/thumbnails/thumbnail.jpg`,
       duration: duration || 0,
       category: category as VideoCategory,
-      membersOnly: membersOnly || false
+      membersOnly: membersOnly || false,
+      isShort: isShort || false
     });
 
     return NextResponse.json({

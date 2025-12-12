@@ -63,8 +63,9 @@ export async function POST(req: NextRequest) {
 
   } catch (error) {
     console.error('Error releasing hand:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
     return NextResponse.json(
-      { error: 'Failed to release hand' },
+      { error: `Failed to release hand: ${errorMessage}` },
       { status: 500 }
     );
   }

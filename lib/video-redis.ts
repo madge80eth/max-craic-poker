@@ -47,7 +47,9 @@ export async function getVideo(id: string): Promise<Video | null> {
     category: data.category as VideoCategory,
     uploadedAt: parseInt(data.uploadedAt as string),
     viewCount: parseInt(data.viewCount as string),
-    totalTips: parseInt(data.totalTips as string)
+    totalTips: parseInt(data.totalTips as string),
+    membersOnly: data.membersOnly === 'true' || data.membersOnly === true,
+    isShort: data.isShort === 'true' || data.isShort === true
   };
 }
 

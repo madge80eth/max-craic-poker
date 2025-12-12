@@ -1466,7 +1466,7 @@
     }
 
     async function releaseNextHand() {
-      if (!confirm('Release next hand in queue? Voting will be open for 90 seconds.')) return;
+      if (!confirm('Release next hand from the queue?\n\nThis will:\n• Release the first hand in queue to viewers\n• Start a 90-second voting window\n• Show the hand on the app\n\nContinue?')) return;
 
       try {
         const response = await fetch('/api/hoth/release', {

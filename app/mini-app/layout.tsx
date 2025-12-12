@@ -4,7 +4,7 @@
 import { Metadata } from 'next'
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Ticket, Gamepad2, Film, Menu } from 'lucide-react';
+import { Home, Ticket, Receipt, Film, Menu } from 'lucide-react';
 
 export const dynamic = 'force-dynamic'
 
@@ -56,15 +56,15 @@ export default function MiniAppLayout({
             </Link>
 
             <Link
-              href="/mini-app/community-game"
+              href="/mini-app/payouts"
               className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg transition-all ${
-                isActive('/mini-app/community-game')
+                isActive('/mini-app/payouts')
                   ? 'bg-purple-600 text-white'
                   : 'text-blue-300 hover:text-white'
               }`}
             >
-              <Gamepad2 className="w-5 h-5" />
-              <span className="text-[11px] font-medium">Game</span>
+              <Receipt className="w-5 h-5" />
+              <span className="text-[11px] font-medium">Payouts</span>
             </Link>
 
             <Link
