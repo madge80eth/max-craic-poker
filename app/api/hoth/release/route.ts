@@ -6,9 +6,12 @@ export const runtime = 'edge';
 export async function POST(req: NextRequest) {
   try {
     // Check if there's already an active hand
-    const activeHandJson = await redis.get('hoth:active');
-    if (activeHandJson) {
-      const activeHand = JSON.parse(activeHandJson as string);
+    const activeHandData = await redis.get('hoth:active');
+    if (activeHandData) {
+      // Handle both string and object responses from Redis
+      const activeHand = typeof activeHandData === 'string'
+        ? JSON.parse(activeHandData)
+        : activeHandData;
       const timeRemaining = 90 - Math.floor((Date.now() - activeHand.releaseTime) / 1000);
 
       if (timeRemaining > 0) {
@@ -20,15 +23,25 @@ export async function POST(req: NextRequest) {
     }
 
     // Get queue
-    const queueJson = await redis.get('hoth:queue');
-    if (!queueJson) {
+    const queueData = await redis.get('hoth:queue');
+    if (!queueData) {
       return NextResponse.json(
         { error: 'No hands in queue' },
         { status: 400 }
       );
     }
 
-    const queue = JSON.parse(queueJson as string);
+    // Handle both string and object/array responses from Redis
+    let queue;
+    if (typeof queueData === 'string') {
+      queue = JSON.parse(queueData);
+    } else if (Array.isArray(queueData)) {
+      queue = queueData;
+    } else {
+      // Unexpected type
+      console.error('Unexpected queue data type:', typeof queueData);
+      queue = [];
+    }
     if (queue.length === 0) {
       return NextResponse.json(
         { error: 'Queue is empty' },
