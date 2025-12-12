@@ -39,21 +39,15 @@ export default function HandOfTheHour({ isLiveStreamActive }: HandOfTheHourProps
         const data = await response.json();
 
         if (data.active) {
-          // Check if this is a new hand (different ID from previous)
-          if (previousHandIdRef.current && previousHandIdRef.current !== data.active.id) {
-            // New hand detected - reset voting state
-            console.log('New hand detected, resetting vote state');
-            setHasVoted(false);
-            setVoteSubmitted(false);
-            setError(null);
-          }
-          // Update the previous hand ID
-          previousHandIdRef.current = data.active.id;
           setActiveHand(data.active);
           setTimeRemaining(data.active.timeRemaining);
         } else {
           setActiveHand(null);
           previousHandIdRef.current = null;
+          // Reset vote state when no active hand
+          setHasVoted(false);
+          setVoteSubmitted(false);
+          setError(null);
         }
       } catch (error) {
         console.error('Error fetching HOTH status:', error);
@@ -65,6 +59,22 @@ export default function HandOfTheHour({ isLiveStreamActive }: HandOfTheHourProps
     const interval = setInterval(fetchStatus, 5000);
     return () => clearInterval(interval);
   }, [isLiveStreamActive]);
+
+  // Reset voting state when activeHand ID changes
+  useEffect(() => {
+    if (activeHand) {
+      const currentHandId = activeHand.id;
+
+      // If this is a different hand from what we have in previousHandIdRef
+      if (previousHandIdRef.current !== currentHandId) {
+        console.log(`Hand changed from ${previousHandIdRef.current} to ${currentHandId}, resetting vote state`);
+        setHasVoted(false);
+        setVoteSubmitted(false);
+        setError(null);
+        previousHandIdRef.current = currentHandId;
+      }
+    }
+  }, [activeHand?.id]);
 
   // Countdown timer
   useEffect(() => {
