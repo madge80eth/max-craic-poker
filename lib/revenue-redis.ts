@@ -1,6 +1,8 @@
 // lib/revenue-redis.ts
 import { redis } from './redis';
 import { Transaction, TransactionType, RevenueStats, Membership, MembershipSettings } from '@/types';
+import { DEFAULT_CREATOR_ID } from './creator-context';
+import { calculatePlatformRevenue } from './revenue-split';
 
 /**
  * Redis Keys:
@@ -283,7 +285,9 @@ export async function getRevenueStats(): Promise<RevenueStats> {
     }
   }
 
-  const platformCut = Math.round(totalVolume * 0.02); // 2%
+  // Calculate platform cut based on creator's tier
+  // Note: This uses DEFAULT_CREATOR_ID - for multi-tenant, pass creatorId as parameter
+  const platformCut = await calculatePlatformRevenue(DEFAULT_CREATOR_ID, totalVolume);
   const activeMemberships = await getActiveMembershipsCount();
 
   const stats: RevenueStats = {

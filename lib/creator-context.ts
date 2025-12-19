@@ -3,12 +3,32 @@
 
 export const DEFAULT_CREATOR_ID = 'max-craic-poker';
 
+export interface CreatorMetrics {
+  volume90d: number; // 90-day rolling transaction volume in cents
+  uniqueWallets90d: number; // Unique wallets that transacted
+  transactionCount90d: number; // Total transactions in 90 days
+  activeMonths: number; // Number of months with >0 transactions
+}
+
+export interface TierOverride {
+  tier: 1 | 2 | 3 | 4;
+  expiresAt: number; // Timestamp when override expires
+  reason: 'founder' | 'grant' | 'promotion' | 'strategic_advisor';
+}
+
 export interface Creator {
   id: string; // Unique slug (e.g., 'max-craic-poker', 'weazel-poker')
   name: string; // Display name
   subdomain: string; // Subdomain slug (matches id)
   walletAddress: string; // Payout wallet for this creator
-  platformFeePercentage: number; // Usually 2%
+
+  // Tier system (replaces platformFeePercentage)
+  tier: 1 | 2 | 3 | 4; // Current tier (1=90/10, 2=85/15, 3=80/20, 4=75/25)
+  tierOverride?: TierOverride; // Manual override for founders, advisors
+  isFounder: boolean; // First 5 creators + Jaylee = permanent founder badge
+  metrics: CreatorMetrics; // 90-day performance metrics
+  lastTierRecalculation: number; // Timestamp of last tier calc (quarterly)
+
   branding: {
     primaryColor?: string;
     logoUrl?: string;

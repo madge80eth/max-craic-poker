@@ -20,7 +20,16 @@ export async function getCreator(creatorId: string): Promise<Creator | null> {
     name: data.name as string,
     subdomain: data.subdomain as string,
     walletAddress: data.walletAddress as string,
-    platformFeePercentage: parseFloat(data.platformFeePercentage as string),
+    tier: (parseInt(data.tier as string) || 4) as 1 | 2 | 3 | 4,
+    tierOverride: data.tierOverride ? JSON.parse(data.tierOverride as string) : undefined,
+    isFounder: data.isFounder === 'true',
+    metrics: data.metrics ? JSON.parse(data.metrics as string) : {
+      volume90d: 0,
+      uniqueWallets90d: 0,
+      transactionCount90d: 0,
+      activeMonths: 0
+    },
+    lastTierRecalculation: parseInt(data.lastTierRecalculation as string) || Date.now(),
     branding: JSON.parse(data.branding as string),
     features: JSON.parse(data.features as string),
     createdAt: parseInt(data.createdAt as string),
@@ -38,7 +47,11 @@ export async function createCreator(creator: Omit<Creator, 'createdAt'>): Promis
     name: creator.name,
     subdomain: creator.subdomain,
     walletAddress: creator.walletAddress,
-    platformFeePercentage: creator.platformFeePercentage,
+    tier: creator.tier,
+    tierOverride: creator.tierOverride ? JSON.stringify(creator.tierOverride) : '',
+    isFounder: creator.isFounder ? 'true' : 'false',
+    metrics: JSON.stringify(creator.metrics),
+    lastTierRecalculation: creator.lastTierRecalculation,
     branding: JSON.stringify(creator.branding),
     features: JSON.stringify(creator.features),
     createdAt: fullCreator.createdAt,
@@ -57,7 +70,11 @@ export async function updateCreator(creatorId: string, updates: Partial<Creator>
   if (updates.name) updateData.name = updates.name;
   if (updates.subdomain) updateData.subdomain = updates.subdomain;
   if (updates.walletAddress) updateData.walletAddress = updates.walletAddress;
-  if (updates.platformFeePercentage !== undefined) updateData.platformFeePercentage = updates.platformFeePercentage;
+  if (updates.tier !== undefined) updateData.tier = updates.tier;
+  if (updates.tierOverride !== undefined) updateData.tierOverride = JSON.stringify(updates.tierOverride);
+  if (updates.isFounder !== undefined) updateData.isFounder = updates.isFounder ? 'true' : 'false';
+  if (updates.metrics) updateData.metrics = JSON.stringify(updates.metrics);
+  if (updates.lastTierRecalculation !== undefined) updateData.lastTierRecalculation = updates.lastTierRecalculation;
   if (updates.branding) updateData.branding = JSON.stringify(updates.branding);
   if (updates.features) updateData.features = JSON.stringify(updates.features);
   if (updates.isActive !== undefined) updateData.isActive = updates.isActive ? 'true' : 'false';
@@ -96,7 +113,15 @@ export async function ensureDefaultCreator(): Promise<void> {
       name: 'Max Craic Poker',
       subdomain: 'maxcraicpoker',
       walletAddress: process.env.NEXT_PUBLIC_TIP_WALLET_ADDRESS || '',
-      platformFeePercentage: 2,
+      tier: 4, // Start at Tier 4 (75/25)
+      isFounder: false, // Set to true for actual founders
+      metrics: {
+        volume90d: 0,
+        uniqueWallets90d: 0,
+        transactionCount90d: 0,
+        activeMonths: 0
+      },
+      lastTierRecalculation: Date.now(),
       branding: {
         primaryColor: '#8b5cf6',
         customDomain: 'maxcraicpoker.com'

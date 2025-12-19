@@ -51,7 +51,15 @@ export async function POST(request: NextRequest) {
       name,
       subdomain,
       walletAddress,
-      platformFeePercentage: 2, // Default 2%
+      tier: 4, // Start at Tier 4 (75/25)
+      isFounder: false,
+      metrics: {
+        volume90d: 0,
+        uniqueWallets90d: 0,
+        transactionCount90d: 0,
+        activeMonths: 0
+      },
+      lastTierRecalculation: Date.now(),
       branding: {},
       features: {
         tippingEnabled: true,
