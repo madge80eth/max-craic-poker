@@ -204,7 +204,8 @@
 
   <div class="tabs-container">
     <div class="tabs">
-      <button class="tab active" onclick="switchTab('general')">📊 General</button>
+      <button class="tab active" onclick="switchTab('tier')">📈 Tier Dashboard</button>
+      <button class="tab" onclick="switchTab('general')">📊 General</button>
       <button class="tab" onclick="switchTab('tournaments')">🎯 Tournaments</button>
       <button class="tab" onclick="switchTab('draw')">🎲 Draw & Prizes</button>
       <button class="tab" onclick="switchTab('revenue')">💰 Revenue & Stats</button>
@@ -214,8 +215,17 @@
     </div>
   </div>
 
+  <!-- TIER DASHBOARD TAB -->
+  <div id="tier-tab" class="tab-content active">
+    <iframe
+      src="/admin"
+      style="width: 100%; height: calc(100vh - 200px); border: none; border-radius: 12px; background: transparent;"
+      title="Tier Dashboard"
+    ></iframe>
+  </div>
+
   <!-- GENERAL TAB -->
-  <div id="general-tab" class="tab-content active">
+  <div id="general-tab" class="tab-content">
     <div class="section">
       <h2>📊 Key Stats</h2>
       <p class="description">Live view of current session metrics</p>
