@@ -1,16 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { Video, Upload, Settings, DollarSign } from 'lucide-react';
+import { Video, Upload, Settings, DollarSign, TrendingUp } from 'lucide-react';
 import MediaUpload from './components/MediaUpload';
 import MembershipSettings from './components/MembershipSettings';
+import TierDashboard from './components/TierDashboard';
 
-type Tab = 'media' | 'membership' | 'revenue';
+type Tab = 'tier' | 'media' | 'membership' | 'revenue';
 
 export default function AdminPage() {
-  const [activeTab, setActiveTab] = useState<Tab>('media');
+  const [activeTab, setActiveTab] = useState<Tab>('tier');
 
   const tabs = [
+    { id: 'tier' as Tab, label: 'Tier & Performance', icon: TrendingUp },
     { id: 'media' as Tab, label: 'Media Upload', icon: Video },
     { id: 'membership' as Tab, label: 'Membership', icon: Settings },
     { id: 'revenue' as Tab, label: 'Revenue', icon: DollarSign }
@@ -49,6 +51,7 @@ export default function AdminPage() {
 
         {/* Tab Content */}
         <div className="bg-white/10 backdrop-blur-lg rounded-xl p-8 border border-white/20">
+          {activeTab === 'tier' && <TierDashboard />}
           {activeTab === 'media' && <MediaUpload />}
           {activeTab === 'membership' && <MembershipSettings />}
           {activeTab === 'revenue' && (
