@@ -21,6 +21,7 @@ export const metadata: Metadata = {
     "fc:frame": "vNext",
     "fc:frame:image": "https://www.maxcraicpoker.com/api/frame-image",
     "fc:frame:image:aspect_ratio": "1.91:1",
+    "base:app_id": "69123f0b47fdf84bd17202b9",
   }
 };
 
