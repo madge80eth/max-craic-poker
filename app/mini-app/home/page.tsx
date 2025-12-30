@@ -541,7 +541,7 @@ export default function HomePage() {
               <li>• Play daily to earn raffle tickets</li>
               <li>• Tickets accumulate until you enter a draw</li>
               <li>• More tickets = better odds to win</li>
-              <li>• Win up to 12% profit share!</li>
+              <li>• Win up to 12% prize potential!</li>
             </ul>
           </div>
         </div>
@@ -613,6 +613,13 @@ export default function HomePage() {
             <div className="bg-blue-900/30 border border-blue-400/20 rounded-lg p-3">
               <p className="text-blue-200/80 text-xs leading-relaxed text-center">
                 <strong>FREE Raffle Entry:</strong> No purchase necessary. Play the daily poker game to earn entry tickets. Members receive bonus tickets as a membership benefit, but all community members can participate without payment.
+              </p>
+            </div>
+
+            {/* Legal Disclaimer */}
+            <div className="bg-yellow-500/10 border border-yellow-400/30 rounded-lg p-4">
+              <p className="text-yellow-100 text-xs leading-relaxed">
+                <strong>Legal Disclaimer:</strong> Max Craic Poker raffle entry is always free - no purchase necessary. Membership provides exclusive content and community features, sold on utility value, and is not an investment product. Members have no contractual claim to prize distributions. All community rewards are discretionary and not guaranteed.
               </p>
             </div>
           </div>

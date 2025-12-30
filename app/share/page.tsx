@@ -2,10 +2,10 @@ import { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: "Max Craic Poker - Enter Draw",
-  description: "Community-backed poker tournaments. Enter free, win profit shares.",
+  description: "Community poker tournaments. Enter free, win prizes.",
   openGraph: {
     title: "Max Craic Poker",
-    description: "Enter the draw and compete for poker profit shares",
+    description: "Enter the draw and compete for poker prizes",
     images: [{
       url: `${process.env.NEXT_PUBLIC_BASE_URL}/mcp-frame.png`,
       width: 1200,

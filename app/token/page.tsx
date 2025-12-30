@@ -107,7 +107,7 @@ export default function TokenPage() {
             <div className="bg-white/10 rounded-lg p-4">
               <p className="text-white font-semibold mb-2">🎰 Raffle Entries</p>
               <p className="text-blue-200 text-sm">
-                Enter community draws and participate in tournament profit sharing
+                Enter community draws and win tournament prizes
               </p>
             </div>
 

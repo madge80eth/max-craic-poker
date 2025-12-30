@@ -188,7 +188,7 @@ export default function DrawPage() {
           });
 
           setTimeout(() => {
-            alert('🔥 STREAK ACTIVE - 1.5X BONUS 🔥\n\nYour next win gets 50% extra profit share!');
+            alert('🔥 STREAK ACTIVE - 1.5X BONUS 🔥\n\nYour next win gets 50% extra prize payout!');
           }, 500);
         }
 
@@ -227,7 +227,7 @@ export default function DrawPage() {
             {winners ? 'Draw Results' : 'Enter the Draw'}
           </h1>
           <p className="text-blue-200">
-            {winners ? 'Winners have been selected' : 'Free entry • Win profit shares'}
+            {winners ? 'Winners have been selected' : 'Free entry • Win prizes'}
           </p>
         </div>
 
@@ -383,7 +383,7 @@ export default function DrawPage() {
                 )}
 
                 <p className="text-white/60 text-xs text-center mt-4">
-                  Winners earn 3-6% base profit share
+                  Winners earn 3-6% base prize payout
                 </p>
               </>
             )}

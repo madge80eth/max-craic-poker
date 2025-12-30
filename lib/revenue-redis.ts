@@ -29,16 +29,14 @@ export async function getMembershipSettings(): Promise<MembershipSettings> {
         'In-depth tournament hand history reviews',
         'Exclusive strategy content',
         'Early access to videos'
-      ],
-      requireMembershipForRaffle: false
+      ]
     };
   }
 
   return {
     enabled: data.enabled === 'true',
     monthlyFeeUSDC: parseInt(data.monthlyFeeUSDC as string),
-    benefits: JSON.parse(data.benefits as string),
-    requireMembershipForRaffle: data.requireMembershipForRaffle === 'true'
+    benefits: JSON.parse(data.benefits as string)
   };
 }
 
@@ -46,8 +44,7 @@ export async function saveMembershipSettings(settings: MembershipSettings): Prom
   await redis.hset('membership_settings', {
     enabled: settings.enabled ? 'true' : 'false',
     monthlyFeeUSDC: settings.monthlyFeeUSDC,
-    benefits: JSON.stringify(settings.benefits),
-    requireMembershipForRaffle: settings.requireMembershipForRaffle ? 'true' : 'false'
+    benefits: JSON.stringify(settings.benefits)
   });
 }
 

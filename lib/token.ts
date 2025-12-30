@@ -28,7 +28,7 @@ export const TOKENOMICS = {
 
   // Utility
   utilities: [
-    "Community profit-sharing rewards",
+    "Community prize pool rewards",
     "Live chat engagement airdrops",
     "Priority home game access",
     "Leaderboard ranking",

@@ -23,7 +23,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { enabled, monthlyFeeUSDC, benefits, requireMembershipForRaffle } = body;
+    const { enabled, monthlyFeeUSDC, benefits } = body;
 
     // Validation
     if (typeof enabled !== 'boolean') {
@@ -47,19 +47,11 @@ export async function POST(request: Request) {
       );
     }
 
-    if (typeof requireMembershipForRaffle !== 'boolean') {
-      return NextResponse.json(
-        { error: 'Invalid requireMembershipForRaffle value' },
-        { status: 400 }
-      );
-    }
-
     // Save settings
     await saveMembershipSettings({
       enabled,
       monthlyFeeUSDC,
-      benefits,
-      requireMembershipForRaffle
+      benefits
     });
 
     return NextResponse.json({

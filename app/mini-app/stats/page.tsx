@@ -117,7 +117,7 @@ export default function StatsPage() {
             <ul className="text-blue-200 text-xs space-y-1.5 text-left">
               <li>• Enter each draw for free</li>
               <li>• 6 winners selected per stream</li>
-              <li>• Win up to 12% profit share</li>
+              <li>• Win up to 12% prize potential</li>
               <li>• Streak bonus: 3 consecutive entries = 1.5x multiplier</li>
             </ul>
           </div>

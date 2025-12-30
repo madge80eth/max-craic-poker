@@ -67,7 +67,6 @@ export interface MembershipSettings {
   enabled: boolean;
   monthlyFeeUSDC: number; // In USDC cents (e.g., 1000 = $10.00)
   benefits: string[]; // List of benefit descriptions
-  requireMembershipForRaffle: boolean; // Toggle: must be member to enter raffle
 }
 
 export interface Membership {

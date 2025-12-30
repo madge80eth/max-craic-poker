@@ -120,7 +120,7 @@ export default function InfoPage() {
             <div className="bg-blue-500/10 rounded-lg p-4 border border-blue-400/20">
               <h3 className="text-white font-bold mb-2">Sharing Bonus (+2%)</h3>
               <p className="text-blue-200 text-sm">
-                Share the draw to unlock an extra +2% on your base profit share
+                Share the draw to unlock an extra +2% on your base prize payout
               </p>
             </div>
 
@@ -151,7 +151,14 @@ export default function InfoPage() {
         <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
           <h2 className="text-2xl font-bold text-white mb-3">🎁 Free to Enter</h2>
           <p className="text-blue-200 leading-relaxed">
-            Always free. No purchase necessary. Transparent profit sharing.
+            Always free. No purchase necessary. Transparent prize distribution.
+          </p>
+        </div>
+
+        {/* Legal Disclaimer */}
+        <div className="bg-yellow-500/10 border border-yellow-400/30 rounded-lg p-4">
+          <p className="text-yellow-100 text-xs leading-relaxed">
+            <strong>Legal Disclaimer:</strong> Max Craic Poker raffle entry is always free - no purchase necessary. Membership provides exclusive content and community features, sold on utility value, and is not an investment product. Members have no contractual claim to prize distributions. All community rewards are discretionary and not guaranteed.
           </p>
         </div>
 
@@ -159,7 +166,7 @@ export default function InfoPage() {
         <div className="bg-white/10 backdrop-blur-sm rounded-lg p-6 border border-white/20">
           <h2 className="text-2xl font-bold text-white mb-3">🔗 On Base</h2>
           <p className="text-blue-200 text-sm leading-relaxed">
-            Built on Base - low fees, instant payouts, and fully onchain. Your profit shares are sent directly to your wallet via USDC when tournaments cash.
+            Built on Base - low fees, instant payouts, and fully onchain. Your prizes are sent directly to your wallet via USDC when tournaments cash.
           </p>
         </div>
 
