@@ -5,24 +5,47 @@
   <style>
     body {
       font-family: system-ui, -apple-system, sans-serif;
-      max-width: 1200px;
+      max-width: 1400px;
       margin: 0 auto;
       padding: 0;
       background: linear-gradient(135deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%);
       min-height: 100vh;
       color: #e0e7ff;
     }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 40px 20px 10px 20px;
+    }
+    .header-left {
+      flex: 1;
+    }
     h1 {
-      text-align: center;
       color: white;
       font-size: 2.5rem;
-      margin-bottom: 10px;
-      padding-top: 40px;
+      margin: 0 0 5px 0;
     }
     .subtitle {
-      text-align: center;
       color: #a5b4fc;
-      margin-bottom: 30px;
+      margin: 0;
+    }
+    .settings-icon {
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 24px;
+      transition: all 0.3s ease;
+    }
+    .settings-icon:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: rotate(90deg);
     }
     .tabs-container {
       background: rgba(0, 0, 0, 0.3);
@@ -36,29 +59,27 @@
       display: flex;
       justify-content: center;
       gap: 0;
-      max-width: 1200px;
+      max-width: 1400px;
       margin: 0 auto;
       padding: 0;
     }
     .tab {
-      padding: 18px 32px;
+      padding: 18px 40px;
       cursor: pointer;
       background: transparent;
       color: #a5b4fc;
       border: none;
       border-bottom: 3px solid transparent;
-      font-size: 15px;
+      font-size: 16px;
       font-weight: 600;
       transition: all 0.3s ease;
       position: relative;
       flex: 1;
-      max-width: 200px;
+      max-width: 300px;
     }
     .tab:hover {
       background: rgba(255, 255, 255, 0.05);
       color: white;
-      transform: none;
-      box-shadow: none;
     }
     .tab.active {
       color: white;
@@ -77,6 +98,58 @@
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
+
+    /* Collapsible Section Styles */
+    .collapsible-section {
+      margin: 30px 0;
+      background: rgba(255,255,255,0.1);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+      overflow: hidden;
+    }
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px 25px;
+      cursor: pointer;
+      background: rgba(139, 92, 246, 0.1);
+      transition: background 0.3s ease;
+    }
+    .section-header:hover {
+      background: rgba(139, 92, 246, 0.2);
+    }
+    .section-header h2 {
+      margin: 0;
+      color: white;
+      font-size: 1.3rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .section-toggle {
+      font-size: 1.2rem;
+      color: #a5b4fc;
+      transition: transform 0.3s ease;
+    }
+    .section-toggle.collapsed {
+      transform: rotate(-90deg);
+    }
+    .section-content {
+      padding: 25px;
+      display: block;
+    }
+    .section-content.collapsed {
+      display: none;
+    }
+    .section-description {
+      color: #c7d2fe;
+      margin-bottom: 20px;
+      font-size: 0.95rem;
+    }
+
     button {
       padding: 15px 30px;
       font-size: 16px;
@@ -95,19 +168,10 @@
     .info { background: #3b82f6; color: white; border: none; border-radius: 8px; }
     .status { background: rgba(255,255,255,0.1); backdrop-filter: blur(10px); padding: 20px; border-radius: 12px; margin: 20px 0; border: 1px solid rgba(255,255,255,0.2); }
     pre { background: #1f2937; color: #10b981; padding: 15px; border-radius: 8px; overflow-x: auto; font-size: 14px; }
-    .section {
-      margin: 30px 0;
-      padding: 25px;
-      background: rgba(255,255,255,0.1);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 16px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-    }
-    h2 {
+    h3 {
       color: white;
       margin-top: 0;
-      font-size: 1.5rem;
+      font-size: 1.1rem;
     }
     .description { color: #c7d2fe; margin-bottom: 15px; }
     .entries-card {
@@ -196,44 +260,96 @@
       border-radius: 8px;
       margin-top: 15px;
     }
+    .toggle-box {
+      background: rgba(59, 130, 246, 0.1);
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+    }
+    .toggle-box label {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      color: #dbeafe;
+      font-weight: 600;
+    }
+    .toggle-box input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+    .toggle-box .description {
+      color: #93c5fd;
+      font-size: 0.85rem;
+      margin: 8px 0 0 28px;
+    }
   </style>
 </head>
 <body>
-  <h1>🎰 Max Craic Poker Admin</h1>
-  <p class="subtitle">Manage draws and view statistics</p>
-
-  <div class="tabs-container">
-    <div class="tabs">
-      <button class="tab active" onclick="switchTab('tier')">📈 Tier Dashboard</button>
-      <button class="tab" onclick="switchTab('general')">📊 General</button>
-      <button class="tab" onclick="switchTab('tournaments')">🎯 Tournaments</button>
-      <button class="tab" onclick="switchTab('draw')">🎲 Draw & Prizes</button>
-      <button class="tab" onclick="switchTab('revenue')">💰 Revenue & Stats</button>
-      <button class="tab" onclick="switchTab('membership')">👑 Members</button>
-      <button class="tab" onclick="switchTab('settings')">⚙️ Settings</button>
-      <button class="tab" onclick="switchTab('engagement')">🎴 Engagement</button>
+  <div class="header">
+    <div class="header-left">
+      <h1>🎰 Max Craic Poker Admin</h1>
+      <p class="subtitle">Manage draws and view statistics</p>
+    </div>
+    <div class="settings-icon" onclick="switchTab('settings')" title="Settings">
+      ⚙️
     </div>
   </div>
 
-  <!-- TIER DASHBOARD TAB -->
-  <div id="tier-tab" class="tab-content active">
-    <iframe
-      src="/admin"
-      style="width: 100%; height: calc(100vh - 200px); border: none; border-radius: 12px; background: transparent;"
-      title="Tier Dashboard"
-    ></iframe>
+  <div class="tabs-container">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('stream')">🎬 Stream</button>
+      <button class="tab" onclick="switchTab('members')">👥 Members</button>
+      <button class="tab" onclick="switchTab('engagement')">🎮 Engagement</button>
+      <button class="tab" onclick="switchTab('revenue')">💰 Revenue</button>
+    </div>
   </div>
 
-  <!-- GENERAL TAB -->
-  <div id="general-tab" class="tab-content">
-    <div class="section">
-      <h2>📊 Key Stats</h2>
-      <p class="description">Live view of current session metrics</p>
+  <!-- STREAM TAB -->
+  <div id="stream-tab" class="tab-content active">
 
-      <!-- Side by side layout for Tips and Entries -->
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
-        <!-- Tips Card -->
-        <div>
+    <!-- Session Setup Section -->
+    <div class="collapsible-section">
+      <div class="section-header" onclick="toggleSection('session-setup')">
+        <h2><span>📅</span> Session Setup</h2>
+        <span class="section-toggle" id="session-setup-toggle">▼</span>
+      </div>
+      <div class="section-content" id="session-setup-content">
+        <p class="section-description">Configure stream session details and schedule</p>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Session ID (keep same to preserve existing entries)</label>
+            <input type="text" id="sessionId" placeholder="2025-11-13">
+          </div>
+          <div class="form-group">
+            <label>Stream Start Date & Time (GMT)</label>
+            <input type="datetime-local" id="streamStartTime">
+          </div>
+        </div>
+
+        <div class="toggle-box">
+          <label>
+            <input type="checkbox" id="resetDraw">
+            <span>Reset draw & clear entries</span>
+          </label>
+          <p class="description">
+            ⚠️ Check this ONLY when starting a new session. Unchecked = update tournament names without clearing entries/winners.
+          </p>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin: 20px 0;">
+          <div id="entriesCard" style="display: none;">
+            <div class="entries-card">
+              <div class="entries-label">Current Entrants</div>
+              <div class="entries-count" id="entriesCount" style="font-size: 3rem;">-</div>
+              <div style="color: #ddd6fe; font-size: 0.9rem; margin-top: 10px;">
+                <span id="lastUpdated">-</span>
+              </div>
+            </div>
+          </div>
           <div id="tipsCard" style="display: none;">
             <div class="entries-card" style="background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);">
               <div class="entries-label">Today's Tips</div>
@@ -245,422 +361,466 @@
           </div>
         </div>
 
-        <!-- Entries Card -->
-        <div>
-          <div id="entriesCard" style="display: none;">
-            <div class="entries-card">
-              <div class="entries-label">Current Entrants</div>
-              <div class="entries-count" id="entriesCount" style="font-size: 3rem;">-</div>
-              <div style="color: #ddd6fe; font-size: 0.9rem; margin-top: 10px;">
-                <span id="lastUpdated">-</span>
-              </div>
-            </div>
-          </div>
+        <button class="info" onclick="loadKeyStats()">🔄 Load Session Stats</button>
+
+        <div id="winnersInfo" style="margin-top: 20px; display: none;">
+          <h3 style="color: white; margin-bottom: 10px;">🏆 Current Winners</h3>
+          <div id="winnersList"></div>
         </div>
-      </div>
-
-      <button class="info" onclick="loadKeyStats()">🔄 Load Key Stats</button>
-
-      <div id="winnersInfo" style="margin-top: 20px; display: none;">
-        <h3 style="color: white; margin-bottom: 10px;">🏆 Current Winners</h3>
-        <div id="winnersList"></div>
       </div>
     </div>
 
-    <div class="section">
-      <h2>📊 System Status</h2>
-      <div class="status" id="status"></div>
-    </div>
-  </div>
+    <!-- Tournaments Section -->
+    <div class="collapsible-section">
+      <div class="section-header" onclick="toggleSection('tournaments')">
+        <h2><span>🎯</span> Tournaments</h2>
+        <span class="section-toggle" id="tournaments-toggle">▼</span>
+      </div>
+      <div class="section-content" id="tournaments-content">
+        <p class="section-description">Update tournaments for the next stream (up to 6)</p>
 
-  <!-- TOURNAMENTS TAB -->
-  <div id="tournaments-tab" class="tab-content">
-    <div class="section">
-      <h2>🎯 Tournament Manager</h2>
-    <p class="description">Update tournaments.json for the next stream without editing files</p>
+        <div class="tournament-form">
+          <div id="tournamentEntries"></div>
 
-    <div class="tournament-form">
-      <div class="form-row">
-        <div class="form-group">
-          <label>Session ID (keep same to preserve existing entries)</label>
-          <input type="text" id="sessionId" placeholder="2025-11-13">
-        </div>
-        <div class="form-group">
-          <label>Stream Start Date & Time (GMT)</label>
-          <input type="datetime-local" id="streamStartTime">
+          <button class="draw" onclick="updateTournaments()" style="width: 100%; margin: 20px 0 0 0;">
+            💾 Update Tournaments
+          </button>
+
+          <div id="tournamentStatus"></div>
         </div>
       </div>
+    </div>
 
-      <div style="background: rgba(59, 130, 246, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid rgba(59, 130, 246, 0.3);">
-        <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #dbeafe;">
-          <input type="checkbox" id="resetDraw" style="width: 18px; height: 18px; cursor: pointer;">
-          <span style="font-weight: 600;">Reset draw & clear entries</span>
-        </label>
-        <p style="color: #93c5fd; font-size: 0.85rem; margin: 8px 0 0 28px;">
-          ⚠️ Check this ONLY when starting a new session. Unchecked = update tournament names without clearing entries/winners.
+    <!-- Draw & Prizes Section -->
+    <div class="collapsible-section">
+      <div class="section-header" onclick="toggleSection('draw-prizes')">
+        <h2><span>🎲</span> Draw & Prizes</h2>
+        <span class="section-toggle" id="draw-prizes-toggle">▼</span>
+      </div>
+      <div class="section-content" id="draw-prizes-content">
+        <p class="section-description">Trigger the draw to select winners and calculate payouts</p>
+
+        <div id="payoutCalculator" style="display: none; margin-bottom: 30px;">
+          <h3>💰 Winner Payout Calculator</h3>
+          <p class="description">Enter tournament results to calculate USDC payouts</p>
+          <div id="payoutCards"></div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+          <button class="draw" onclick="triggerDraw()">Trigger Draw</button>
+          <button class="reset" onclick="resetDraw()">Reset Draw</button>
+        </div>
+
+        <h3 style="margin-top: 30px;">⚡ Manual Draw Override (Testing)</h3>
+        <p class="description">Immediately trigger the draw NOW - ignores scheduled date (use for testing)</p>
+        <button class="test" onclick="triggerDrawNow()" style="background: #f59e0b; font-size: 18px; padding: 20px 40px;">
+          ⚡ TRIGGER DRAW NOW (Testing)
+        </button>
+        <p style="color: #fbbf24; font-size: 14px; margin-top: 10px; font-weight: 600;">
+          ⚠️ This will select 6 winners from current entries immediately
         </p>
+
+        <h3 style="margin-top: 30px;">🧪 Testing</h3>
+        <p class="description">Add test wallets to quickly test the draw functionality</p>
+        <button class="test" onclick="testDraw()">Add Test Entries</button>
+        <p style="color: #a5b4fc; font-size: 14px; margin-top: 10px;">Adds 10 test wallets to the current draw</p>
       </div>
-
-      <h3 style="color: white; margin: 20px 0 15px 0; font-size: 1.1rem;">Tournaments (up to 6)</h3>
-
-      <div id="tournamentEntries">
-        <!-- Tournament entries will be populated by JS -->
-      </div>
-
-      <button class="draw" onclick="updateTournaments()" style="width: 100%; margin: 20px 0 0 0;">
-        💾 Update Tournaments
-      </button>
-
-      <div id="tournamentStatus"></div>
-    </div>
     </div>
   </div>
 
-  <!-- DRAW & PRIZES TAB -->
-  <div id="draw-tab" class="tab-content">
-    <div class="section" id="payoutCalculator" style="display: none;">
-      <h2>💰 Winner Payout Calculator</h2>
-      <p class="description">Enter tournament results to calculate USDC payouts</p>
-      <div id="payoutCards"></div>
-    </div>
+  <!-- MEMBERS TAB -->
+  <div id="members-tab" class="tab-content">
 
-    <div class="section">
-      <h2>🎲 Draw Management</h2>
-      <p class="description">Trigger the draw to select winners or reset to start fresh</p>
-      <button class="draw" onclick="triggerDraw()">Trigger Draw</button>
-      <button class="reset" onclick="resetDraw()">Reset Draw</button>
-    </div>
-
-    <div class="section">
-      <h2>⚡ Manual Draw Override (Testing)</h2>
-      <p class="description">Immediately trigger the draw NOW - ignores scheduled date (use for testing before coach call)</p>
-      <button class="test" onclick="triggerDrawNow()" style="background: #f59e0b; font-size: 18px; padding: 20px 40px;">
-        ⚡ TRIGGER DRAW NOW (Testing)
-      </button>
-      <p style="color: #fbbf24; font-size: 14px; margin-top: 10px; font-weight: 600;">
-        ⚠️ This will select 6 winners from current entries immediately, regardless of scheduled draw date
-      </p>
-    </div>
-
-    <div class="section">
-      <h2>🧪 Testing</h2>
-      <p class="description">Add test wallets to quickly test the draw functionality without manual entries</p>
-      <button class="test" onclick="testDraw()">Add Test Entries</button>
-      <p style="color: #a5b4fc; font-size: 14px; margin-top: 10px;">Adds 10 test wallets to the current draw</p>
-    </div>
-  </div>
-
-  <!-- REVENUE & STATS TAB -->
-  <div id="revenue-tab" class="tab-content">
-    <div class="section">
-      <h2>💰 Revenue Overview</h2>
-      <p class="description">Complete revenue statistics across all transaction types</p>
-
-      <div id="revenueStats" style="display: none;">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 20px 0;">
-          <div class="entries-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-            <div class="entries-label">Total Volume</div>
-            <div class="entries-count" id="totalVolume" style="font-size: 3rem;">$0.00</div>
-            <div style="color: #d1fae5; font-size: 0.9rem; margin-top: 10px;">All transactions</div>
-          </div>
-
-          <div class="entries-card" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
-            <div class="entries-label">Platform Cut (2%)</div>
-            <div class="entries-count" id="platformCut" style="font-size: 3rem;">$0.00</div>
-            <div style="color: #ede9fe; font-size: 0.9rem; margin-top: 10px;">Your revenue</div>
-          </div>
-        </div>
-
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0;">
-          <div style="background: rgba(236, 72, 153, 0.2); padding: 20px; border-radius: 12px; border: 1px solid rgba(236, 72, 153, 0.3);">
-            <div style="color: #fbcfe8; font-size: 0.9rem; margin-bottom: 5px;">Tips</div>
-            <div style="color: white; font-size: 1.8rem; font-weight: bold;" id="totalTips">$0.00</div>
-          </div>
-
-          <div style="background: rgba(251, 191, 36, 0.2); padding: 20px; border-radius: 12px; border: 1px solid rgba(251, 191, 36, 0.3);">
-            <div style="color: #fef3c7; font-size: 0.9rem; margin-bottom: 5px;">Memberships</div>
-            <div style="color: white; font-size: 1.8rem; font-weight: bold;" id="totalMemberships">$0.00</div>
-          </div>
-
-          <div style="background: rgba(59, 130, 246, 0.2); padding: 20px; border-radius: 12px; border: 1px solid rgba(59, 130, 246, 0.3);">
-            <div style="color: #dbeafe; font-size: 0.9rem; margin-bottom: 5px;">Transactions</div>
-            <div style="color: white; font-size: 1.8rem; font-weight: bold;" id="transactionCount">0</div>
-          </div>
-
-          <div style="background: rgba(16, 185, 129, 0.2); padding: 20px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.3);">
-            <div style="color: #d1fae5; font-size: 0.9rem; margin-bottom: 5px;">Active Members</div>
-            <div style="color: white; font-size: 1.8rem; font-weight: bold;" id="activeMemberships">0</div>
-          </div>
-        </div>
+    <!-- Member List Section -->
+    <div class="collapsible-section">
+      <div class="section-header" onclick="toggleSection('member-list')">
+        <h2><span>👥</span> Member List</h2>
+        <span class="section-toggle" id="member-list-toggle">▼</span>
       </div>
+      <div class="section-content" id="member-list-content">
+        <p class="section-description">All members and their status</p>
 
-      <button class="info" onclick="fetchRevenue()">🔄 Get Revenue Data</button>
-    </div>
+        <div id="membersStats" style="display: none; margin: 20px 0;">
+          <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 25px; border-radius: 12px; text-align: center;">
+            <div style="color: #fef3c7; font-size: 1rem; margin-bottom: 5px;">Total Members</div>
+            <div style="color: white; font-size: 3rem; font-weight: bold;" id="totalMembers">0</div>
+          </div>
+        </div>
 
-    <div class="section">
-      <h2>📊 Transaction History</h2>
-      <p class="description">Recent transactions (last 50)</p>
+        <button class="info" onclick="fetchMembers()">🔄 Get Members</button>
 
-      <div id="transactionsList" style="display: none; margin-top: 20px;"></div>
-
-      <div style="margin-top: 20px; display: flex; gap: 10px;">
-        <button class="draw" onclick="exportRevenue('csv')">📥 Export CSV</button>
-        <button class="draw" onclick="exportRevenue('json')">📥 Export JSON</button>
+        <div id="membersList" style="display: none; margin-top: 20px;"></div>
       </div>
     </div>
 
-    <div class="section">
-      <h2>📈 Platform Statistics</h2>
-      <p class="description">Overview of all-time platform engagement</p>
+    <!-- Membership Settings Section -->
+    <div class="collapsible-section">
+      <div class="section-header" onclick="toggleSection('membership-settings')">
+        <h2><span>⚙️</span> Membership Settings</h2>
+        <span class="section-toggle" id="membership-settings-toggle">▼</span>
+      </div>
+      <div class="section-content" id="membership-settings-content">
+        <p class="section-description">Configure membership system and benefits</p>
 
-      <div id="statsCards" style="display: none; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-        <div class="entries-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
-          <div class="entries-label">Unique Wallets</div>
-          <div class="entries-count" id="totalWalletsCount">-</div>
-          <div style="color: #d1fae5; font-size: 0.9rem; margin-top: 10px;">
-            All-time users
+        <div id="membershipForm" style="max-width: 600px; margin: 20px 0;">
+          <div style="margin-bottom: 20px;">
+            <label style="color: #a5b4fc; font-size: 14px; display: flex; align-items: center; gap: 10px; cursor: pointer;">
+              <input type="checkbox" id="membershipEnabled" style="width: auto; cursor: pointer;" />
+              <span>Enable Membership System</span>
+            </label>
           </div>
-        </div>
-        <div class="entries-card" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
-          <div class="entries-label">Total Draws</div>
-          <div class="entries-count" id="totalDrawsCount">-</div>
-          <div style="color: #dbeafe; font-size: 0.9rem; margin-top: 10px;">
-            All-time entries
+
+          <div style="margin-bottom: 20px;">
+            <label style="color: #a5b4fc; font-size: 14px; margin-bottom: 8px; display: block;">Monthly Fee (USD)</label>
+            <input type="number" id="monthlyFee" placeholder="10.00" step="0.01" min="0" style="width: 100%; padding: 12px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(255,255,255,0.05); color: white; box-sizing: border-box;" />
           </div>
-        </div>
-      </div>
 
-      <button class="info" onclick="fetchPlatformStats()">🔄 Get Platform Statistics</button>
-    </div>
+          <div style="margin-bottom: 20px;">
+            <label style="color: #a5b4fc; font-size: 14px; margin-bottom: 8px; display: block;">Benefits (one per line)</label>
+            <textarea id="membershipBenefits" rows="4" placeholder="In-depth tournament hand history reviews&#10;Exclusive strategy content&#10;Early access to videos&#10;Bonus raffle tickets" style="width: 100%; padding: 12px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(255,255,255,0.05); color: white; box-sizing: border-box; font-family: system-ui, sans-serif;"></textarea>
+          </div>
 
-    <div class="section">
-      <h2>🏆 Monthly Leaderboard</h2>
-      <p class="description">Monthly snapshots happen automatically. Use this for manual override or testing.</p>
-      <button class="draw" onclick="snapshotLeaderboard()">Manual Snapshot (Override)</button>
-      <p style="color: #6b7280; font-size: 14px; margin-top: 10px;">
-        ⚠️ The system auto-snapshots at month end. Only use this for testing or manual override.
-      </p>
-    </div>
-  </div>
-
-  <!-- MEMBERSHIP TAB -->
-  <div id="membership-tab" class="tab-content">
-    <div class="section">
-      <h2>👑 Membership Settings</h2>
-      <p class="description">Configure membership system and benefits</p>
-
-      <div id="membershipForm" style="max-width: 600px; margin: 20px 0;">
-        <div style="margin-bottom: 20px;">
-          <label style="color: #a5b4fc; font-size: 14px; display: flex; align-items: center; gap: 10px; cursor: pointer;">
-            <input type="checkbox" id="membershipEnabled" style="width: auto; cursor: pointer;" />
-            <span>Enable Membership System</span>
-          </label>
+          <button class="draw" onclick="saveMembershipSettings()">💾 Save Settings</button>
+          <button class="info" onclick="loadMembershipSettings()">🔄 Reload</button>
         </div>
 
-        <div style="margin-bottom: 20px;">
-          <label style="color: #a5b4fc; font-size: 14px; margin-bottom: 8px; display: block;">Monthly Fee (USD)</label>
-          <input type="number" id="monthlyFee" placeholder="10.00" step="0.01" min="0" style="width: 100%; padding: 12px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(255,255,255,0.05); color: white; box-sizing: border-box;" />
-        </div>
-
-        <div style="margin-bottom: 20px;">
-          <label style="color: #a5b4fc; font-size: 14px; margin-bottom: 8px; display: block;">Benefits (one per line)</label>
-          <textarea id="membershipBenefits" rows="4" placeholder="In-depth tournament hand history reviews&#10;Exclusive strategy content&#10;Early access to videos&#10;Bonus raffle tickets" style="width: 100%; padding: 12px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(255,255,255,0.05); color: white; box-sizing: border-box; font-family: system-ui, sans-serif;"></textarea>
-        </div>
-
-        <button class="draw" onclick="saveMembershipSettings()">💾 Save Settings</button>
-        <button class="info" onclick="loadMembershipSettings()">🔄 Reload</button>
-      </div>
-
-      <div id="membershipSaveStatus"></div>
-    </div>
-
-    <div class="section">
-      <h2>👥 Active Members</h2>
-      <p class="description">All members and their status</p>
-
-      <div id="membersStats" style="display: none; margin: 20px 0;">
-        <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 25px; border-radius: 12px; text-align: center;">
-          <div style="color: #fef3c7; font-size: 1rem; margin-bottom: 5px;">Total Members</div>
-          <div style="color: white; font-size: 3rem; font-weight: bold;" id="totalMembers">0</div>
-        </div>
-      </div>
-
-      <button class="info" onclick="fetchMembers()">🔄 Get Members</button>
-
-      <div id="membersList" style="display: none; margin-top: 20px;"></div>
-    </div>
-  </div>
-
-  <!-- SETTINGS TAB -->
-  <div id="settings-tab" class="tab-content">
-    <div class="section">
-      <h2>📺 Streaming Configuration</h2>
-      <p class="description">Configure which streaming service to embed in your mini app</p>
-
-      <div style="max-width: 600px; margin: 20px 0;">
-        <div style="margin-bottom: 20px;">
-          <label style="color: #a5b4fc; font-size: 14px; margin-bottom: 8px; display: block;">Streaming Platform</label>
-          <select id="streamingPlatform" style="width: 100%; padding: 12px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: #1a1a2e; color: white; box-sizing: border-box;">
-            <option value="retake" style="background: #1a1a2e; color: white;">Retake</option>
-            <option value="twitch" style="background: #1a1a2e; color: white;">Twitch</option>
-            <option value="youtube" style="background: #1a1a2e; color: white;">YouTube Live</option>
-            <option value="kick" style="background: #1a1a2e; color: white;">Kick</option>
-            <option value="custom" style="background: #1a1a2e; color: white;">Custom Embed URL</option>
-          </select>
-        </div>
-
-        <div style="margin-bottom: 20px;">
-          <label style="color: #a5b4fc; font-size: 14px; margin-bottom: 8px; display: block;">Stream URL / Channel Name</label>
-          <input type="text" id="streamUrl" placeholder="e.g., https://retake.tv/live/... or YourChannelName" style="width: 100%; padding: 12px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(255,255,255,0.05); color: white; box-sizing: border-box;" />
-          <p style="color: #6b7280; font-size: 12px; margin-top: 5px;">
-            For Twitch/Kick: enter channel name<br>
-            For YouTube: enter full live stream URL<br>
-            For Custom: enter full embed URL
-          </p>
-        </div>
-
-        <button class="draw" onclick="saveStreamingSettings()">💾 Save Streaming Settings</button>
-        <button class="info" onclick="loadStreamingSettings()">🔄 Load Current Settings</button>
-      </div>
-
-      <div id="streamingSettingsStatus"></div>
-
-      <div style="background: rgba(59, 130, 246, 0.1); padding: 15px; border-radius: 8px; margin-top: 20px; border: 1px solid rgba(59, 130, 246, 0.3);">
-        <h3 style="color: #dbeafe; font-size: 1rem; margin: 0 0 10px 0;">ℹ️ Platform-Specific Instructions</h3>
-        <div style="color: #93c5fd; font-size: 0.9rem; line-height: 1.6;">
-          <p><strong>Retake:</strong> Use the full stream URL (e.g., https://retake.tv/live/68b58fa755320f51930c9081)</p>
-          <p><strong>Twitch:</strong> Enter your channel name only (e.g., "yourchannelname")</p>
-          <p><strong>YouTube:</strong> Use the full live stream URL from your stream page</p>
-          <p><strong>Kick:</strong> Enter your channel name only (e.g., "yourchannelname")</p>
-          <p><strong>Custom:</strong> Provide the full embed iframe URL from your streaming service</p>
-        </div>
+        <div id="membershipSaveStatus"></div>
       </div>
     </div>
   </div>
 
   <!-- ENGAGEMENT TAB -->
   <div id="engagement-tab" class="tab-content">
-    <div class="section">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-        <div>
-          <h2 style="margin: 0;">🎴 Hand of the Hour</h2>
-          <p class="description" style="margin: 5px 0 0 0;">Pre-load historical poker hands and release them during stream for viewer voting</p>
-        </div>
-        <button onclick="toggleHothSection()" id="hothToggleBtn" class="info" style="margin: 0;">
-          ▼ Collapse
-        </button>
+
+    <!-- HOTH Settings Section -->
+    <div class="collapsible-section">
+      <div class="section-header" onclick="toggleSection('hoth-settings')">
+        <h2><span>🎴</span> Hand of the Hour</h2>
+        <span class="section-toggle" id="hoth-settings-toggle">▼</span>
       </div>
+      <div class="section-content" id="hoth-settings-content">
+        <p class="section-description">Pre-load historical poker hands and release them during stream for viewer voting</p>
 
-      <div id="hothContent">
+        <!-- Settings Row: Enable Toggle + Stream Delay -->
+        <div class="toggle-box">
+          <div style="display: grid; grid-template-columns: 1fr 250px; gap: 20px; align-items: start;">
+            <!-- Enable Toggle -->
+            <div>
+              <label>
+                <input type="checkbox" id="hothEnabled">
+                <span>Enable Hand of the Hour Feature</span>
+              </label>
+              <p class="description">
+                When enabled, viewers can vote on historical poker hands during your stream
+              </p>
+            </div>
 
-      <!-- Settings Row: Enable Toggle + Stream Delay -->
-      <div style="background: rgba(59, 130, 246, 0.1); padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid rgba(59, 130, 246, 0.3);">
-        <div style="display: grid; grid-template-columns: 1fr 250px; gap: 20px; align-items: start;">
-          <!-- Enable Toggle -->
-          <div>
-            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; color: #dbeafe;">
-              <input type="checkbox" id="hothEnabled" style="width: 18px; height: 18px; cursor: pointer;">
-              <span style="font-weight: 600;">Enable Hand of the Hour Feature</span>
-            </label>
-            <p style="color: #93c5fd; font-size: 0.85rem; margin: 8px 0 0 28px;">
-              When enabled, viewers can vote on historical poker hands during your stream
-            </p>
+            <!-- Stream Delay Input -->
+            <div>
+              <label style="color: #dbeafe; font-size: 0.9rem; font-weight: 600; display: block; margin-bottom: 5px;">
+                Stream Delay (seconds)
+              </label>
+              <input
+                type="number"
+                id="streamDelaySeconds"
+                min="0"
+                max="600"
+                step="0.5"
+                placeholder="0"
+                style="width: 100%; padding: 10px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(255,255,255,0.05); color: white; box-sizing: border-box;"
+              />
+              <p style="color: #93c5fd; font-size: 0.75rem; margin: 5px 0 0 0;">
+                Hand shows to viewers after this delay (e.g., 2.5 mins = 150 seconds)
+              </p>
+            </div>
           </div>
 
-          <!-- Stream Delay Input -->
-          <div>
-            <label style="color: #dbeafe; font-size: 0.9rem; font-weight: 600; display: block; margin-bottom: 5px;">
-              Stream Delay (seconds)
-            </label>
-            <input
-              type="number"
-              id="streamDelaySeconds"
-              min="0"
-              max="600"
-              step="0.5"
-              placeholder="0"
-              style="width: 100%; padding: 10px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(255,255,255,0.05); color: white; box-sizing: border-box;"
-            />
-            <p style="color: #93c5fd; font-size: 0.75rem; margin: 5px 0 0 0;">
-              Hand shows to viewers after this delay (e.g., 2.5 mins = 150 seconds)
-            </p>
+          <!-- Save Button -->
+          <button class="draw" onclick="saveHothSettings()" style="margin-top: 15px; width: auto;">
+            💾 Save Settings
+          </button>
+          <div id="hothSettingsSaveStatus" style="margin-top: 10px;"></div>
+        </div>
+
+        <!-- Current Status -->
+        <div id="hothStatusCard" style="background: rgba(139, 92, 246, 0.1); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(139, 92, 246, 0.3);">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div>
+              <div style="color: #c7d2fe; font-size: 0.9rem;">Status</div>
+              <div id="hothStatus" style="color: white; font-size: 1.5rem; font-weight: bold; margin-top: 5px;">No active hand</div>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <button class="info" onclick="loadHothStatus()" style="margin: 0;">🔄 Refresh</button>
+            </div>
+          </div>
+          <div id="hothTimeRemaining" style="display: none; margin-top: 15px; color: #ddd6fe;">
+            <span style="color: #a5b4fc;">Time remaining:</span> <span id="hothTimer" style="font-weight: bold; color: white;">120s</span>
+            <div style="font-size: 0.8rem; color: #a5b4fc; margin-top: 5px;">Auto-closes and tallies votes after 120s</div>
+          </div>
+          <div id="hothVoteCount" style="display: none; margin-top: 10px; color: #ddd6fe;">
+            <span style="color: #a5b4fc;">Votes received:</span> <span id="hothVotes" style="font-weight: bold; color: white;">0</span>
           </div>
         </div>
 
-        <!-- Save Button -->
-        <button class="draw" onclick="saveHothSettings()" style="margin-top: 15px; width: auto;">
-          💾 Save Settings
-        </button>
-        <div id="hothSettingsSaveStatus" style="margin-top: 10px;"></div>
+        <!-- Add Hand to Queue -->
+        <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1);">
+          <h3>Add Hand to Queue</h3>
+          <div style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 10px; align-items: end;">
+            <div>
+              <label style="color: #a5b4fc; font-size: 12px; margin-bottom: 5px; display: block;">Hole Cards (e.g., "Ac Jh")</label>
+              <input type="text" id="hothCards" placeholder="Ac Jh" style="width: 100%; padding: 12px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(255,255,255,0.05); color: white; box-sizing: border-box;" />
+              <p style="color: #6b7280; font-size: 11px; margin: 5px 0 0 0;">Format: Rank (A,K,Q,J,T,9-2) + Suit (s,h,d,c)</p>
+            </div>
+            <div>
+              <label style="color: #a5b4fc; font-size: 12px; margin-bottom: 5px; display: block;">Outcome</label>
+              <select id="hothOutcome" style="width: 100%; padding: 12px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: #1a1a2e; color: white; box-sizing: border-box;">
+                <option value="win" style="background: #1a1a2e; color: white;">Win</option>
+                <option value="lose" style="background: #1a1a2e; color: white;">Lose</option>
+              </select>
+            </div>
+            <button class="draw" onclick="addHandToQueue()" style="margin: 0; white-space: nowrap;">➕ Add to Queue</button>
+          </div>
+        </div>
+
+        <!-- Queue Display -->
+        <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="margin: 0;">Queued Hands (<span id="queueCount">0</span>/6)</h3>
+            <button class="draw" onclick="releaseNextHand()" id="releaseBtn" style="margin: 0; background: #10b981;">🎴 Release Next Hand</button>
+          </div>
+          <div id="queueList" style="display: flex; flex-direction: column; gap: 10px;">
+            <p style="color: #6b7280; text-align: center; padding: 20px;">No hands in queue</p>
+          </div>
+        </div>
+
+        <!-- Session Leaderboard -->
+        <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="margin: 0;">Session Leaderboard</h3>
+            <div style="display: flex; gap: 10px;">
+              <button class="draw" onclick="endHothGame()" style="margin: 0; font-size: 13px; padding: 10px 15px; background: #10b981;">🏁 End Game</button>
+              <button class="reset" onclick="clearHothSession()" style="margin: 0; font-size: 13px; padding: 10px 15px;">🔄 Clear Session</button>
+            </div>
+          </div>
+          <div id="hothLeaderboard">
+            <p style="color: #6b7280; text-align: center; padding: 20px;">No results yet</p>
+          </div>
+        </div>
+
+        <div id="hothStatusMsg"></div>
       </div>
+    </div>
 
-      <!-- Current Status -->
-      <div id="hothStatusCard" style="background: rgba(139, 92, 246, 0.1); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(139, 92, 246, 0.3);">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-          <div>
-            <div style="color: #c7d2fe; font-size: 0.9rem;">Status</div>
-            <div id="hothStatus" style="color: white; font-size: 1.5rem; font-weight: bold; margin-top: 5px;">No active hand</div>
+    <!-- Madge Game Settings Section (Placeholder) -->
+    <div class="collapsible-section">
+      <div class="section-header" onclick="toggleSection('madge-settings')">
+        <h2><span>🃏</span> Madge Game Settings</h2>
+        <span class="section-toggle collapsed" id="madge-settings-toggle">▼</span>
+      </div>
+      <div class="section-content collapsed" id="madge-settings-content">
+        <p class="section-description">Configure daily poker game settings</p>
+        <p style="color: #a5b4fc; font-style: italic;">Game settings coming soon...</p>
+      </div>
+    </div>
+
+    <!-- Giveaway Settings Section -->
+    <div class="collapsible-section">
+      <div class="section-header" onclick="toggleSection('giveaway-settings')">
+        <h2><span>🎁</span> Giveaway Settings</h2>
+        <span class="section-toggle" id="giveaway-settings-toggle">▼</span>
+      </div>
+      <div class="section-content" id="giveaway-settings-content">
+        <p class="section-description">Control who can enter your giveaways</p>
+
+        <div class="toggle-box">
+          <label>
+            <input type="checkbox" id="membersOnlyGiveaway">
+            <span>Members-Only Giveaway</span>
+          </label>
+          <p class="description">
+            ℹ️ When enabled, only wallets with active membership can win the raffle. The Madge game still works for everyone, but non-members won't be entered into the draw pool. This rewards your paying supporters while keeping the game fun for all.
+          </p>
+        </div>
+
+        <div style="background: rgba(251, 191, 36, 0.1); padding: 15px; border-radius: 8px; margin-top: 20px; border: 1px solid rgba(251, 191, 36, 0.3);">
+          <h3 style="color: #fbbf24; margin: 0 0 10px 0; font-size: 1rem;">📋 Regulatory Compliance Note</h3>
+          <p style="color: #fde68a; font-size: 0.85rem; line-height: 1.6; margin: 0;">
+            This is compliant because membership has standalone value (content access, community). The giveaway is a discretionary perk, not a pay-to-enter lottery. All users can still play the Madge game for free.
+          </p>
+        </div>
+
+        <button class="draw" onclick="saveGiveawaySettings()" style="margin-top: 20px;">💾 Save Giveaway Settings</button>
+        <div id="giveawaySettingsStatus"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- REVENUE TAB -->
+  <div id="revenue-tab" class="tab-content">
+
+    <!-- Revenue Stats Section -->
+    <div class="collapsible-section">
+      <div class="section-header" onclick="toggleSection('revenue-stats')">
+        <h2><span>💵</span> Revenue Stats & Dashboard</h2>
+        <span class="section-toggle" id="revenue-stats-toggle">▼</span>
+      </div>
+      <div class="section-content" id="revenue-stats-content">
+        <p class="section-description">Complete revenue statistics across all transaction types</p>
+
+        <div id="revenueStats" style="display: none;">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin: 20px 0;">
+            <div class="entries-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+              <div class="entries-label">Total Volume</div>
+              <div class="entries-count" id="totalVolume" style="font-size: 3rem;">$0.00</div>
+              <div style="color: #d1fae5; font-size: 0.9rem; margin-top: 10px;">All transactions</div>
+            </div>
+
+            <div class="entries-card" style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);">
+              <div class="entries-label">Platform Cut (2%)</div>
+              <div class="entries-count" id="platformCut" style="font-size: 3rem;">$0.00</div>
+              <div style="color: #ede9fe; font-size: 0.9rem; margin-top: 10px;">Your revenue</div>
+            </div>
           </div>
-          <div style="display: flex; gap: 10px;">
-            <button class="info" onclick="loadHothStatus()" style="margin: 0;">🔄 Refresh</button>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 20px 0;">
+            <div style="background: rgba(236, 72, 153, 0.2); padding: 20px; border-radius: 12px; border: 1px solid rgba(236, 72, 153, 0.3);">
+              <div style="color: #fbcfe8; font-size: 0.9rem; margin-bottom: 5px;">Tips</div>
+              <div style="color: white; font-size: 1.8rem; font-weight: bold;" id="totalTips">$0.00</div>
+            </div>
+
+            <div style="background: rgba(251, 191, 36, 0.2); padding: 20px; border-radius: 12px; border: 1px solid rgba(251, 191, 36, 0.3);">
+              <div style="color: #fef3c7; font-size: 0.9rem; margin-bottom: 5px;">Memberships</div>
+              <div style="color: white; font-size: 1.8rem; font-weight: bold;" id="totalMemberships">$0.00</div>
+            </div>
+
+            <div style="background: rgba(59, 130, 246, 0.2); padding: 20px; border-radius: 12px; border: 1px solid rgba(59, 130, 246, 0.3);">
+              <div style="color: #dbeafe; font-size: 0.9rem; margin-bottom: 5px;">Transactions</div>
+              <div style="color: white; font-size: 1.8rem; font-weight: bold;" id="transactionCount">0</div>
+            </div>
+
+            <div style="background: rgba(16, 185, 129, 0.2); padding: 20px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.3);">
+              <div style="color: #d1fae5; font-size: 0.9rem; margin-bottom: 5px;">Active Members</div>
+              <div style="color: white; font-size: 1.8rem; font-weight: bold;" id="activeMemberships">0</div>
+            </div>
           </div>
         </div>
-        <div id="hothTimeRemaining" style="display: none; margin-top: 15px; color: #ddd6fe;">
-          <span style="color: #a5b4fc;">Time remaining:</span> <span id="hothTimer" style="font-weight: bold; color: white;">120s</span>
-          <div style="font-size: 0.8rem; color: #a5b4fc; margin-top: 5px;">Auto-closes and tallies votes after 120s</div>
-        </div>
-        <div id="hothVoteCount" style="display: none; margin-top: 10px; color: #ddd6fe;">
-          <span style="color: #a5b4fc;">Votes received:</span> <span id="hothVotes" style="font-weight: bold; color: white;">0</span>
+
+        <button class="info" onclick="fetchRevenue()">🔄 Get Revenue Data</button>
+
+        <h3 style="margin-top: 40px;">📊 Transaction History</h3>
+        <p class="description">Recent transactions (last 50)</p>
+
+        <div id="transactionsList" style="display: none; margin-top: 20px;"></div>
+
+        <div style="margin-top: 20px; display: flex; gap: 10px;">
+          <button class="draw" onclick="exportRevenue('csv')">📥 Export CSV</button>
+          <button class="draw" onclick="exportRevenue('json')">📥 Export JSON</button>
         </div>
       </div>
+    </div>
 
-      <!-- Add Hand to Queue -->
-      <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1);">
-        <h3 style="color: white; margin-top: 0; font-size: 1.1rem;">Add Hand to Queue</h3>
-        <div style="display: grid; grid-template-columns: 2fr 1fr auto; gap: 10px; align-items: end;">
-          <div>
-            <label style="color: #a5b4fc; font-size: 12px; margin-bottom: 5px; display: block;">Hole Cards (e.g., "Ac Jh")</label>
-            <input type="text" id="hothCards" placeholder="Ac Jh" style="width: 100%; padding: 12px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(255,255,255,0.05); color: white; box-sizing: border-box;" />
-            <p style="color: #6b7280; font-size: 11px; margin: 5px 0 0 0;">Format: Rank (A,K,Q,J,T,9-2) + Suit (s,h,d,c)</p>
+    <!-- Tier Status Section -->
+    <div class="collapsible-section">
+      <div class="section-header" onclick="toggleSection('tier-status')">
+        <h2><span>📈</span> Tier Status</h2>
+        <span class="section-toggle collapsed" id="tier-status-toggle">▼</span>
+      </div>
+      <div class="section-content collapsed" id="tier-status-content">
+        <iframe
+          src="/admin"
+          style="width: 100%; height: 600px; border: none; border-radius: 12px; background: transparent;"
+          title="Tier Dashboard"
+        ></iframe>
+      </div>
+    </div>
+
+    <!-- Platform Statistics Section -->
+    <div class="collapsible-section">
+      <div class="section-header" onclick="toggleSection('platform-stats')">
+        <h2><span>📊</span> Platform Statistics</h2>
+        <span class="section-toggle collapsed" id="platform-stats-toggle">▼</span>
+      </div>
+      <div class="section-content collapsed" id="platform-stats-content">
+        <p class="section-description">Overview of all-time platform engagement</p>
+
+        <div id="statsCards" style="display: none; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+          <div class="entries-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+            <div class="entries-label">Unique Wallets</div>
+            <div class="entries-count" id="totalWalletsCount">-</div>
+            <div style="color: #d1fae5; font-size: 0.9rem; margin-top: 10px;">
+              All-time users
+            </div>
           </div>
-          <div>
-            <label style="color: #a5b4fc; font-size: 12px; margin-bottom: 5px; display: block;">Outcome</label>
-            <select id="hothOutcome" style="width: 100%; padding: 12px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: #1a1a2e; color: white; box-sizing: border-box;">
-              <option value="win" style="background: #1a1a2e; color: white;">Win</option>
-              <option value="lose" style="background: #1a1a2e; color: white;">Lose</option>
+          <div class="entries-card" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
+            <div class="entries-label">Total Draws</div>
+            <div class="entries-count" id="totalDrawsCount">-</div>
+            <div style="color: #dbeafe; font-size: 0.9rem; margin-top: 10px;">
+              All-time entries
+            </div>
+          </div>
+        </div>
+
+        <button class="info" onclick="fetchPlatformStats()">🔄 Get Platform Statistics</button>
+
+        <h3 style="margin-top: 30px;">🏆 Monthly Leaderboard</h3>
+        <p class="description">Monthly snapshots happen automatically. Use this for manual override or testing.</p>
+        <button class="draw" onclick="snapshotLeaderboard()">Manual Snapshot (Override)</button>
+        <p style="color: #6b7280; font-size: 14px; margin-top: 10px;">
+          ⚠️ The system auto-snapshots at month end. Only use this for testing or manual override.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SETTINGS TAB (Hidden by default, shown via gear icon) -->
+  <div id="settings-tab" class="tab-content">
+    <div class="collapsible-section">
+      <div class="section-header" onclick="toggleSection('streaming-config')">
+        <h2><span>📺</span> Streaming Configuration</h2>
+        <span class="section-toggle" id="streaming-config-toggle">▼</span>
+      </div>
+      <div class="section-content" id="streaming-config-content">
+        <p class="section-description">Configure which streaming service to embed in your mini app</p>
+
+        <div style="max-width: 600px; margin: 20px 0;">
+          <div style="margin-bottom: 20px;">
+            <label style="color: #a5b4fc; font-size: 14px; margin-bottom: 8px; display: block;">Streaming Platform</label>
+            <select id="streamingPlatform" style="width: 100%; padding: 12px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: #1a1a2e; color: white; box-sizing: border-box;">
+              <option value="retake" style="background: #1a1a2e; color: white;">Retake</option>
+              <option value="twitch" style="background: #1a1a2e; color: white;">Twitch</option>
+              <option value="youtube" style="background: #1a1a2e; color: white;">YouTube Live</option>
+              <option value="kick" style="background: #1a1a2e; color: white;">Kick</option>
+              <option value="custom" style="background: #1a1a2e; color: white;">Custom Embed URL</option>
             </select>
           </div>
-          <button class="draw" onclick="addHandToQueue()" style="margin: 0; white-space: nowrap;">➕ Add to Queue</button>
-        </div>
-      </div>
 
-      <!-- Queue Display -->
-      <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(255,255,255,0.1);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-          <h3 style="color: white; margin: 0; font-size: 1.1rem;">Queued Hands (<span id="queueCount">0</span>/6)</h3>
-          <button class="draw" onclick="releaseNextHand()" id="releaseBtn" style="margin: 0; background: #10b981;">🎴 Release Next Hand</button>
-        </div>
-        <div id="queueList" style="display: flex; flex-direction: column; gap: 10px;">
-          <p style="color: #6b7280; text-align: center; padding: 20px;">No hands in queue</p>
-        </div>
-      </div>
+          <div style="margin-bottom: 20px;">
+            <label style="color: #a5b4fc; font-size: 14px; margin-bottom: 8px; display: block;">Stream URL / Channel Name</label>
+            <input type="text" id="streamUrl" placeholder="e.g., https://retake.tv/live/... or YourChannelName" style="width: 100%; padding: 12px; font-size: 14px; border: 1px solid rgba(255,255,255,0.2); border-radius: 8px; background: rgba(255,255,255,0.05); color: white; box-sizing: border-box;" />
+            <p style="color: #6b7280; font-size: 12px; margin-top: 5px;">
+              For Twitch/Kick: enter channel name<br>
+              For YouTube: enter full live stream URL<br>
+              For Custom: enter full embed URL
+            </p>
+          </div>
 
-      <!-- Session Leaderboard -->
-      <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-          <h3 style="color: white; margin: 0; font-size: 1.1rem;">Session Leaderboard</h3>
-          <div style="display: flex; gap: 10px;">
-            <button class="draw" onclick="endHothGame()" style="margin: 0; font-size: 13px; padding: 10px 15px; background: #10b981;">🏁 End Game</button>
-            <button class="reset" onclick="clearHothSession()" style="margin: 0; font-size: 13px; padding: 10px 15px;">🔄 Clear Session</button>
+          <button class="draw" onclick="saveStreamingSettings()">💾 Save Streaming Settings</button>
+          <button class="info" onclick="loadStreamingSettings()">🔄 Load Current Settings</button>
+        </div>
+
+        <div id="streamingSettingsStatus"></div>
+
+        <div style="background: rgba(59, 130, 246, 0.1); padding: 15px; border-radius: 8px; margin-top: 20px; border: 1px solid rgba(59, 130, 246, 0.3);">
+          <h3 style="color: #dbeafe; font-size: 1rem; margin: 0 0 10px 0;">ℹ️ Platform-Specific Instructions</h3>
+          <div style="color: #93c5fd; font-size: 0.9rem; line-height: 1.6;">
+            <p><strong>Retake:</strong> Use the full stream URL (e.g., https://retake.tv/live/68b58fa755320f51930c9081)</p>
+            <p><strong>Twitch:</strong> Enter your channel name only (e.g., "yourchannelname")</p>
+            <p><strong>YouTube:</strong> Use the full live stream URL from your stream page</p>
+            <p><strong>Kick:</strong> Enter your channel name only (e.g., "yourchannelname")</p>
+            <p><strong>Custom:</strong> Provide the full embed iframe URL from your streaming service</p>
           </div>
         </div>
-        <div id="hothLeaderboard">
-          <p style="color: #6b7280; text-align: center; padding: 20px;">No results yet</p>
-        </div>
       </div>
-
-      <div id="hothStatusMsg"></div>
-      </div> <!-- Close hothContent -->
     </div>
   </div>
 
@@ -686,12 +846,28 @@
         targetTab.classList.add('active');
       }
 
-      // Add active class to clicked tab button
-      document.querySelectorAll('.tab').forEach(tab => {
-        if (tab.onclick && tab.onclick.toString().includes(`'${tabName}'`)) {
-          tab.classList.add('active');
-        }
-      });
+      // Add active class to clicked tab button (only for visible tabs)
+      if (tabName !== 'settings') {
+        document.querySelectorAll('.tab').forEach(tab => {
+          if (tab.onclick && tab.onclick.toString().includes(`'${tabName}'`)) {
+            tab.classList.add('active');
+          }
+        });
+      }
+    }
+
+    // Collapsible section toggle
+    function toggleSection(sectionId) {
+      const content = document.getElementById(sectionId + '-content');
+      const toggle = document.getElementById(sectionId + '-toggle');
+
+      if (content.classList.contains('collapsed')) {
+        content.classList.remove('collapsed');
+        toggle.classList.remove('collapsed');
+      } else {
+        content.classList.add('collapsed');
+        toggle.classList.add('collapsed');
+      }
     }
 
     // Tournament Manager Functions
@@ -705,10 +881,9 @@
         // Populate session ID
         document.getElementById('sessionId').value = data.sessionId || '';
 
-        // Convert ISO string to datetime-local format (remove the 'Z' and seconds)
+        // Convert ISO string to datetime-local format
         if (data.streamStartTime) {
           const dt = new Date(data.streamStartTime);
-          // Format: YYYY-MM-DDTHH:MM
           const localDateTime = dt.toISOString().slice(0, 16);
           document.getElementById('streamStartTime').value = localDateTime;
         }
@@ -763,7 +938,6 @@
           return;
         }
 
-        // Convert datetime-local to ISO string with Z (GMT)
         const streamStartTime = new Date(streamStartTimeLocal).toISOString();
 
         // Collect tournaments
@@ -803,7 +977,6 @@
               ${resetMessage}
             </div>
           `;
-          // Reload the data and refresh entries
           await loadCurrentTournaments();
           fetchCurrentEntries();
         } else {
@@ -814,8 +987,57 @@
       }
     }
 
-    // Load tournaments on page load
+    // Giveaway Settings Functions
+    async function loadGiveawaySettings() {
+      try {
+        const response = await fetch('/api/admin/giveaway-settings');
+        const data = await response.json();
+
+        if (data.success && data.settings) {
+          document.getElementById('membersOnlyGiveaway').checked = data.settings.membersOnly || false;
+        }
+      } catch (error) {
+        console.error('Error loading giveaway settings:', error);
+      }
+    }
+
+    async function saveGiveawaySettings() {
+      const statusDiv = document.getElementById('giveawaySettingsStatus');
+      statusDiv.innerHTML = '<div style="color: #a5b4fc; padding: 15px;">Saving...</div>';
+
+      try {
+        const membersOnly = document.getElementById('membersOnlyGiveaway').checked;
+
+        const response = await fetch('/api/admin/giveaway-settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ membersOnly })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          statusDiv.innerHTML = `
+            <div class="success-msg">
+              ✅ Settings saved!<br>
+              <small style="color: #6ee7b7;">Giveaway mode: ${membersOnly ? 'Members-Only' : 'Public'}</small>
+            </div>
+          `;
+        } else {
+          statusDiv.innerHTML = `<div class="error-msg">❌ ${data.message}</div>`;
+        }
+      } catch (error) {
+        statusDiv.innerHTML = `<div class="error-msg">❌ Error: ${error.message}</div>`;
+      }
+
+      setTimeout(() => {
+        statusDiv.innerHTML = '';
+      }, 5000);
+    }
+
+    // Load tournaments and giveaway settings on page load
     loadCurrentTournaments();
+    loadGiveawaySettings();
 
     async function fetchCurrentEntries() {
       try {
@@ -823,12 +1045,10 @@
         const data = await response.json();
 
         if (data.success) {
-          // Show entries card
           document.getElementById('entriesCard').style.display = 'block';
           document.getElementById('entriesCount').textContent = data.totalEntries || 0;
           document.getElementById('lastUpdated').textContent = new Date().toLocaleTimeString();
 
-          // Show winners if available
           if (data.winners && data.winners.length > 0) {
             document.getElementById('winnersInfo').style.display = 'block';
             let winnersHtml = '';
@@ -847,7 +1067,6 @@
             });
             document.getElementById('winnersList').innerHTML = winnersHtml;
 
-            // Show payout calculator
             winnersData = data.winners;
             await loadPayoutCalculator();
           } else {
@@ -855,12 +1074,9 @@
             document.getElementById('payoutCalculator').style.display = 'none';
             winnersData = null;
           }
-
-          // Also update the status section
-          document.getElementById('status').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
         }
       } catch (error) {
-        alert('Error fetching entries: ' + error.message);
+        console.error('Error fetching entries:', error);
       }
     }
 
@@ -870,7 +1086,6 @@
         return;
       }
 
-      // Load tournaments data
       try {
         const response = await fetch('/api/tournaments');
         const result = await response.json();
@@ -884,7 +1099,6 @@
     }
 
     function parseBuyIn(buyInString) {
-      // Extract numeric value from strings like "$11" or "€10"
       const match = buyInString.match(/[\d.]+/);
       return match ? parseFloat(match[0]) : 0;
     }
@@ -1021,7 +1235,6 @@
         return;
       }
 
-      // Validate Basescan URL format
       if (!basescanUrl.includes('basescan.org')) {
         statusDiv.innerHTML = '<span style="color: #fca5a5;">Invalid Basescan URL</span>';
         return;
@@ -1048,7 +1261,6 @@
 
         if (data.success) {
           statusDiv.innerHTML = '<span style="color: #10b981;">✅ Saved! Record will appear in Info tab</span>';
-          // Clear the input
           document.getElementById(`basescan-${index}`).value = '';
           submitBtn.textContent = 'Submitted';
           setTimeout(() => {
@@ -1072,11 +1284,9 @@
 
       const response = await fetch('/api/test-draw', { method: 'POST' });
       const data = await response.json();
-      document.getElementById('status').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
 
       if (data.success) {
         setTimeout(() => {
-          checkStatus();
           fetchCurrentEntries();
         }, 1000);
       }
@@ -1087,11 +1297,9 @@
 
       const response = await fetch('/api/draw', { method: 'POST' });
       const data = await response.json();
-      document.getElementById('status').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
 
       if (data.success) {
         setTimeout(() => {
-          checkStatus();
           fetchCurrentEntries();
         }, 1000);
       }
@@ -1106,17 +1314,14 @@
         '• Send notifications to users\n' +
         '• Start the 12-hour stream window\n\n' +
         'This ignores the scheduled draw date and starts the stream window NOW.\n\n' +
-        'Use this for testing the full draw flow.\n\n' +
         'Continue?')) return;
 
       const response = await fetch('/api/draw', { method: 'POST' });
       const data = await response.json();
-      document.getElementById('status').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
 
       if (data.success) {
-        alert(`✅ Draw Complete!\n\n${data.totalEntries} entries → 6 winners selected\n\nCheck the General tab to see winners and payout calculator.`);
+        alert(`✅ Draw Complete!\n\n${data.totalEntries} entries → 6 winners selected\n\nCheck the Session Setup section to see winners and payout calculator.`);
         setTimeout(() => {
-          checkStatus();
           fetchCurrentEntries();
         }, 1000);
       } else {
@@ -1129,11 +1334,9 @@
 
       const response = await fetch('/api/reset', { method: 'POST' });
       const data = await response.json();
-      document.getElementById('status').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
 
       if (data.success) {
         setTimeout(() => {
-          checkStatus();
           fetchCurrentEntries();
         }, 1000);
       }
@@ -1164,31 +1367,16 @@
 
       const response = await fetch('/api/leaderboard/snapshot', { method: 'POST' });
       const data = await response.json();
-      document.getElementById('status').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
 
       if (data.success) {
         setTimeout(() => {
-          checkStatus();
           fetchCurrentEntries();
         }, 1000);
       }
     }
 
-    async function checkStatus() {
-      const response = await fetch('/api/reset');
-      const data = await response.json();
-      document.getElementById('status').innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
-    }
-
     async function fetchTips() {
-      const button = event?.target;
-      if (button) {
-        button.classList.add('loading');
-        button.textContent = '⏳ Loading...';
-      }
-
       try {
-        // Get current session ID from tournaments data
         const tournamentsResponse = await fetch('/api/tournaments');
         const tournamentsData = await tournamentsResponse.json();
         const sessionId = tournamentsData.sessionId || tournamentsData.data?.sessionId;
@@ -1202,7 +1390,6 @@
         const data = await response.json();
 
         if (data.success) {
-          // Show tips card
           document.getElementById('tipsCard').style.display = 'block';
           document.getElementById('tipsTotal').textContent = `$${(data.totalTips / 100).toFixed(2)}`;
           document.getElementById('tipCount').textContent = data.tipCount || 0;
@@ -1210,11 +1397,6 @@
         }
       } catch (error) {
         console.error('Error fetching tips:', error);
-      } finally {
-        if (button) {
-          button.classList.remove('loading');
-          button.textContent = '🔄 Get Tips';
-        }
       }
     }
 
@@ -1227,7 +1409,6 @@
         if (data.success) {
           const stats = data.stats;
 
-          // Update stats cards
           document.getElementById('totalVolume').textContent = `$${(stats.totalVolume / 100).toFixed(2)}`;
           document.getElementById('platformCut').textContent = `$${(stats.platformCut / 100).toFixed(2)}`;
           document.getElementById('totalTips').textContent = `$${(stats.totalTips / 100).toFixed(2)}`;
@@ -1283,7 +1464,6 @@
           document.getElementById('membershipEnabled').checked = settings.enabled;
           document.getElementById('monthlyFee').value = (settings.monthlyFeeUSDC / 100).toFixed(2);
           document.getElementById('membershipBenefits').value = settings.benefits.join('\n');
-          // Removed: requireMembershipForRaffle (regulatory compliance)
         }
       } catch (error) {
         console.error('Failed to load membership settings:', error);
@@ -1294,7 +1474,6 @@
       const enabled = document.getElementById('membershipEnabled').checked;
       const monthlyFee = parseFloat(document.getElementById('monthlyFee').value);
       const benefitsText = document.getElementById('membershipBenefits').value;
-      // Removed: requireMembershipForRaffle (regulatory compliance - raffle must be free)
 
       const benefits = benefitsText.split('\n').filter(b => b.trim() !== '');
       const monthlyFeeUSDC = Math.round(monthlyFee * 100);
@@ -1307,7 +1486,7 @@
             enabled,
             monthlyFeeUSDC,
             benefits,
-            requireMembershipForRaffle: false // Always false for regulatory compliance
+            requireMembershipForRaffle: false
           })
         });
 
@@ -1337,11 +1516,9 @@
         if (data.success) {
           const members = data.memberships;
 
-          // Update total count
           document.getElementById('totalMembers').textContent = members.length;
           document.getElementById('membersStats').style.display = 'block';
 
-          // Display members list
           if (members.length > 0) {
             const membersList = document.getElementById('membersList');
             let html = '<div style="overflow-x: auto;"><table style="width: 100%; border-collapse: collapse; font-size: 14px;">';
@@ -1402,7 +1579,6 @@
       }
 
       try {
-        // For now, save to localStorage (TODO: Move to tournaments.json or separate API)
         const settings = { platform, streamUrl: url };
         localStorage.setItem('streamingSettings', JSON.stringify(settings));
 
@@ -1431,10 +1607,9 @@
             document.getElementById('streamingSettingsStatus').innerHTML = '';
           }, 2000);
         } else {
-          // Load default from tournaments.json streamUrl
           if (tournamentsData && tournamentsData.streamUrl) {
             document.getElementById('streamUrl').value = tournamentsData.streamUrl;
-            document.getElementById('streamingPlatform').value = 'retake'; // Default assumption
+            document.getElementById('streamingPlatform').value = 'retake';
           }
         }
       } catch (error) {
@@ -1442,17 +1617,14 @@
       }
     }
 
-    // Load membership settings on page load
+    // Load settings on page load
     loadMembershipSettings();
-    // Load streaming settings
     loadStreamingSettings();
 
-    // Auto-refresh status, entries, and tips every 10 seconds
-    checkStatus();
+    // Auto-refresh stats every 10 seconds
     fetchCurrentEntries();
     fetchTips();
     setInterval(() => {
-      checkStatus();
       fetchCurrentEntries();
       fetchTips();
     }, 10000);
@@ -1464,7 +1636,6 @@
         const response = await fetch('/api/hoth/status');
         const data = await response.json();
 
-        // Update status display
         if (data.active) {
           document.getElementById('hothStatus').textContent = `Hand #${data.active.id.split('_')[1]} Active`;
           document.getElementById('hothTimeRemaining').style.display = 'block';
@@ -1477,10 +1648,7 @@
           document.getElementById('hothVoteCount').style.display = 'none';
         }
 
-        // Update queue
         updateQueueDisplay(data.queue || []);
-
-        // Load leaderboard
         loadHothLeaderboard();
 
       } catch (error) {
@@ -1510,7 +1678,7 @@
         if (response.ok) {
           showHothMsg(`✅ Added ${cards} (${outcome}) to queue`, false);
           document.getElementById('hothCards').value = '';
-          loadHothStatus(); // Refresh
+          loadHothStatus();
         } else {
           showHothMsg(data.error || 'Failed to add hand', true);
         }
@@ -1532,7 +1700,7 @@
 
         if (response.ok) {
           showHothMsg(`✅ Released hand: ${data.hand.cards}`, false);
-          loadHothStatus(); // Refresh
+          loadHothStatus();
           startHothTimer();
         } else {
           showHothMsg(data.error || 'Failed to release hand', true);
@@ -1557,7 +1725,7 @@
 
         if (response.ok) {
           showHothMsg('✅ Hand deleted', false);
-          loadHothStatus(); // Refresh
+          loadHothStatus();
         } else {
           showHothMsg(data.error || 'Failed to delete hand', true);
         }
@@ -1579,7 +1747,7 @@
 
         if (response.ok) {
           showHothMsg('✅ Session cleared', false);
-          loadHothStatus(); // Refresh
+          loadHothStatus();
         } else {
           showHothMsg('Failed to clear session', true);
         }
@@ -1669,12 +1837,10 @@
     }
 
     function startHothTimer() {
-      // Auto-refresh status every 5 seconds to update timer
       const interval = setInterval(() => {
         loadHothStatus();
       }, 5000);
 
-      // Stop after 100 seconds
       setTimeout(() => clearInterval(interval), 100000);
     }
 
@@ -1736,20 +1902,6 @@
       }, 5000);
     }
 
-    // Toggle HOTH section collapse
-    function toggleHothSection() {
-      const content = document.getElementById('hothContent');
-      const btn = document.getElementById('hothToggleBtn');
-
-      if (content.style.display === 'none') {
-        content.style.display = 'block';
-        btn.textContent = '▼ Collapse';
-      } else {
-        content.style.display = 'none';
-        btn.textContent = '▶ Expand';
-      }
-    }
-
     // End HOTH game and push winners to listing
     async function endHothGame() {
       if (!confirm('End the Hand of the Hour game?\n\nThis will:\n• Finalize any active hand\n• Push top 5 winners to the Winners listing\n• Clear the session results\n\nContinue?')) return;
@@ -1763,7 +1915,7 @@
 
         if (response.ok) {
           showHothMsg(`✅ ${data.message}`, false);
-          loadHothStatus(); // Refresh
+          loadHothStatus();
         } else {
           showHothMsg(data.error || 'Failed to end game', true);
         }
@@ -1779,4 +1931,4 @@
   </script>
 </body>
 </html>
-// Cache bust 1733228888
+// Cache bust 1736430000

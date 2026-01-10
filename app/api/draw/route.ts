@@ -14,9 +14,13 @@ export async function POST(request: NextRequest) {
     // Auto-reset if session changed in tournaments.json
     await checkAndResetSession();
 
+    // Check giveaway settings
+    const giveawaySettingsData = await redis.hgetall('giveaway_settings');
+    const membersOnlyMode = giveawaySettingsData?.membersOnly === 'true';
+
     // Get all entries
     const entries = await redis.hgetall('raffle_entries');
-    
+
     if (!entries || Object.keys(entries).length === 0) {
       return NextResponse.json(
         { success: false, message: 'No entries found' },
@@ -39,9 +43,33 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    if (entryArray.length < 6) {
+    // Filter by membership status if members-only mode is enabled
+    let eligibleEntries = entryArray;
+    if (membersOnlyMode) {
+      const eligibleEntriesFiltered: any[] = [];
+
+      for (const entry of entryArray) {
+        const membershipData = await redis.hgetall(`membership:${entry.walletAddress}`);
+
+        if (membershipData && Object.keys(membershipData).length > 0) {
+          const expiryDate = parseInt(membershipData.expiryDate as string);
+          const status = membershipData.status as string;
+          const isActive = status === 'active' && expiryDate > Date.now();
+
+          if (isActive) {
+            eligibleEntriesFiltered.push(entry);
+          }
+        }
+      }
+
+      eligibleEntries = eligibleEntriesFiltered;
+
+      console.log(`Members-only mode: ${entryArray.length} total entries, ${eligibleEntries.length} eligible members`);
+    }
+
+    if (eligibleEntries.length < 6) {
       return NextResponse.json(
-        { success: false, message: `Need at least 6 entries for draw. Currently have ${entryArray.length}` },
+        { success: false, message: `Need at least 6 ${membersOnlyMode ? 'member' : ''} entries for draw. Currently have ${eligibleEntries.length}` },
         { status: 400 }
       );
     }
@@ -64,7 +92,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Shuffle entries and take first 6 unique winners
-    const shuffled = [...entryArray].sort(() => Math.random() - 0.5);
+    const shuffled = [...eligibleEntries].sort(() => Math.random() - 0.5);
     const uniqueWinners = Array.from(new Set(shuffled.map(e => e.walletAddress)))
       .slice(0, 6)
       .map(address => shuffled.find(e => e.walletAddress === address)!);
@@ -153,6 +181,8 @@ export async function POST(request: NextRequest) {
       success: true,
       winners,
       totalEntries: entryArray.length,
+      eligibleEntries: eligibleEntries.length,
+      membersOnlyMode,
       message: 'Winners drawn successfully!'
     });
 
