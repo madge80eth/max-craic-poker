@@ -44,6 +44,7 @@ export default function HomePage() {
   const [winners, setWinners] = useState<any[] | null>(null);
   const [streamUrl, setStreamUrl] = useState<string | null>(null);
   const [streamDate, setStreamDate] = useState<string>('');
+  const [hasEnteredDraw, setHasEnteredDraw] = useState(false);
 
   // Tipping state
   const [sessionId, setSessionId] = useState<string>('');
@@ -111,7 +112,12 @@ export default function HomePage() {
         }
       } catch (err) { console.error('Stream check error:', err); }
     }
+
     checkStreamAndWinners();
+
+    // Poll every 10 seconds to check for draw results
+    const interval = setInterval(checkStreamAndWinners, 10000);
+    return () => clearInterval(interval);
   }, []);
 
   // Fetch tips total
@@ -270,6 +276,7 @@ export default function HomePage() {
 
         if (data.success) {
           setTotalTickets(data.totalTickets || 0);
+          setHasEnteredDraw(data.hasEnteredDraw || false);
 
           if (data.hasPlayedToday && data.todayResult) {
             setHandResult(data.todayResult);
@@ -341,6 +348,9 @@ export default function HomePage() {
   const getMadgeMessage = (): string => {
     switch (gameState) {
       case 'welcome':
+        if (hasEnteredDraw) {
+          return `You're all set! You entered with ${totalTickets} ticket${totalTickets !== 1 ? 's' : ''}. Winners announced when the draw is triggered. Good luck!`;
+        }
         if (totalTickets > 0) {
           return `Welcome back! You have ${totalTickets} ticket${totalTickets !== 1 ? 's' : ''} saved up. Deal to earn more!`;
         }
@@ -598,16 +608,33 @@ export default function HomePage() {
         {/* Welcome State - Deal Button */}
         {gameState === 'welcome' && !isDealing && (
           <div className="space-y-3">
-            <button
-              onClick={handleDeal}
-              className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-all text-base"
-            >
-              🎴 Deal Me In
-            </button>
+            {hasEnteredDraw ? (
+              <div className="bg-green-500/20 backdrop-blur-lg rounded-xl p-6 border border-green-400/30">
+                <div className="text-center">
+                  <div className="text-4xl mb-3">🎟️</div>
+                  <h3 className="text-white font-bold text-lg mb-2">You're Entered!</h3>
+                  <p className="text-green-200 text-sm mb-3">
+                    You've already entered the current draw with {totalTickets} ticket{totalTickets !== 1 ? 's' : ''}.
+                  </p>
+                  <p className="text-green-200/80 text-xs">
+                    Winners will be announced when the draw is triggered. Good luck! 🍀
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <button
+                  onClick={handleDeal}
+                  className="w-full bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-all text-base"
+                >
+                  🎴 Deal Me In
+                </button>
 
-            <p className="text-center text-blue-200/60 text-xs">
-              Resets daily at midnight UTC
-            </p>
+                <p className="text-center text-blue-200/60 text-xs">
+                  Resets daily at midnight UTC
+                </p>
+              </>
+            )}
 
             {/* Raffle Entry Disclaimer */}
             <div className="bg-blue-900/30 border border-blue-400/20 rounded-lg p-3">

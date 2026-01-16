@@ -1,5 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { hasUserPlayedToday, recalculateTodayPlacement, getUserTickets } from '@/lib/redis';
+import { Redis } from '@upstash/redis';
+
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+});
 
 export async function GET(request: NextRequest) {
   try {
@@ -19,12 +25,16 @@ export async function GET(request: NextRequest) {
     // Get total accumulated tickets
     const totalTickets = await getUserTickets(walletAddress);
 
+    // Check if user has already entered the current draw
+    const hasEnteredDraw = await redis.hexists('raffle_entries', walletAddress);
+
     if (!hasPlayedToday) {
       return NextResponse.json({
         success: true,
         hasPlayedToday: false,
         todayResult: null,
-        totalTickets
+        totalTickets,
+        hasEnteredDraw
       });
     }
 
@@ -35,7 +45,8 @@ export async function GET(request: NextRequest) {
       success: true,
       hasPlayedToday: true,
       todayResult,
-      totalTickets
+      totalTickets,
+      hasEnteredDraw
     });
 
   } catch (error) {
