@@ -3,7 +3,7 @@
 import { useAccount } from 'wagmi';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Info, BarChart3, TrendingUp, Trophy, Flame } from 'lucide-react';
+import { Info, BarChart3, TrendingUp, Trophy, Flame, Spade } from 'lucide-react';
 
 interface UserStats {
   totalEntries: number;
@@ -146,6 +146,25 @@ export default function MorePage() {
             <div>
               <h3 className="text-white font-bold text-base">Leaderboard</h3>
               <p className="text-blue-200 text-xs">See top community members</p>
+            </div>
+          </div>
+        </Link>
+
+        {/* Poker Link */}
+        <Link
+          href="/poker"
+          className="block bg-white/10 backdrop-blur-lg rounded-xl p-4 border border-white/20 hover:bg-white/15 transition-all group"
+        >
+          <div className="flex items-center gap-4">
+            <div className="bg-gradient-to-br from-green-500 to-emerald-600 p-3 rounded-xl group-hover:scale-110 transition-transform">
+              <Spade className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <h3 className="text-white font-bold text-base">MCP Poker</h3>
+                <span className="px-2 py-0.5 bg-green-500/30 text-green-300 text-[10px] font-bold rounded-full">NEW</span>
+              </div>
+              <p className="text-blue-200 text-xs">Play 6-max No-Limit Hold&apos;em</p>
             </div>
           </div>
         </Link>
