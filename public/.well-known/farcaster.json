@@ -8,7 +8,7 @@
     "splashBackgroundColor": "#6B46C1",
     "webhookUrl": "https://maxcraicpoker.com/api/webhook",
     "subtitle": "Enter draw, get paid if I cash",
-    "description": "Enter the daily draw from the Mini App. If I cash in a tournament, one entrant gets USDC automatically. I post a screenshot of the finish for transparency.",
+    "description": "Daily draw for poker tournament profits. Winners get USDC when I cash.",
     "primaryCategory": "social",
     "tags": ["poker", "gambling", "crypto", "base", "tournament"],
     "screenshotUrls": [
