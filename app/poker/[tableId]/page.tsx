@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAccount } from 'wagmi';
 import { ClientGameState, PlayerAction } from '@/lib/poker/types';
 import Table from '../components/Table';
 import Link from 'next/link';
+import { usePokerSounds } from '../hooks/usePokerSounds';
 
 interface PageProps {
   params: Promise<{ tableId: string }>;
@@ -14,12 +15,15 @@ interface PageProps {
 export default function PokerTable({ params }: PageProps) {
   const searchParams = useSearchParams();
   const { address } = useAccount();
+  const { playSound, toggleSounds, isSoundEnabled } = usePokerSounds();
 
   const [tableId, setTableId] = useState<string>('');
   const [gameState, setGameState] = useState<ClientGameState | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionPending, setActionPending] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const prevStateRef = useRef<ClientGameState | null>(null);
 
   // Get player info from URL params
   const playerIdParam = searchParams.get('playerId');
@@ -61,6 +65,58 @@ export default function PokerTable({ params }: PageProps) {
     const interval = setInterval(fetchState, 1000); // Poll every second
     return () => clearInterval(interval);
   }, [tableId, fetchState]);
+
+  // Detect game changes and play sounds
+  useEffect(() => {
+    if (!gameState || !prevStateRef.current) {
+      prevStateRef.current = gameState;
+      return;
+    }
+
+    const prev = prevStateRef.current;
+
+    // Detect phase changes (deal sound)
+    if (gameState.phase !== prev.phase) {
+      if (gameState.phase === 'preflop' || gameState.phase === 'flop' ||
+          gameState.phase === 'turn' || gameState.phase === 'river') {
+        playSound('deal');
+      }
+    }
+
+    // Detect winner (win sound)
+    if (gameState.winners && gameState.winners.length > 0 &&
+        (!prev.winners || prev.winners.length === 0)) {
+      playSound('win');
+    }
+
+    // Detect turn change (turn notification)
+    if (gameState.activePlayerIndex !== prev.activePlayerIndex &&
+        gameState.yourSeatIndex !== null) {
+      const yourPlayer = gameState.players.find(p => p.seatIndex === gameState.yourSeatIndex);
+      if (yourPlayer && gameState.activePlayerIndex !== -1 &&
+          gameState.players[gameState.activePlayerIndex]?.seatIndex === gameState.yourSeatIndex) {
+        playSound('turn');
+      }
+    }
+
+    // Detect last actions from other players
+    gameState.players.forEach(player => {
+      const prevPlayer = prev.players.find(p => p.odentity === player.odentity);
+      if (prevPlayer && player.lastAction !== prevPlayer.lastAction && player.lastAction) {
+        if (player.seatIndex !== gameState.yourSeatIndex) {
+          switch (player.lastAction) {
+            case 'fold': playSound('fold'); break;
+            case 'check': playSound('check'); break;
+            case 'call': playSound('call'); break;
+            case 'raise': playSound('raise'); break;
+            case 'allin': playSound('allIn'); break;
+          }
+        }
+      }
+    });
+
+    prevStateRef.current = gameState;
+  }, [gameState, playSound]);
 
   // Handle seat click (join table)
   const handleSeatClick = async (seatIndex: number) => {
@@ -119,6 +175,15 @@ export default function PokerTable({ params }: PageProps) {
   // Handle player action
   const handleAction = async (action: PlayerAction, amount?: number) => {
     if (!playerId || !tableId || actionPending) return;
+
+    // Play sound for own action immediately
+    switch (action) {
+      case 'fold': playSound('fold'); break;
+      case 'check': playSound('check'); break;
+      case 'call': playSound('call'); break;
+      case 'raise': playSound('raise'); break;
+      case 'allin': playSound('allIn'); break;
+    }
 
     setActionPending(true);
     try {
@@ -249,6 +314,19 @@ export default function PokerTable({ params }: PageProps) {
         <div>Players: {gameState.players.length}/6</div>
         {isSeated && <div>Your seat: {(gameState.yourSeatIndex ?? 0) + 1}</div>}
       </div>
+
+      {/* Sound Toggle */}
+      <button
+        onClick={() => {
+          const newState = !soundEnabled;
+          setSoundEnabled(newState);
+          toggleSounds(newState);
+        }}
+        className="fixed bottom-4 right-4 px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-xs transition-colors"
+        title={soundEnabled ? 'Mute sounds' : 'Unmute sounds'}
+      >
+        {soundEnabled ? '🔊' : '🔇'}
+      </button>
     </div>
   );
 }
