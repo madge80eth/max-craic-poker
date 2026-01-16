@@ -10,7 +10,18 @@
     "subtitle": "Enter draw, get paid if I cash",
     "description": "Daily draw for poker tournament profits. Winners get USDC when I cash.",
     "primaryCategory": "social",
-    "tags": ["poker", "gambling", "crypto", "base", "tournament"],
+    "tags": [
+      "poker",
+      "gambling",
+      "crypto",
+      "base",
+      "tournament"
+    ],
+    "heroImageUrl": "https://maxcraicpoker.com/image.png",
+    "tagline": "Win when I win at poker",
+    "ogTitle": "Max Craic Poker",
+    "ogDescription": "Daily draw for poker tournament profits. Winners get USDC when I cash.",
+    "ogImageUrl": "https://maxcraicpoker.com/image.png",
     "screenshotUrls": [
       "https://www.maxcraicpoker.com/www_maxcraicpoker_com_mini-app_home_iPhone_14_Pro_Max_.png",
       "https://www.maxcraicpoker.com/www_maxcraicpoker_com_mini-app_home_iPhone_14_Pro_Max___1_.png",
