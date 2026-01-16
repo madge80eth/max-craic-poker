@@ -40,3 +40,76 @@ body {
 .animate-slide-up {
   animation: slide-up 0.4s ease-out;
 }
+
+/* Poker card animations */
+@keyframes card-deal {
+  0% {
+    opacity: 0;
+    transform: translateY(-100px) scale(0.5) rotateY(180deg);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-20px) scale(1.1) rotateY(90deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotateY(0deg);
+  }
+}
+
+@keyframes card-flip {
+  0% {
+    transform: rotateY(0deg);
+  }
+  50% {
+    transform: rotateY(90deg);
+  }
+  100% {
+    transform: rotateY(0deg);
+  }
+}
+
+@keyframes bounce-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  70% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes chip-stack {
+  0% {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-card-deal {
+  animation: card-deal 0.5s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-card-flip {
+  animation: card-flip 0.4s ease-in-out;
+}
+
+.animate-bounce-in {
+  animation: bounce-in 0.5s ease-out;
+}
+
+.animate-chip-stack {
+  animation: chip-stack 0.3s ease-out;
+}

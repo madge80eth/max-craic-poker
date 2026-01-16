@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import { ClientGameState, PlayerAction } from '@/lib/poker/types';
 import PlayerSeat from './PlayerSeat';
 import Card from './Card';
@@ -31,6 +32,44 @@ export default function Table({
   onNextHand,
 }: TableProps) {
   const { players, communityCards, pot, phase, yourSeatIndex, validActions, winners, config, lastActionTime } = gameState;
+
+  // Track previous state for animations
+  const prevCommunityCountRef = useRef(0);
+  const prevHandNumberRef = useRef(gameState.handNumber);
+  const [animatingCards, setAnimatingCards] = useState<Set<number>>(new Set());
+
+  // Detect new community cards for animation
+  useEffect(() => {
+    const prevCount = prevCommunityCountRef.current;
+    const currentCount = communityCards.length;
+
+    // New hand started - reset
+    if (gameState.handNumber !== prevHandNumberRef.current) {
+      prevHandNumberRef.current = gameState.handNumber;
+      prevCommunityCountRef.current = 0;
+      setAnimatingCards(new Set());
+      return;
+    }
+
+    // New cards dealt
+    if (currentCount > prevCount) {
+      const newCardIndices = new Set<number>();
+      for (let i = prevCount; i < currentCount; i++) {
+        newCardIndices.add(i);
+      }
+      setAnimatingCards(newCardIndices);
+
+      // Clear animation state after animation completes
+      const timeout = setTimeout(() => {
+        setAnimatingCards(new Set());
+      }, 600);
+
+      prevCommunityCountRef.current = currentCount;
+      return () => clearTimeout(timeout);
+    }
+
+    prevCommunityCountRef.current = currentCount;
+  }, [communityCards.length, gameState.handNumber]);
 
   // Get current blind level info
   const blindLevel = config.blindLevels[gameState.blindLevel] || config.blindLevels[0];
@@ -84,6 +123,7 @@ export default function Table({
             onSeatClick={phase === 'waiting' ? onSeatClick : undefined}
             lastActionTime={lastActionTime}
             actionTimeout={config.actionTimeout}
+            handNumber={gameState.handNumber}
           />
         );
       })}
@@ -92,8 +132,12 @@ export default function Table({
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
         <div className="flex gap-1 sm:gap-2 justify-center mb-2 sm:mb-4">
           {communityCards.map((card, i) => (
-            <div key={i} className="transform transition-all duration-300" style={{ animationDelay: `${i * 100}ms` }}>
-              <Card card={card} />
+            <div key={`${gameState.handNumber}-${i}`} className="transform">
+              <Card
+                card={card}
+                animate={animatingCards.has(i) ? 'deal' : 'none'}
+                delay={animatingCards.has(i) ? (i - Math.min(...Array.from(animatingCards))) * 100 : 0}
+              />
             </div>
           ))}
           {/* Empty slots for remaining cards */}

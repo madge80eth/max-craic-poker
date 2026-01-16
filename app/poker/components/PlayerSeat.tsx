@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import { ClientPlayer } from '@/lib/poker/types';
 import Card from './Card';
 import ActionTimer from './ActionTimer';
@@ -13,6 +14,7 @@ interface PlayerSeatProps {
   onSeatClick?: (seatIndex: number) => void;
   lastActionTime?: number;
   actionTimeout?: number;
+  handNumber?: number; // For tracking new hands and animating cards
 }
 
 const POSITION_CLASSES: Record<string, string> = {
@@ -33,8 +35,22 @@ export default function PlayerSeat({
   onSeatClick,
   lastActionTime = 0,
   actionTimeout = 30,
+  handNumber = 0,
 }: PlayerSeatProps) {
   const positionClass = POSITION_CLASSES[position];
+  const prevHandNumberRef = useRef(handNumber);
+  const [animateCards, setAnimateCards] = useState(false);
+
+  // Detect new hand for card animation
+  useEffect(() => {
+    if (handNumber !== prevHandNumberRef.current && player?.holeCards) {
+      setAnimateCards(true);
+      prevHandNumberRef.current = handNumber;
+      const timeout = setTimeout(() => setAnimateCards(false), 600);
+      return () => clearTimeout(timeout);
+    }
+    prevHandNumberRef.current = handNumber;
+  }, [handNumber, player?.holeCards]);
 
   if (!player) {
     return (
@@ -109,12 +125,30 @@ export default function PlayerSeat({
         <div className="flex gap-0.5 sm:gap-1 justify-center">
           {player.holeCards ? (
             player.holeCards.map((card, i) => (
-              <Card key={i} card={card} small />
+              <Card
+                key={`${handNumber}-${i}`}
+                card={card}
+                small
+                animate={animateCards ? 'deal' : 'none'}
+                delay={animateCards ? (seatIndex * 100) + (i * 50) : 0}
+              />
             ))
           ) : !player.folded ? (
             <>
-              <Card card={null} faceDown small />
-              <Card card={null} faceDown small />
+              <Card
+                card={null}
+                faceDown
+                small
+                animate={animateCards ? 'deal' : 'none'}
+                delay={animateCards ? seatIndex * 100 : 0}
+              />
+              <Card
+                card={null}
+                faceDown
+                small
+                animate={animateCards ? 'deal' : 'none'}
+                delay={animateCards ? (seatIndex * 100) + 50 : 0}
+              />
             </>
           ) : null}
         </div>
