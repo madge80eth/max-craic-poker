@@ -14,16 +14,6 @@ interface TableProps {
   onNextHand?: () => void;
 }
 
-// Map seat indices to positions (6-max layout)
-const SEAT_POSITIONS = [
-  'bottom-center',  // Seat 0 - Hero position
-  'bottom-left',    // Seat 1
-  'top-left',       // Seat 2
-  'top-center',     // Seat 3
-  'top-right',      // Seat 4
-  'bottom-right',   // Seat 5
-] as const;
-
 export default function Table({
   gameState,
   onAction,
@@ -33,7 +23,7 @@ export default function Table({
 }: TableProps) {
   const { players, communityCards, pot, phase, yourSeatIndex, validActions, winners, config, lastActionTime } = gameState;
 
-  // Track previous state for animations
+  // Track animation state
   const prevCommunityCountRef = useRef(0);
   const prevHandNumberRef = useRef(gameState.handNumber);
   const [animatingCards, setAnimatingCards] = useState<Set<number>>(new Set());
@@ -43,7 +33,6 @@ export default function Table({
     const prevCount = prevCommunityCountRef.current;
     const currentCount = communityCards.length;
 
-    // New hand started - reset
     if (gameState.handNumber !== prevHandNumberRef.current) {
       prevHandNumberRef.current = gameState.handNumber;
       prevCommunityCountRef.current = 0;
@@ -51,19 +40,13 @@ export default function Table({
       return;
     }
 
-    // New cards dealt
     if (currentCount > prevCount) {
       const newCardIndices = new Set<number>();
       for (let i = prevCount; i < currentCount; i++) {
         newCardIndices.add(i);
       }
       setAnimatingCards(newCardIndices);
-
-      // Clear animation state after animation completes
-      const timeout = setTimeout(() => {
-        setAnimatingCards(new Set());
-      }, 600);
-
+      const timeout = setTimeout(() => setAnimatingCards(new Set()), 600);
       prevCommunityCountRef.current = currentCount;
       return () => clearTimeout(timeout);
     }
@@ -71,43 +54,42 @@ export default function Table({
     prevCommunityCountRef.current = currentCount;
   }, [communityCards.length, gameState.handNumber]);
 
-  // Get current blind level info
   const blindLevel = config.blindLevels[gameState.blindLevel] || config.blindLevels[0];
 
-  // Find player by seat
   const getPlayerBySeat = (seatIndex: number) => {
     return players.find(p => p.seatIndex === seatIndex) || null;
   };
 
-  // Get your player
   const yourPlayer = yourSeatIndex !== null ? getPlayerBySeat(yourSeatIndex) : null;
+  const showActionBar = yourSeatIndex !== null && yourPlayer && !yourPlayer.folded && !yourPlayer.allIn &&
+    phase !== 'waiting' && phase !== 'showdown' && phase !== 'finished';
 
   return (
-    <div className="relative w-full max-w-4xl mx-auto h-[500px] sm:h-[600px]">
-      {/* Table Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-green-800 to-green-900 rounded-[60px] sm:rounded-[100px] border-4 sm:border-8 border-amber-900 shadow-2xl">
-        {/* Table Felt Pattern */}
-        <div className="absolute inset-2 sm:inset-4 rounded-[50px] sm:rounded-[90px] border-2 sm:border-4 border-green-700/50" />
+    <div className="relative w-full h-full min-h-[500px]">
+      {/* Table felt */}
+      <div className="absolute inset-4 sm:inset-8">
+        <div className="relative w-full h-full rounded-[50%] bg-gradient-to-b from-emerald-800 to-emerald-900 shadow-2xl border-8 border-amber-900/80">
+          {/* Inner table rim */}
+          <div className="absolute inset-3 rounded-[50%] border-4 border-emerald-700/50" />
+
+          {/* Table pattern */}
+          <div className="absolute inset-0 rounded-[50%] opacity-10 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.3)_100%)]" />
+        </div>
       </div>
 
-      {/* Header Info */}
-      <div className="absolute -top-10 sm:-top-12 left-1/2 -translate-x-1/2 w-full max-w-sm px-2">
-        <div className="bg-gray-900/90 backdrop-blur px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-white text-xs sm:text-sm text-center">
-          <span className="text-gray-400">Blinds:</span>{' '}
-          <span className="font-bold">{blindLevel.smallBlind}/{blindLevel.bigBlind}</span>
-          {blindLevel.ante > 0 && (
-            <span className="ml-2 text-gray-400">
-              Ante: <span className="text-white">{blindLevel.ante}</span>
-            </span>
-          )}
-          <span className="mx-2 sm:mx-3 text-gray-600">|</span>
-          <span className="text-gray-400">Hand:</span>{' '}
-          <span className="font-bold">#{gameState.handNumber}</span>
+      {/* Header - Blinds & Hand info */}
+      <div className="absolute top-2 left-1/2 -translate-x-1/2 z-20">
+        <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-900/80 backdrop-blur rounded-full text-xs">
+          <span className="text-gray-400">Blinds</span>
+          <span className="text-white font-semibold">{blindLevel.smallBlind}/{blindLevel.bigBlind}</span>
+          <span className="text-gray-600">|</span>
+          <span className="text-gray-400">Hand</span>
+          <span className="text-white font-semibold">#{gameState.handNumber}</span>
         </div>
       </div>
 
       {/* Player Seats */}
-      {SEAT_POSITIONS.map((position, seatIndex) => {
+      {[0, 1, 2, 3, 4, 5].map((seatIndex) => {
         const player = getPlayerBySeat(seatIndex);
         const isActive = player && gameState.activePlayerIndex !== -1 &&
           players[gameState.activePlayerIndex]?.seatIndex === seatIndex;
@@ -118,8 +100,7 @@ export default function Table({
             player={player}
             isActive={isActive || false}
             isYou={seatIndex === yourSeatIndex}
-            position={position}
-            seatIndex={seatIndex}
+            position={seatIndex}
             onSeatClick={phase === 'waiting' ? onSeatClick : undefined}
             lastActionTime={lastActionTime}
             actionTimeout={config.actionTimeout}
@@ -128,78 +109,76 @@ export default function Table({
         );
       })}
 
-      {/* Community Cards */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-        <div className="flex gap-1 sm:gap-2 justify-center mb-2 sm:mb-4">
+      {/* Center area - Community cards & pot */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+        {/* Community Cards */}
+        <div className="flex gap-1 justify-center mb-3">
           {communityCards.map((card, i) => (
-            <div key={`${gameState.handNumber}-${i}`} className="transform">
-              <Card
-                card={card}
-                animate={animatingCards.has(i) ? 'deal' : 'none'}
-                delay={animatingCards.has(i) ? (i - Math.min(...Array.from(animatingCards))) * 100 : 0}
-              />
-            </div>
+            <Card
+              key={`${gameState.handNumber}-${i}`}
+              card={card}
+              size="md"
+              animate={animatingCards.has(i) ? 'deal' : 'none'}
+              delay={animatingCards.has(i) ? (i - Math.min(...Array.from(animatingCards))) * 80 : 0}
+            />
           ))}
-          {/* Empty slots for remaining cards */}
+          {/* Empty card slots */}
           {Array.from({ length: 5 - communityCards.length }).map((_, i) => (
             <div
               key={`empty-${i}`}
-              className="w-10 h-14 sm:w-12 sm:h-16 rounded-lg border-2 border-dashed border-green-600/30"
+              className="w-11 h-16 rounded-lg border-2 border-dashed border-emerald-600/30"
             />
           ))}
         </div>
 
-        {/* Pot Display */}
+        {/* Pot */}
         {pot > 0 && (
           <div className="text-center">
-            <div className="inline-block bg-black/60 backdrop-blur px-3 sm:px-4 py-1.5 sm:py-2 rounded-full">
-              <span className="text-yellow-400 font-bold text-base sm:text-lg">
-                Pot: {pot.toLocaleString()}
-              </span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900/80 backdrop-blur rounded-full">
+              <div className="w-3 h-3 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600" />
+              <span className="text-yellow-400 font-bold">{pot.toLocaleString()}</span>
             </div>
           </div>
         )}
       </div>
 
-      {/* Game Status / Winners */}
+      {/* Waiting for players overlay */}
       {phase === 'waiting' && (
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-8 z-20">
-          <div className="bg-black/80 backdrop-blur px-4 sm:px-6 py-3 rounded-lg text-center">
-            <div className="text-white mb-2 text-sm sm:text-base">
-              {players.length}/6 players
-            </div>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
+          <div className="bg-gray-900/95 backdrop-blur-lg px-6 py-5 rounded-2xl text-center shadow-xl border border-gray-700/50">
+            <div className="text-white font-semibold mb-1">{players.length}/6 Players</div>
+            <div className="text-gray-400 text-sm mb-4">Waiting for players to join...</div>
             {players.length >= 2 && onStartGame && (
               <button
                 onClick={onStartGame}
-                className="px-4 sm:px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-lg transition-colors text-sm sm:text-base"
+                className="w-full px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-colors"
               >
                 Start Game
               </button>
             )}
             {players.length < 2 && (
-              <div className="text-gray-400 text-xs sm:text-sm">
-                Need at least 2 players to start
-              </div>
+              <div className="text-gray-500 text-xs">Need at least 2 players</div>
             )}
           </div>
         </div>
       )}
 
-      {/* Winners Display */}
+      {/* Winners overlay */}
       {(phase === 'showdown' || phase === 'finished') && winners && winners.length > 0 && (
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-12 z-20">
-          <div className="bg-black/90 backdrop-blur px-4 sm:px-6 py-4 rounded-lg text-center animate-bounce-in">
-            <div className="text-yellow-400 font-bold text-base sm:text-lg mb-2">
-              {phase === 'finished' ? '🏆 Game Over!' : '🎉 Winner!'}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
+          <div className="bg-gray-900/95 backdrop-blur-lg px-6 py-5 rounded-2xl text-center shadow-xl border border-yellow-500/30 animate-bounce-in">
+            <div className="text-2xl mb-2">{phase === 'finished' ? '🏆' : '🎉'}</div>
+            <div className="text-yellow-400 font-bold text-lg mb-3">
+              {phase === 'finished' ? 'Game Over!' : 'Winner!'}
             </div>
             {winners.map((winner, i) => {
               const winnerPlayer = players.find(p => p.odentity === winner.odentity);
               return (
-                <div key={i} className="text-white text-sm sm:text-base">
-                  <span className="font-bold">{winnerPlayer?.name || 'Unknown'}</span>
-                  <span className="text-green-400 ml-2">+{winner.amount.toLocaleString()}</span>
+                <div key={i} className="mb-2">
+                  <div className="text-white font-semibold">{winnerPlayer?.name || 'Unknown'}</div>
+                  <div className="text-emerald-400 font-bold">+{winner.amount.toLocaleString()}</div>
                   {winner.handName && winner.handName !== 'Uncontested' && (
-                    <div className="text-gray-400 text-xs sm:text-sm">({winner.handName})</div>
+                    <div className="text-gray-400 text-sm">{winner.handName}</div>
                   )}
                 </div>
               );
@@ -207,7 +186,7 @@ export default function Table({
             {phase === 'showdown' && onNextHand && (
               <button
                 onClick={onNextHand}
-                className="mt-3 px-4 sm:px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-lg transition-colors text-sm sm:text-base"
+                className="mt-3 w-full px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl transition-colors"
               >
                 Next Hand
               </button>
@@ -216,18 +195,16 @@ export default function Table({
         </div>
       )}
 
-      {/* Action Bar (below table) */}
-      {yourSeatIndex !== null && yourPlayer && !yourPlayer.folded && !yourPlayer.allIn && phase !== 'waiting' && phase !== 'showdown' && phase !== 'finished' && (
-        <div className="absolute -bottom-28 sm:-bottom-24 left-1/2 -translate-x-1/2 w-full max-w-lg px-2">
-          <ActionBar
-            validActions={validActions}
-            currentBet={gameState.currentBet}
-            playerBet={yourPlayer.bet}
-            playerChips={yourPlayer.chips}
-            onAction={onAction}
-            disabled={validActions.length === 0}
-          />
-        </div>
+      {/* Action Bar */}
+      {showActionBar && (
+        <ActionBar
+          validActions={validActions}
+          currentBet={gameState.currentBet}
+          playerBet={yourPlayer.bet}
+          playerChips={yourPlayer.chips}
+          onAction={onAction}
+          disabled={validActions.length === 0}
+        />
       )}
     </div>
   );

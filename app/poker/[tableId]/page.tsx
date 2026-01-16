@@ -7,6 +7,7 @@ import { ClientGameState, PlayerAction } from '@/lib/poker/types';
 import Table from '../components/Table';
 import Link from 'next/link';
 import { usePokerSounds } from '../hooks/usePokerSounds';
+import { ArrowLeft, Volume2, VolumeX } from 'lucide-react';
 
 interface PageProps {
   params: Promise<{ tableId: string }>;
@@ -15,7 +16,7 @@ interface PageProps {
 export default function PokerTable({ params }: PageProps) {
   const searchParams = useSearchParams();
   const { address } = useAccount();
-  const { playSound, toggleSounds, isSoundEnabled } = usePokerSounds();
+  const { playSound, toggleSounds } = usePokerSounds();
 
   const [tableId, setTableId] = useState<string>('');
   const [gameState, setGameState] = useState<ClientGameState | null>(null);
@@ -25,18 +26,15 @@ export default function PokerTable({ params }: PageProps) {
   const [soundEnabled, setSoundEnabled] = useState(true);
   const prevStateRef = useRef<ClientGameState | null>(null);
 
-  // Get player info from URL params
   const playerIdParam = searchParams.get('playerId');
   const playerNameParam = searchParams.get('playerName');
   const playerId = playerIdParam || address || null;
   const playerName = playerNameParam || (address ? `Player_${address.slice(2, 6)}` : 'Guest');
 
-  // Resolve params
   useEffect(() => {
     params.then(p => setTableId(p.tableId));
   }, [params]);
 
-  // Fetch game state
   const fetchState = useCallback(async () => {
     if (!tableId) return;
 
@@ -50,23 +48,21 @@ export default function PokerTable({ params }: PageProps) {
       } else {
         setError(data.error || 'Failed to load game');
       }
-    } catch (err) {
+    } catch {
       setError('Failed to connect to server');
     } finally {
       setLoading(false);
     }
   }, [tableId, playerId]);
 
-  // Poll for updates
   useEffect(() => {
     if (!tableId) return;
-
     fetchState();
-    const interval = setInterval(fetchState, 1000); // Poll every second
+    const interval = setInterval(fetchState, 1000);
     return () => clearInterval(interval);
   }, [tableId, fetchState]);
 
-  // Detect game changes and play sounds
+  // Sound effects
   useEffect(() => {
     if (!gameState || !prevStateRef.current) {
       prevStateRef.current = gameState;
@@ -75,42 +71,32 @@ export default function PokerTable({ params }: PageProps) {
 
     const prev = prevStateRef.current;
 
-    // Detect phase changes (deal sound)
     if (gameState.phase !== prev.phase) {
-      if (gameState.phase === 'preflop' || gameState.phase === 'flop' ||
-          gameState.phase === 'turn' || gameState.phase === 'river') {
+      if (['preflop', 'flop', 'turn', 'river'].includes(gameState.phase)) {
         playSound('deal');
       }
     }
 
-    // Detect winner (win sound)
-    if (gameState.winners && gameState.winners.length > 0 &&
-        (!prev.winners || prev.winners.length === 0)) {
+    if (gameState.winners?.length && !prev.winners?.length) {
       playSound('win');
     }
 
-    // Detect turn change (turn notification)
-    if (gameState.activePlayerIndex !== prev.activePlayerIndex &&
-        gameState.yourSeatIndex !== null) {
-      const yourPlayer = gameState.players.find(p => p.seatIndex === gameState.yourSeatIndex);
-      if (yourPlayer && gameState.activePlayerIndex !== -1 &&
-          gameState.players[gameState.activePlayerIndex]?.seatIndex === gameState.yourSeatIndex) {
+    if (gameState.activePlayerIndex !== prev.activePlayerIndex && gameState.yourSeatIndex !== null) {
+      const activePlayer = gameState.players[gameState.activePlayerIndex];
+      if (activePlayer?.seatIndex === gameState.yourSeatIndex) {
         playSound('turn');
       }
     }
 
-    // Detect last actions from other players
     gameState.players.forEach(player => {
       const prevPlayer = prev.players.find(p => p.odentity === player.odentity);
       if (prevPlayer && player.lastAction !== prevPlayer.lastAction && player.lastAction) {
         if (player.seatIndex !== gameState.yourSeatIndex) {
-          switch (player.lastAction) {
-            case 'fold': playSound('fold'); break;
-            case 'check': playSound('check'); break;
-            case 'call': playSound('call'); break;
-            case 'raise': playSound('raise'); break;
-            case 'allin': playSound('allIn'); break;
-          }
+          const soundMap: Record<string, 'fold' | 'check' | 'call' | 'raise' | 'allIn'> = {
+            fold: 'fold', check: 'check', call: 'call', raise: 'raise', allin: 'allIn'
+          };
+          const sound = soundMap[player.lastAction];
+          if (sound) playSound(sound);
         }
       }
     });
@@ -118,25 +104,15 @@ export default function PokerTable({ params }: PageProps) {
     prevStateRef.current = gameState;
   }, [gameState, playSound]);
 
-  // Handle seat click (join table)
   const handleSeatClick = async (seatIndex: number) => {
     if (!playerId || !tableId) return;
-
-    // Check if already seated
-    if (gameState?.players.some(p => p.odentity === playerId)) {
-      return;
-    }
+    if (gameState?.players.some(p => p.odentity === playerId)) return;
 
     try {
       const res = await fetch('/api/poker/join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tableId,
-          playerId,
-          playerName,
-          seatIndex,
-        }),
+        body: JSON.stringify({ tableId, playerId, playerName, seatIndex }),
       });
 
       const data = await res.json();
@@ -145,12 +121,11 @@ export default function PokerTable({ params }: PageProps) {
       } else {
         alert(data.error || 'Failed to join table');
       }
-    } catch (err) {
+    } catch {
       alert('Failed to join table');
     }
   };
 
-  // Handle start game
   const handleStartGame = async () => {
     if (!playerId || !tableId) return;
 
@@ -167,35 +142,26 @@ export default function PokerTable({ params }: PageProps) {
       } else {
         alert(data.error || 'Failed to start game');
       }
-    } catch (err) {
+    } catch {
       alert('Failed to start game');
     }
   };
 
-  // Handle player action
   const handleAction = async (action: PlayerAction, amount?: number) => {
     if (!playerId || !tableId || actionPending) return;
 
-    // Play sound for own action immediately
-    switch (action) {
-      case 'fold': playSound('fold'); break;
-      case 'check': playSound('check'); break;
-      case 'call': playSound('call'); break;
-      case 'raise': playSound('raise'); break;
-      case 'allin': playSound('allIn'); break;
-    }
+    const soundMap: Record<string, 'fold' | 'check' | 'call' | 'raise' | 'allIn'> = {
+      fold: 'fold', check: 'check', call: 'call', raise: 'raise', allin: 'allIn'
+    };
+    const sound = soundMap[action];
+    if (sound) playSound(sound);
 
     setActionPending(true);
     try {
       const res = await fetch('/api/poker/action', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          tableId,
-          playerId,
-          action,
-          amount,
-        }),
+        body: JSON.stringify({ tableId, playerId, action, amount }),
       });
 
       const data = await res.json();
@@ -204,14 +170,13 @@ export default function PokerTable({ params }: PageProps) {
       } else {
         alert(data.error || 'Failed to perform action');
       }
-    } catch (err) {
+    } catch {
       alert('Failed to perform action');
     } finally {
       setActionPending(false);
     }
   };
 
-  // Handle next hand
   const handleNextHand = async () => {
     if (!playerId || !tableId) return;
 
@@ -228,28 +193,34 @@ export default function PokerTable({ params }: PageProps) {
       } else {
         alert(data.error || 'Failed to start next hand');
       }
-    } catch (err) {
+    } catch {
       alert('Failed to start next hand');
     }
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 via-purple-900/20 to-gray-900 flex items-center justify-center">
-        <div className="text-white text-xl">Loading table...</div>
+      <div className="min-h-screen bg-[#0d1117] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 mx-auto mb-4 rounded-full bg-emerald-600/20 flex items-center justify-center animate-pulse">
+            <span className="text-2xl">♠</span>
+          </div>
+          <div className="text-gray-400">Loading table...</div>
+        </div>
       </div>
     );
   }
 
   if (error || !gameState) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-gray-900 via-purple-900/20 to-gray-900 flex items-center justify-center">
+      <div className="min-h-screen bg-[#0d1117] flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="text-red-400 text-xl mb-4">{error || 'Table not found'}</div>
+          <div className="text-red-400 mb-4">{error || 'Table not found'}</div>
           <Link
             href="/poker"
-            className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-xl transition-colors"
           >
+            <ArrowLeft className="w-4 h-4" />
             Back to Lobby
           </Link>
         </div>
@@ -261,72 +232,67 @@ export default function PokerTable({ params }: PageProps) {
   const isYourTurn = isSeated && gameState.validActions.length > 0;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-purple-900/20 to-gray-900 text-white p-4">
+    <div className="min-h-screen bg-[#0d1117] text-white">
       {/* Header */}
-      <div className="flex items-center justify-between mb-4 max-w-4xl mx-auto">
-        <Link
-          href="/poker"
-          className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors"
-        >
-          &larr; Lobby
-        </Link>
+      <div className="fixed top-0 left-0 right-0 z-40 bg-gray-900/80 backdrop-blur-lg border-b border-gray-800/50">
+        <div className="flex items-center justify-between px-4 py-3">
+          <Link
+            href="/poker"
+            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span className="text-sm font-medium">Lobby</span>
+          </Link>
 
-        <div className="text-center">
-          <div className="text-sm text-gray-400">Table ID</div>
-          <div className="font-mono text-xs">{tableId.slice(0, 20)}...</div>
-        </div>
+          <div className="flex items-center gap-3">
+            {isSeated && (
+              <div className="text-xs">
+                <span className="text-gray-500">Playing as </span>
+                <span className="text-purple-400 font-medium">{playerName}</span>
+              </div>
+            )}
 
-        <div className="text-right">
-          {isSeated ? (
-            <div className="text-sm">
-              <span className="text-gray-400">Playing as:</span>{' '}
-              <span className="text-purple-400 font-medium">{playerName}</span>
-            </div>
-          ) : (
-            <div className="text-sm text-gray-400">Click a seat to join</div>
-          )}
+            <button
+              onClick={() => {
+                const newState = !soundEnabled;
+                setSoundEnabled(newState);
+                toggleSounds(newState);
+              }}
+              className="p-2 text-gray-400 hover:text-white transition-colors"
+            >
+              {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Turn Indicator */}
+      {/* Your Turn Indicator */}
       {isYourTurn && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50">
-          <div className="bg-yellow-500 text-black px-6 py-2 rounded-full font-bold animate-pulse">
-            Your Turn!
+        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50">
+          <div className="px-4 py-2 bg-yellow-500 text-gray-900 font-bold rounded-full text-sm animate-pulse shadow-lg shadow-yellow-500/30">
+            Your Turn
           </div>
         </div>
       )}
 
-      {/* Table */}
-      <div className="flex items-center justify-center min-h-[700px]">
-        <Table
-          gameState={gameState}
-          onAction={handleAction}
-          onSeatClick={handleSeatClick}
-          onStartGame={isSeated ? handleStartGame : undefined}
-          onNextHand={isSeated ? handleNextHand : undefined}
-        />
+      {/* Table Container */}
+      <div className="pt-16 pb-32 px-2 min-h-screen flex items-center justify-center">
+        <div className="w-full max-w-2xl aspect-[4/3]">
+          <Table
+            gameState={gameState}
+            onAction={handleAction}
+            onSeatClick={handleSeatClick}
+            onStartGame={isSeated ? handleStartGame : undefined}
+            onNextHand={isSeated ? handleNextHand : undefined}
+          />
+        </div>
       </div>
 
-      {/* Game Info Footer */}
-      <div className="fixed bottom-4 left-4 text-xs text-gray-500">
+      {/* Status Footer */}
+      <div className="fixed bottom-20 left-4 text-[10px] text-gray-600 z-30">
         <div>Phase: {gameState.phase}</div>
         <div>Players: {gameState.players.length}/6</div>
-        {isSeated && <div>Your seat: {(gameState.yourSeatIndex ?? 0) + 1}</div>}
       </div>
-
-      {/* Sound Toggle */}
-      <button
-        onClick={() => {
-          const newState = !soundEnabled;
-          setSoundEnabled(newState);
-          toggleSounds(newState);
-        }}
-        className="fixed bottom-4 right-4 px-3 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg text-xs transition-colors"
-        title={soundEnabled ? 'Mute sounds' : 'Unmute sounds'}
-      >
-        {soundEnabled ? '🔊' : '🔇'}
-      </button>
     </div>
   );
 }
