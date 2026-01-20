@@ -13,7 +13,7 @@ export function middleware(request: NextRequest) {
 
   // Serve Craic Protocol manifest for craic domains
   if (isCraicDomain && pathname === '/.well-known/farcaster.json') {
-    return NextResponse.rewrite(new URL('/craic/.well-known/farcaster.json', request.url));
+    return NextResponse.rewrite(new URL('/api/craic-manifest', request.url));
   }
 
   // Redirect root to Craic Protocol app for craic domains
