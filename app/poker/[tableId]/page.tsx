@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { useAccount } from 'wagmi';
+import { useAccount, useConnect } from 'wagmi';
 import { ClientGameState, PlayerAction } from '@/lib/poker/types';
 import Table from '../components/Table';
 import Link from 'next/link';
@@ -15,8 +15,27 @@ interface PageProps {
 
 export default function PokerTable({ params }: PageProps) {
   const searchParams = useSearchParams();
-  const { address } = useAccount();
+  const { address, isConnected } = useAccount();
+  const { connect, connectors } = useConnect();
   const { playSound, toggleSounds } = usePokerSounds();
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  // Auto-connect Farcaster wallet if in Farcaster context
+  useEffect(() => {
+    if (isConnected || isConnecting) return;
+
+    const isFarcaster = typeof window !== 'undefined' && (window as any).farcaster;
+
+    if (isFarcaster && connectors.length > 0) {
+      const farcasterConnector = connectors.find(c => c.id === 'farcasterMiniApp' || c.name.toLowerCase().includes('farcaster'));
+      if (farcasterConnector) {
+        setIsConnecting(true);
+        connect({ connector: farcasterConnector }, {
+          onSettled: () => setIsConnecting(false)
+        });
+      }
+    }
+  }, [isConnected, isConnecting, connectors, connect]);
 
   const [tableId, setTableId] = useState<string>('');
   const [gameState, setGameState] = useState<ClientGameState | null>(null);

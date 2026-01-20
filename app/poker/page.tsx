@@ -1,19 +1,40 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAccount } from 'wagmi';
+import { useAccount, useConnect } from 'wagmi';
 import { useRouter } from 'next/navigation';
 import { TableInfo } from '@/lib/poker/types';
-import { Users, Zap, Trophy, ChevronRight, Plus, Loader2 } from 'lucide-react';
+import { Users, Zap, Trophy, ChevronRight, Plus, Loader2, Wallet, DollarSign } from 'lucide-react';
+import Link from 'next/link';
 
 export default function PokerLobby() {
   const { address, isConnected } = useAccount();
+  const { connect, connectors } = useConnect();
   const router = useRouter();
   const [tables, setTables] = useState<TableInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [playerName, setPlayerName] = useState('');
   const [showNameInput, setShowNameInput] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
+
+  // Auto-connect Farcaster wallet if in Farcaster context
+  useEffect(() => {
+    if (isConnected || isConnecting) return;
+
+    const isFarcaster = typeof window !== 'undefined' && (window as any).farcaster;
+
+    if (isFarcaster && connectors.length > 0) {
+      // Find the Farcaster connector
+      const farcasterConnector = connectors.find(c => c.id === 'farcasterMiniApp' || c.name.toLowerCase().includes('farcaster'));
+      if (farcasterConnector) {
+        setIsConnecting(true);
+        connect({ connector: farcasterConnector }, {
+          onSettled: () => setIsConnecting(false)
+        });
+      }
+    }
+  }, [isConnected, isConnecting, connectors, connect]);
 
   // Fetch tables
   useEffect(() => {
@@ -110,7 +131,27 @@ export default function PokerLobby() {
               <span className="text-4xl opacity-50">♠</span>
             </div>
             <h2 className="text-xl font-semibold mb-2">Connect to Play</h2>
-            <p className="text-gray-400 text-sm mb-6">Connect your wallet to join tables</p>
+            <p className="text-gray-400 text-sm mb-4">Connect your wallet to join tables</p>
+
+            {isConnecting ? (
+              <div className="flex items-center justify-center gap-2 text-emerald-400">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Connecting...</span>
+              </div>
+            ) : (
+              <div className="space-y-2 max-w-xs mx-auto">
+                {connectors.map((connector) => (
+                  <button
+                    key={connector.id}
+                    onClick={() => connect({ connector })}
+                    className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-semibold py-3 px-6 rounded-xl transition-all flex items-center justify-center gap-2"
+                  >
+                    <Wallet className="w-5 h-5" />
+                    Connect {connector.name}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         ) : (
           <>
@@ -153,24 +194,31 @@ export default function PokerLobby() {
               </button>
             )}
 
-            {/* Quick Play Button */}
-            <button
-              onClick={handleCreateTable}
-              disabled={creating || !playerName}
-              className="w-full mb-6 p-5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:from-gray-700 disabled:to-gray-600 rounded-2xl font-semibold text-lg shadow-lg shadow-emerald-500/25 transition-all active:scale-[0.98] flex items-center justify-center gap-3"
-            >
-              {creating ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Creating...
-                </>
-              ) : (
-                <>
-                  <Plus className="w-5 h-5" />
-                  Create Table
-                </>
-              )}
-            </button>
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              {/* Create Free Table */}
+              <button
+                onClick={handleCreateTable}
+                disabled={creating || !playerName}
+                className="p-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:from-gray-700 disabled:to-gray-600 rounded-2xl font-semibold shadow-lg shadow-emerald-500/25 transition-all active:scale-[0.98] flex flex-col items-center gap-2"
+              >
+                {creating ? (
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                ) : (
+                  <Plus className="w-6 h-6" />
+                )}
+                <span className="text-sm">Free Table</span>
+              </button>
+
+              {/* Sponsored Games */}
+              <Link
+                href="/poker/sponsored"
+                className="p-4 bg-gradient-to-r from-yellow-600 to-orange-500 hover:from-yellow-500 hover:to-orange-400 rounded-2xl font-semibold shadow-lg shadow-yellow-500/25 transition-all active:scale-[0.98] flex flex-col items-center gap-2"
+              >
+                <DollarSign className="w-6 h-6" />
+                <span className="text-sm">Sponsored</span>
+              </Link>
+            </div>
 
             {/* Game Info Cards */}
             <div className="grid grid-cols-3 gap-3 mb-6">
