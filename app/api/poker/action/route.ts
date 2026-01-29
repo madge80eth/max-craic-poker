@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     let gameState: GameState = typeof stateJson === 'string' ? JSON.parse(stateJson) : stateJson;
 
     // Validate game is in progress
-    if (gameState.phase === 'waiting' || gameState.phase === 'finished') {
+    if (gameState.phase === 'waiting' || gameState.phase === 'finished' || gameState.phase === 'showdown') {
       return NextResponse.json({ error: 'Game not in progress' }, { status: 400 });
     }
 

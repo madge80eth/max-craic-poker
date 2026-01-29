@@ -160,8 +160,19 @@ export function startHand(state: GameState): GameState {
     .map(({ index }) => index);
 
   const dealerActiveIndex = activeIndices.indexOf(dealerIndex);
-  const sbIndex = activeIndices[(dealerActiveIndex + 1) % activeIndices.length];
-  const bbIndex = activeIndices[(dealerActiveIndex + 2) % activeIndices.length];
+
+  let sbIndex: number;
+  let bbIndex: number;
+
+  if (activeIndices.length === 2) {
+    // Heads-up: dealer posts small blind, other player posts big blind
+    sbIndex = dealerIndex;
+    bbIndex = activeIndices[(dealerActiveIndex + 1) % activeIndices.length];
+  } else {
+    // 3+ players: SB is left of dealer, BB is left of SB
+    sbIndex = activeIndices[(dealerActiveIndex + 1) % activeIndices.length];
+    bbIndex = activeIndices[(dealerActiveIndex + 2) % activeIndices.length];
+  }
 
   // Reset players and post blinds
   const players = state.players.map((p, i) => {
@@ -566,7 +577,7 @@ export function getValidActions(state: GameState, playerIndex: number): ValidAct
   // Call if there's a bet
   if (state.currentBet > player.bet && player.chips > 0) {
     const toCall = state.currentBet - player.bet;
-    if (toCall < player.chips) {
+    if (toCall <= player.chips) {
       actions.push({ action: 'call' });
     }
   }

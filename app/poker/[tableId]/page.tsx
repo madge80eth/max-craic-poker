@@ -9,6 +9,16 @@ import Link from 'next/link';
 import { usePokerSounds } from '../hooks/usePokerSounds';
 import { ArrowLeft, Volume2, VolumeX } from 'lucide-react';
 
+function getGuestId(): string {
+  if (typeof window === 'undefined') return '';
+  let guestId = sessionStorage.getItem('poker_guest_id');
+  if (!guestId) {
+    guestId = `guest_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    sessionStorage.setItem('poker_guest_id', guestId);
+  }
+  return guestId;
+}
+
 interface PageProps {
   params: Promise<{ tableId: string }>;
 }
@@ -19,6 +29,12 @@ export default function PokerTable({ params }: PageProps) {
   const { connect, connectors } = useConnect();
   const { playSound, toggleSounds } = usePokerSounds();
   const [isConnecting, setIsConnecting] = useState(false);
+  const [guestId, setGuestId] = useState('');
+
+  // Generate guest ID on mount
+  useEffect(() => {
+    setGuestId(getGuestId());
+  }, []);
 
   // Auto-connect Farcaster wallet if in Farcaster context
   useEffect(() => {
@@ -47,8 +63,8 @@ export default function PokerTable({ params }: PageProps) {
 
   const playerIdParam = searchParams.get('playerId');
   const playerNameParam = searchParams.get('playerName');
-  const playerId = playerIdParam || address || null;
-  const playerName = playerNameParam || (address ? `Player_${address.slice(2, 6)}` : 'Guest');
+  const playerId = playerIdParam || address || guestId || null;
+  const playerName = playerNameParam || (address ? `Player_${address.slice(2, 6)}` : (typeof window !== 'undefined' ? sessionStorage.getItem('poker_guest_name') : null) || 'Guest');
 
   useEffect(() => {
     params.then(p => setTableId(p.tableId));
