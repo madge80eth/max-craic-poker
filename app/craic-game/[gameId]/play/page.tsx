@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams, useParams, useRouter } from 'next/navigation';
 import { useAccount } from 'wagmi';
 import { Volume2, VolumeX, ArrowLeft, Info } from 'lucide-react';
-import Table from '@/components/poker/Table';
+import Table from '@/app/poker/components/Table';
 import { ClientGameState, PlayerAction } from '@/lib/poker/types';
 
 // Sound effects
