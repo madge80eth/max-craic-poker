@@ -25,6 +25,7 @@ export default function PokerLobby() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [playerName, setPlayerName] = useState('');
+  const [nameConfirmed, setNameConfirmed] = useState(false);
   const [showNameInput, setShowNameInput] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [guestId, setGuestId] = useState('');
@@ -77,15 +78,19 @@ export default function PokerLobby() {
 
   // Set default player name
   useEffect(() => {
-    if (playerName) return;
+    if (nameConfirmed) return;
     if (address) {
       setPlayerName(`Player_${address.slice(2, 6)}`);
+      setNameConfirmed(true);
     } else {
-      // Load saved guest name or leave empty for input
+      // Load saved guest name and auto-confirm if exists
       const savedName = typeof window !== 'undefined' ? sessionStorage.getItem('poker_guest_name') : null;
-      if (savedName) setPlayerName(savedName);
+      if (savedName) {
+        setPlayerName(savedName);
+        setNameConfirmed(true);
+      }
     }
-  }, [address, playerName]);
+  }, [address, nameConfirmed]);
 
   // Save guest name when it changes
   useEffect(() => {
@@ -131,8 +136,8 @@ export default function PokerLobby() {
     router.push(`/poker/${tableId}?playerId=${encodeURIComponent(playerId)}&playerName=${encodeURIComponent(playerName)}`);
   };
 
-  // Show name entry if no name set yet
-  const needsName = !playerName;
+  // Show name entry if name hasn't been confirmed yet
+  const needsName = !nameConfirmed;
 
   return (
     <div className="min-h-screen bg-[#0d1117] text-white">
@@ -174,13 +179,26 @@ export default function PokerLobby() {
               className="w-full bg-gray-900/50 rounded-xl px-4 py-3 text-white text-sm text-center focus:outline-none focus:ring-2 focus:ring-emerald-500/50 border border-gray-700/50 mb-4"
               maxLength={15}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && playerName.trim()) {
+                if (e.key === 'Enter' && playerName.trim().length >= 2) {
                   setPlayerName(playerName.trim());
+                  setNameConfirmed(true);
                 }
               }}
             />
+            <button
+              onClick={() => {
+                if (playerName.trim().length >= 2) {
+                  setPlayerName(playerName.trim());
+                  setNameConfirmed(true);
+                }
+              }}
+              disabled={playerName.trim().length < 2}
+              className="w-full py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:from-gray-700 disabled:to-gray-600 disabled:text-gray-400 text-white font-semibold rounded-xl transition-all mb-4"
+            >
+              Play
+            </button>
             {!isConnected && (
-              <p className="text-gray-600 text-xs mt-4">
+              <p className="text-gray-600 text-xs">
                 No wallet needed &bull; Play chips only
               </p>
             )}
