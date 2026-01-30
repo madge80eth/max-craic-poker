@@ -73,6 +73,8 @@ export function addPlayer(
     isDealer: false,
     isSmallBlind: false,
     isBigBlind: false,
+    consecutiveTimeouts: 0,
+    sitOut: false,
   };
 
   return {
@@ -125,7 +127,7 @@ export function startGame(state: GameState): GameState {
 
 // Start a new hand
 export function startHand(state: GameState): GameState {
-  const activePlayers = state.players.filter(p => p.chips > 0 && !p.disconnected);
+  const activePlayers = state.players.filter(p => p.chips > 0 && !p.disconnected && !p.sitOut);
 
   // Check if game is over (only 1 player left with chips)
   if (activePlayers.length <= 1) {
@@ -145,7 +147,7 @@ export function startHand(state: GameState): GameState {
   let dealerIndex = state.dealerIndex;
   do {
     dealerIndex = (dealerIndex + 1) % state.players.length;
-  } while (state.players[dealerIndex].chips === 0 || state.players[dealerIndex].disconnected);
+  } while (state.players[dealerIndex].chips === 0 || state.players[dealerIndex].disconnected || state.players[dealerIndex].sitOut);
 
   // Create and shuffle deck
   const deck = shuffleDeck(createDeck());
@@ -156,7 +158,7 @@ export function startHand(state: GameState): GameState {
   // Find small blind and big blind positions
   const activeIndices = state.players
     .map((p, i) => ({ player: p, index: i }))
-    .filter(({ player }) => player.chips > 0 && !player.disconnected)
+    .filter(({ player }) => player.chips > 0 && !player.disconnected && !player.sitOut)
     .map(({ index }) => index);
 
   const dealerActiveIndex = activeIndices.indexOf(dealerIndex);
@@ -176,7 +178,7 @@ export function startHand(state: GameState): GameState {
 
   // Reset players and post blinds
   const players = state.players.map((p, i) => {
-    const isActive = p.chips > 0 && !p.disconnected;
+    const isActive = p.chips > 0 && !p.disconnected && !p.sitOut;
     let bet = 0;
     let chips = p.chips;
     let allIn = false;
@@ -424,8 +426,8 @@ function findNextPlayer(state: GameState): number {
     seen.add(index);
     const player = state.players[index];
 
-    // Skip folded and all-in players
-    if (!player.folded && !player.allIn) {
+    // Skip folded, all-in, and sitting-out players
+    if (!player.folded && !player.allIn && !player.sitOut) {
       // Player needs to act if:
       // 1. They haven't acted yet (no lastAction)
       // 2. Their bet is less than the current bet
@@ -448,7 +450,8 @@ function advancePhase(state: GameState): GameState {
     lastAction: undefined,
   }));
 
-  let newState: GameState = { ...state, players, currentBet: 0 };
+  const blinds = state.config.blindLevels[state.blindLevel] || state.config.blindLevels[0];
+  let newState: GameState = { ...state, players, currentBet: 0, minRaise: blinds.bigBlind };
 
   // Deal community cards based on phase
   switch (state.phase) {
@@ -628,6 +631,8 @@ export function toClientState(state: GameState, viewerIdentity: string | null): 
     // 2. It's showdown and player hasn't folded
     holeCards: (i === viewerIndex || (isShowdown && !p.folded)) ? p.holeCards : null,
     showCards: isShowdown && !p.folded,
+    consecutiveTimeouts: p.consecutiveTimeouts || 0,
+    sitOut: p.sitOut || false,
   }));
 
   const validActions = viewerIndex !== -1 && viewerIndex === state.activePlayerIndex

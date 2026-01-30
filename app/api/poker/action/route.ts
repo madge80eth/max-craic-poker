@@ -3,6 +3,7 @@ import { Redis } from '@upstash/redis';
 import { processAction, toClientState, startHand } from '@/lib/poker/engine';
 import { GameState, GameAction } from '@/lib/poker/types';
 import { SponsoredTournament } from '@/lib/poker/sponsored-types';
+import { updateLobbyStatus } from '@/lib/poker/lobby';
 
 const redis = Redis.fromEnv();
 
@@ -28,6 +29,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Game not in progress' }, { status: 400 });
     }
 
+    // Reset consecutive timeouts on voluntary action (player is active)
+    const actingPlayer = gameState.players.find(p => p.odentity === playerId);
+    if (actingPlayer) {
+      actingPlayer.consecutiveTimeouts = 0;
+      if (actingPlayer.sitOut) actingPlayer.sitOut = false;
+    }
+
     // Process the action
     const gameAction: GameAction = {
       type: action,
@@ -46,6 +54,14 @@ export async function POST(request: Request) {
 
     // Save updated state
     await redis.set(`poker:table:${tableId}:state`, JSON.stringify(gameState));
+
+    // Update lobby status when game finishes
+    if (gameState.phase === 'finished') {
+      await updateLobbyStatus(redis, tableId, {
+        status: 'finished',
+        playerCount: gameState.players.filter(p => !p.disconnected).length,
+      });
+    }
 
     // Check if this is a sponsored tournament that just finished
     let sponsoredTournamentData = null;

@@ -7,24 +7,14 @@ import { Volume2, VolumeX, ArrowLeft, Info } from 'lucide-react';
 import Table from '@/app/poker/components/Table';
 import { ClientGameState, PlayerAction } from '@/lib/poker/types';
 
-// Sound effects
+// Sound effects - only play deal sound, everything else silenced
 const playSound = (type: 'fold' | 'check' | 'call' | 'raise' | 'allin' | 'deal' | 'turn' | 'win') => {
   if (typeof window === 'undefined') return;
-
-  const sounds: Record<string, string> = {
-    fold: '/sounds/fold.mp3',
-    check: '/sounds/check.mp3',
-    call: '/sounds/call.mp3',
-    raise: '/sounds/raise.mp3',
-    allin: '/sounds/allin.mp3',
-    deal: '/sounds/deal.mp3',
-    turn: '/sounds/turn.mp3',
-    win: '/sounds/win.mp3',
-  };
+  if (type !== 'deal') return;
 
   try {
-    const audio = new Audio(sounds[type] || sounds.check);
-    audio.volume = 0.5;
+    const audio = new Audio('/sounds/deal.mp3');
+    audio.volume = 0.3;
     audio.play().catch(() => {});
   } catch {}
 };

@@ -23,6 +23,12 @@ export default function Table({
 }: TableProps) {
   const { players, communityCards, pot, phase, yourSeatIndex, validActions, winners, config, lastActionTime } = gameState;
 
+  // Keep onNextHand and phase in refs so the timer callback can access latest values
+  const onNextHandRef = useRef(onNextHand);
+  onNextHandRef.current = onNextHand;
+  const phaseRef = useRef(phase);
+  phaseRef.current = phase;
+
   // Track animation state
   const prevCommunityCountRef = useRef(0);
   const prevHandNumberRef = useRef(gameState.handNumber);
@@ -54,10 +60,41 @@ export default function Table({
     prevCommunityCountRef.current = currentCount;
   }, [communityCards.length, gameState.handNumber]);
 
+  // Auto-advance after showdown (3 second delay)
+  const [showWinnerBanner, setShowWinnerBanner] = useState(false);
+  const lastShowdownHandRef = useRef<number>(-1);
+
+  useEffect(() => {
+    if (phase === 'showdown' && winners && winners.length > 0 && lastShowdownHandRef.current !== gameState.handNumber) {
+      lastShowdownHandRef.current = gameState.handNumber;
+      setShowWinnerBanner(true);
+
+      const timeout = setTimeout(() => {
+        setShowWinnerBanner(false);
+        // Only advance if we're still in showdown — avoids race condition
+        // where the hand already advanced via polling before this timer fires
+        if (phaseRef.current === 'showdown') {
+          onNextHandRef.current?.();
+        }
+      }, 3000);
+
+      return () => clearTimeout(timeout);
+    }
+    // Do NOT include 'winners' - it gets a new reference every poll cycle,
+    // which would clear the timeout and stall the game
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, gameState.handNumber]);
+
   const blindLevel = config.blindLevels[gameState.blindLevel] || config.blindLevels[0];
 
   const getPlayerBySeat = (seatIndex: number) => {
     return players.find(p => p.seatIndex === seatIndex) || null;
+  };
+
+  // Auto-center: rotate seat positions so "you" is always at the bottom
+  const getVisualPosition = (seatIndex: number): number => {
+    if (yourSeatIndex === null || yourSeatIndex === undefined) return seatIndex;
+    return ((seatIndex - yourSeatIndex) % 6 + 6) % 6;
   };
 
   const yourPlayer = yourSeatIndex !== null ? getPlayerBySeat(yourSeatIndex) : null;
@@ -65,26 +102,28 @@ export default function Table({
     phase !== 'waiting' && phase !== 'showdown' && phase !== 'finished';
 
   return (
-    <div className="relative w-full h-full min-h-[500px]">
+    <div className="relative w-full h-full min-h-[520px]">
       {/* Table felt */}
-      <div className="absolute inset-4 sm:inset-8">
-        <div className="relative w-full h-full rounded-[50%] bg-gradient-to-b from-emerald-800 to-emerald-900 shadow-2xl border-8 border-amber-900/80">
-          {/* Inner table rim */}
-          <div className="absolute inset-3 rounded-[50%] border-4 border-emerald-700/50" />
-
-          {/* Table pattern */}
-          <div className="absolute inset-0 rounded-[50%] opacity-10 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.3)_100%)]" />
+      <div className="absolute inset-3 sm:inset-6">
+        <div className="relative w-full h-full rounded-[50%] bg-gradient-to-b from-emerald-700 via-emerald-800 to-emerald-900 shadow-[0_0_60px_rgba(16,185,129,0.15)] border-[10px] border-amber-900/70">
+          <div className="absolute -inset-[1px] rounded-[50%] border-2 border-amber-700/30" />
+          <div className="absolute inset-3 rounded-[50%] border-2 border-emerald-600/40" />
+          <div className="absolute inset-0 rounded-[50%] opacity-[0.07] bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.1)_0%,transparent_60%)]" />
         </div>
       </div>
 
       {/* Header - Blinds & Hand info */}
-      <div className="absolute top-2 left-1/2 -translate-x-1/2 z-20">
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-900/80 backdrop-blur rounded-full text-xs">
-          <span className="text-gray-400">Blinds</span>
-          <span className="text-white font-semibold">{blindLevel.smallBlind}/{blindLevel.bigBlind}</span>
-          <span className="text-gray-600">|</span>
-          <span className="text-gray-400">Hand</span>
-          <span className="text-white font-semibold">#{gameState.handNumber}</span>
+      <div className="absolute top-1 left-1/2 -translate-x-1/2 z-20">
+        <div className="flex items-center gap-3 px-4 py-2 bg-gray-900/90 backdrop-blur-sm rounded-full text-xs border border-gray-700/40">
+          <div className="flex items-center gap-1.5">
+            <span className="text-gray-500 uppercase tracking-wider text-[10px]">Blinds</span>
+            <span className="text-white font-bold">{blindLevel.smallBlind}/{blindLevel.bigBlind}</span>
+          </div>
+          <div className="w-px h-3 bg-gray-700" />
+          <div className="flex items-center gap-1.5">
+            <span className="text-gray-500 uppercase tracking-wider text-[10px]">Hand</span>
+            <span className="text-white font-bold">#{gameState.handNumber}</span>
+          </div>
         </div>
       </div>
 
@@ -100,8 +139,8 @@ export default function Table({
             player={player}
             isActive={isActive || false}
             isYou={seatIndex === yourSeatIndex}
-            position={seatIndex}
-            onSeatClick={phase === 'waiting' ? onSeatClick : undefined}
+            position={getVisualPosition(seatIndex)}
+            onSeatClick={phase === 'waiting' ? () => onSeatClick?.(seatIndex) : undefined}
             lastActionTime={lastActionTime}
             actionTimeout={config.actionTimeout}
             handNumber={gameState.handNumber}
@@ -110,23 +149,23 @@ export default function Table({
       })}
 
       {/* Center area - Community cards & pot */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+      <div className="absolute top-[42%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
         {/* Community Cards */}
-        <div className="flex gap-1 justify-center mb-3">
+        <div className="flex gap-2 justify-center mb-3">
           {communityCards.map((card, i) => (
             <Card
               key={`${gameState.handNumber}-${i}`}
               card={card}
-              size="md"
+              size="xl"
               animate={animatingCards.has(i) ? 'deal' : 'none'}
               delay={animatingCards.has(i) ? (i - Math.min(...Array.from(animatingCards))) * 80 : 0}
             />
           ))}
-          {/* Empty card slots */}
-          {Array.from({ length: 5 - communityCards.length }).map((_, i) => (
+          {phase !== 'waiting' && communityCards.length < 5 && Array.from({ length: 5 - communityCards.length }).map((_, i) => (
             <div
               key={`empty-${i}`}
-              className="w-11 h-16 rounded-lg border-2 border-dashed border-emerald-600/30"
+              className="rounded-xl border-2 border-dashed border-emerald-600/20"
+              style={{ width: 80, height: 112 }}
             />
           ))}
         </div>
@@ -134,9 +173,9 @@ export default function Table({
         {/* Pot */}
         {pot > 0 && (
           <div className="text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-gray-900/80 backdrop-blur rounded-full">
-              <div className="w-3 h-3 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600" />
-              <span className="text-yellow-400 font-bold">{pot.toLocaleString()}</span>
+            <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-900/85 backdrop-blur-sm rounded-full border border-gray-700/30">
+              <div className="w-4 h-4 rounded-full bg-gradient-to-br from-yellow-400 to-amber-600 shadow-sm shadow-yellow-500/30" />
+              <span className="text-yellow-400 font-bold text-lg">{pot.toLocaleString()}</span>
             </div>
           </div>
         )}
@@ -145,52 +184,64 @@ export default function Table({
       {/* Waiting for players overlay */}
       {phase === 'waiting' && (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
-          <div className="bg-gray-900/95 backdrop-blur-lg px-6 py-5 rounded-2xl text-center shadow-xl border border-gray-700/50">
-            <div className="text-white font-semibold mb-1">{players.length}/6 Players</div>
-            <div className="text-gray-400 text-sm mb-4">Waiting for players to join...</div>
+          <div className="bg-gray-900/95 backdrop-blur-lg px-8 py-6 rounded-2xl text-center shadow-xl border border-gray-700/50 min-w-[240px]">
+            <div className="text-white font-bold text-lg mb-1">{players.length}/6 Players</div>
+            <div className="text-gray-400 text-sm mb-5">Waiting for players to join...</div>
             {players.length >= 2 && onStartGame && (
               <button
                 onClick={onStartGame}
-                className="w-full px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-colors"
+                className="w-full px-6 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-colors text-base"
               >
                 Start Game
               </button>
             )}
             {players.length < 2 && (
-              <div className="text-gray-500 text-xs">Need at least 2 players</div>
+              <div className="text-gray-500 text-sm">Need at least 2 players</div>
             )}
           </div>
         </div>
       )}
 
-      {/* Winners overlay */}
-      {(phase === 'showdown' || phase === 'finished') && winners && winners.length > 0 && (
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
-          <div className="bg-gray-900/95 backdrop-blur-lg px-6 py-5 rounded-2xl text-center shadow-xl border border-yellow-500/30 animate-bounce-in">
-            <div className="text-2xl mb-2">{phase === 'finished' ? '🏆' : '🎉'}</div>
-            <div className="text-yellow-400 font-bold text-lg mb-3">
-              {phase === 'finished' ? 'Game Over!' : 'Winner!'}
-            </div>
+      {/* Winner banner - brief 3s flash during showdown */}
+      {phase === 'showdown' && showWinnerBanner && winners && winners.length > 0 && (
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none">
+          <div className="bg-gray-900/90 backdrop-blur-lg px-8 py-5 rounded-2xl text-center shadow-2xl border border-yellow-500/40 min-w-[260px]">
             {winners.map((winner, i) => {
               const winnerPlayer = players.find(p => p.odentity === winner.odentity);
               return (
-                <div key={i} className="mb-2">
-                  <div className="text-white font-semibold">{winnerPlayer?.name || 'Unknown'}</div>
-                  <div className="text-emerald-400 font-bold">+{winner.amount.toLocaleString()}</div>
+                <div key={i} className="mb-1">
+                  <div className="text-yellow-400 font-bold text-xl">{winnerPlayer?.name || 'Unknown'} wins!</div>
+                  <div className="text-emerald-400 font-bold text-2xl">+{winner.amount.toLocaleString()}</div>
                   {winner.handName && winner.handName !== 'Uncontested' && (
-                    <div className="text-gray-400 text-sm">{winner.handName}</div>
+                    <div className="text-gray-300 text-sm mt-1">{winner.handName}</div>
                   )}
                 </div>
               );
             })}
-            {phase === 'showdown' && onNextHand && (
-              <button
-                onClick={onNextHand}
-                className="mt-3 w-full px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl transition-colors"
-              >
-                Next Hand
-              </button>
-            )}
+          </div>
+        </div>
+      )}
+
+      {/* Game Over overlay */}
+      {phase === 'finished' && (
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
+          <div className="bg-gray-900/95 backdrop-blur-lg px-8 py-6 rounded-2xl text-center shadow-xl border border-yellow-500/30 min-w-[260px]">
+            <div className="text-yellow-400 font-bold text-xl mb-3">Game Over</div>
+            {winners && winners.map((winner, i) => {
+              const winnerPlayer = players.find(p => p.odentity === winner.odentity);
+              return (
+                <div key={i} className="mb-2">
+                  <div className="text-white font-semibold text-lg">{winnerPlayer?.name || 'Unknown'}</div>
+                  <div className="text-emerald-400 font-bold text-xl">+{winner.amount.toLocaleString()}</div>
+                </div>
+              );
+            })}
+            <a
+              href="/poker"
+              className="mt-4 inline-block w-full px-6 py-3.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl transition-colors text-center"
+            >
+              Back to Lobby
+            </a>
           </div>
         </div>
       )}

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 import { startHand, toClientState } from '@/lib/poker/engine';
 import { GameState } from '@/lib/poker/types';
+import { updateLobbyStatus } from '@/lib/poker/lobby';
 
 const redis = Redis.fromEnv();
 
@@ -38,6 +39,14 @@ export async function POST(request: Request) {
 
     // Save updated state
     await redis.set(`poker:table:${tableId}:state`, JSON.stringify(gameState));
+
+    // Update lobby status if game finished
+    if (gameState.phase === 'finished') {
+      await updateLobbyStatus(redis, tableId, {
+        status: 'finished',
+        playerCount: gameState.players.filter(p => !p.disconnected).length,
+      });
+    }
 
     return NextResponse.json({
       success: true,

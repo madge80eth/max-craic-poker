@@ -7,7 +7,7 @@ import { ClientGameState, PlayerAction } from '@/lib/poker/types';
 import Table from '../components/Table';
 import Link from 'next/link';
 import { usePokerSounds } from '../hooks/usePokerSounds';
-import { ArrowLeft, Volume2, VolumeX } from 'lucide-react';
+import { ArrowLeft, Volume2, VolumeX, ShieldAlert, X } from 'lucide-react';
 
 function getGuestId(): string {
   if (typeof window === 'undefined') return '';
@@ -59,6 +59,7 @@ export default function PokerTable({ params }: PageProps) {
   const [error, setError] = useState<string | null>(null);
   const [actionPending, setActionPending] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [sybilError, setSybilError] = useState<string | null>(null);
   const prevStateRef = useRef<ClientGameState | null>(null);
 
   const playerIdParam = searchParams.get('playerId');
@@ -152,7 +153,15 @@ export default function PokerTable({ params }: PageProps) {
 
       const data = await res.json();
       if (data.success) {
+        if (data.redirect) {
+          // Table was full - redirected to overflow table
+          window.location.href = `/poker/${data.redirect}?playerId=${encodeURIComponent(playerId)}&playerName=${encodeURIComponent(playerName)}`;
+          return;
+        }
         setGameState(data.gameState);
+      } else if (data.sybilFailed) {
+        // Show styled sybil error instead of alert
+        setSybilError(data.error || 'You do not meet the requirements to join this table.');
       } else {
         alert(data.error || 'Failed to join table');
       }
@@ -225,11 +234,13 @@ export default function PokerTable({ params }: PageProps) {
       const data = await res.json();
       if (data.success) {
         setGameState(data.gameState);
-      } else {
-        alert(data.error || 'Failed to start next hand');
       }
+      // Silently ignore errors — "Can only start next hand after showdown" is a
+      // benign race condition when the auto-advance timer fires after the hand
+      // has already transitioned via polling or another player's action.
     } catch {
-      alert('Failed to start next hand');
+      // Network errors during auto-advance are also benign — the poll loop
+      // will pick up the correct state on the next tick.
     }
   };
 
@@ -265,6 +276,25 @@ export default function PokerTable({ params }: PageProps) {
 
   const isSeated = gameState.yourSeatIndex !== null;
   const isYourTurn = isSeated && gameState.validActions.length > 0;
+  const yourPlayer = isSeated ? gameState.players.find(p => p.seatIndex === gameState.yourSeatIndex) : null;
+  const isSittingOut = yourPlayer?.sitOut || false;
+
+  const handleSitOut = async (sitOut: boolean) => {
+    if (!playerId || !tableId) return;
+    try {
+      const res = await fetch('/api/poker/sit-out', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tableId, playerId, sitOut }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setGameState(data.gameState);
+      }
+    } catch {
+      // Silently handle errors
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#0d1117] text-white">
@@ -285,6 +315,19 @@ export default function PokerTable({ params }: PageProps) {
                 <span className="text-gray-500">Playing as </span>
                 <span className="text-purple-400 font-medium">{playerName}</span>
               </div>
+            )}
+
+            {isSeated && gameState.phase !== 'waiting' && (
+              <button
+                onClick={() => handleSitOut(!isSittingOut)}
+                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
+                  isSittingOut
+                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                    : 'bg-orange-600/20 hover:bg-orange-600/30 text-orange-400 border border-orange-500/30'
+                }`}
+              >
+                {isSittingOut ? "I'm Back" : 'Sit Out'}
+              </button>
             )}
 
             <button
@@ -328,6 +371,35 @@ export default function PokerTable({ params }: PageProps) {
         <div>Phase: {gameState.phase}</div>
         <div>Players: {gameState.players.length}/6</div>
       </div>
+
+      {/* Sybil Error Modal */}
+      {sybilError && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-gray-900 rounded-2xl border border-red-500/30 w-full max-w-sm shadow-2xl">
+            <div className="p-6 text-center">
+              <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-red-500/20 flex items-center justify-center">
+                <ShieldAlert className="w-7 h-7 text-red-400" />
+              </div>
+              <h3 className="text-lg font-bold text-white mb-2">Access Denied</h3>
+              <p className="text-sm text-gray-400 mb-6">{sybilError}</p>
+              <div className="flex gap-3">
+                <Link
+                  href="/poker"
+                  className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium rounded-xl transition-colors text-center text-sm"
+                >
+                  Back to Lobby
+                </Link>
+                <button
+                  onClick={() => setSybilError(null)}
+                  className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white font-medium rounded-xl transition-colors text-sm"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

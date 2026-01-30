@@ -35,12 +35,14 @@ export default function ActionBar({
   const maxRaise = raiseAction?.maxAmount || 0;
   const pot = currentBet; // Simplified - actual pot tracking would need game state
 
-  // Initialize/update raise amount
+  // Always reset raise amount to minimum when action context changes
   useEffect(() => {
-    if (raiseAction && raiseAmount < minRaise) {
+    if (raiseAction) {
       setRaiseAmount(minRaise);
+      setShowRaisePanel(false);
     }
-  }, [raiseAction, minRaise, raiseAmount]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [minRaise]);
 
   if (validActions.length === 0) {
     return null;
@@ -132,7 +134,7 @@ export default function ActionBar({
                 disabled={disabled}
                 className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-600 text-white font-bold rounded-xl transition-colors"
               >
-                Raise to {raiseAmount.toLocaleString()}
+                {canCheck ? 'Bet' : 'Raise to'} {raiseAmount.toLocaleString()}
               </button>
             </div>
           </div>
@@ -185,7 +187,7 @@ export default function ActionBar({
                   disabled={disabled}
                   className="flex-1 py-4 bg-yellow-600 hover:bg-yellow-500 disabled:bg-gray-600 text-white font-semibold rounded-xl transition-colors"
                 >
-                  <div className="text-sm">Raise</div>
+                  <div className="text-sm">{canCheck ? 'Bet' : 'Raise'}</div>
                   <div className="text-xs opacity-80">{minRaise.toLocaleString()}+</div>
                 </button>
               )}
