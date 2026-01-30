@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAccount, useConnect } from 'wagmi';
 import { useRouter } from 'next/navigation';
 import { TableInfo, SybilResistanceConfig, DEFAULT_SYBIL_CONFIG, estimateGameDuration } from '@/lib/poker/types';
+import { TournamentInfo } from '@/lib/poker/tournament-types';
 import {
   Users, Zap, Trophy, ChevronRight, Plus, Loader2, DollarSign, X, Clock,
   Shield, BadgeCheck, FileSpreadsheet, Image, Coins, AtSign, ArrowLeft, ArrowRight, Check
@@ -58,8 +59,10 @@ export default function PokerLobby() {
   const { connect, connectors } = useConnect();
   const router = useRouter();
   const [tables, setTables] = useState<TableInfo[]>([]);
+  const [tournaments, setTournaments] = useState<TournamentInfo[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [creatingTournament, setCreatingTournament] = useState(false);
   const [playerName, setPlayerName] = useState('');
   const [nameConfirmed, setNameConfirmed] = useState(false);
   const [showNameInput, setShowNameInput] = useState(false);
@@ -111,24 +114,27 @@ export default function PokerLobby() {
     }
   }, [isConnected, isConnecting, connectors, connect]);
 
-  // Fetch tables
+  // Fetch tables and tournaments
   useEffect(() => {
-    const fetchTables = async () => {
+    const fetchAll = async () => {
       try {
-        const res = await fetch('/api/poker/tables');
-        const data = await res.json();
-        if (data.success) {
-          setTables(data.tables);
-        }
+        const [tablesRes, tournamentsRes] = await Promise.all([
+          fetch('/api/poker/tables'),
+          fetch('/api/poker/tournaments'),
+        ]);
+        const tablesData = await tablesRes.json();
+        const tournamentsData = await tournamentsRes.json();
+        if (tablesData.success) setTables(tablesData.tables);
+        if (tournamentsData.success) setTournaments(tournamentsData.tournaments);
       } catch (error) {
-        console.error('Failed to fetch tables:', error);
+        console.error('Failed to fetch lobby data:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTables();
-    const interval = setInterval(fetchTables, 5000);
+    fetchAll();
+    const interval = setInterval(fetchAll, 5000);
     return () => clearInterval(interval);
   }, []);
 
@@ -246,6 +252,36 @@ export default function PokerLobby() {
       return;
     }
     router.push(`/poker/${tableId}?playerId=${encodeURIComponent(playerId)}&playerName=${encodeURIComponent(playerName)}`);
+  };
+
+  const handleCreateTournament = async () => {
+    if (!playerId || !playerName) return;
+    setCreatingTournament(true);
+    try {
+      const res = await fetch('/api/poker/tournament/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          creatorId: playerId,
+          creatorName: playerName,
+          name: `${playerName}'s Tournament`,
+          maxPlayers: 18,
+          startingChips,
+          blindIntervalMinutes: blindInterval,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        router.push(`/poker/tournament/${data.tournamentId}?playerId=${encodeURIComponent(playerId)}&playerName=${encodeURIComponent(playerName)}`);
+      } else {
+        alert(data.error || 'Failed to create tournament');
+      }
+    } catch (error) {
+      console.error('Failed to create tournament:', error);
+      alert('Failed to create tournament');
+    } finally {
+      setCreatingTournament(false);
+    }
   };
 
   const handleCSVUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -394,7 +430,7 @@ export default function PokerLobby() {
             )}
 
             {/* Action Buttons */}
-            <div className="grid grid-cols-2 gap-3 mb-6">
+            <div className="grid grid-cols-3 gap-3 mb-6">
               <button
                 onClick={openWizard}
                 disabled={creating || !playerName}
@@ -406,6 +442,19 @@ export default function PokerLobby() {
                   <Plus className="w-6 h-6" />
                 )}
                 <span className="text-sm">Free Table</span>
+              </button>
+
+              <button
+                onClick={handleCreateTournament}
+                disabled={creatingTournament || !playerName}
+                className="p-4 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 disabled:from-gray-700 disabled:to-gray-600 rounded-2xl font-semibold shadow-lg shadow-purple-500/25 transition-all active:scale-[0.98] flex flex-col items-center gap-2"
+              >
+                {creatingTournament ? (
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                ) : (
+                  <Trophy className="w-6 h-6" />
+                )}
+                <span className="text-sm">Tournament</span>
               </button>
 
               <Link
@@ -541,6 +590,68 @@ export default function PokerLobby() {
                 </div>
               )}
             </div>
+
+            {/* Tournaments */}
+            {tournaments.length > 0 && (
+              <div className="mt-6">
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Tournaments</h2>
+                  <span className="text-xs text-gray-500">{tournaments.length} tournaments</span>
+                </div>
+                <div className="space-y-2">
+                  {tournaments.map((t) => {
+                    const statusColors: Record<string, string> = {
+                      registering: 'bg-emerald-500/20 text-emerald-400',
+                      running: 'bg-yellow-500/20 text-yellow-400',
+                      final_table: 'bg-purple-500/20 text-purple-400',
+                      finished: 'bg-gray-500/20 text-gray-400',
+                    };
+                    const statusLabels: Record<string, string> = {
+                      registering: 'Open',
+                      running: 'In Progress',
+                      final_table: 'Final Table',
+                      finished: 'Finished',
+                    };
+                    return (
+                      <button
+                        key={t.tournamentId}
+                        onClick={() => router.push(`/poker/tournament/${t.tournamentId}?playerId=${encodeURIComponent(playerId)}&playerName=${encodeURIComponent(playerName)}`)}
+                        className="w-full p-4 bg-gray-800/40 hover:bg-gray-800/60 rounded-xl border border-gray-700/30 transition-colors text-left"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center">
+                              <Trophy className="w-5 h-5 text-purple-300" />
+                            </div>
+                            <div>
+                              <div className="font-medium text-sm">{t.name}</div>
+                              <div className="flex items-center gap-2 text-xs text-gray-500">
+                                <span className="flex items-center gap-1">
+                                  <Users className="w-3 h-3" />
+                                  {t.status === 'registering'
+                                    ? `${t.registeredCount}/${t.maxPlayers}`
+                                    : `${t.remainingCount} left`}
+                                </span>
+                                <span>&bull;</span>
+                                <span>{t.startingChips.toLocaleString()} chips</span>
+                                <span>&bull;</span>
+                                <span>{t.blindIntervalMinutes}m blinds</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-1 text-[10px] font-medium rounded-full uppercase ${statusColors[t.status] || ''}`}>
+                              {statusLabels[t.status] || t.status}
+                            </span>
+                            <ChevronRight className="w-4 h-4 text-gray-500" />
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Dev Tools */}
             <div className="mt-8 pt-4 border-t border-gray-800/50">

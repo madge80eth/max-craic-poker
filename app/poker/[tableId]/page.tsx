@@ -60,6 +60,8 @@ export default function PokerTable({ params }: PageProps) {
   const [actionPending, setActionPending] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [sybilError, setSybilError] = useState<string | null>(null);
+  const [eliminatedInfo, setEliminatedInfo] = useState<{ position: number; total: number } | null>(null);
+  const [movingToTable, setMovingToTable] = useState<string | null>(null);
   const prevStateRef = useRef<ClientGameState | null>(null);
 
   const playerIdParam = searchParams.get('playerId');
@@ -79,6 +81,22 @@ export default function PokerTable({ params }: PageProps) {
       const data = await res.json();
 
       if (data.success) {
+        // MTT: Player was moved to a new table
+        if (data.moved && data.newTableId) {
+          setMovingToTable(data.newTableId);
+          setTimeout(() => {
+            window.location.href = `/poker/${data.newTableId}?playerId=${encodeURIComponent(playerId || '')}&playerName=${encodeURIComponent(playerName)}`;
+          }, 2000);
+          return;
+        }
+
+        // MTT: Player was eliminated
+        if (data.eliminated) {
+          setEliminatedInfo({ position: data.finishPosition, total: data.totalPlayers });
+          if (data.gameState) setGameState(data.gameState);
+          return;
+        }
+
         setGameState(data.gameState);
         setError(null);
       } else {
@@ -89,7 +107,7 @@ export default function PokerTable({ params }: PageProps) {
     } finally {
       setLoading(false);
     }
-  }, [tableId, playerId]);
+  }, [tableId, playerId, playerName]);
 
   useEffect(() => {
     if (!tableId) return;
@@ -373,6 +391,39 @@ export default function PokerTable({ params }: PageProps) {
       </div>
 
       {/* Sybil Error Modal */}
+      {/* MTT: Moving to new table overlay */}
+      {movingToTable && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-gray-900 rounded-2xl border border-emerald-500/30 w-full max-w-sm shadow-2xl p-6 text-center">
+            <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-emerald-500/20 flex items-center justify-center animate-pulse">
+              <span className="text-2xl">♠</span>
+            </div>
+            <h3 className="text-lg font-bold text-white mb-2">Table Change</h3>
+            <p className="text-sm text-gray-400">Moving you to a new table...</p>
+          </div>
+        </div>
+      )}
+
+      {/* MTT: Eliminated modal */}
+      {eliminatedInfo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-gray-900 rounded-2xl border border-gray-700/30 w-full max-w-sm shadow-2xl p-6 text-center">
+            <div className="text-4xl mb-4">💀</div>
+            <h3 className="text-lg font-bold text-white mb-2">Eliminated</h3>
+            <p className="text-sm text-gray-400 mb-1">
+              You finished <span className="text-white font-bold">{eliminatedInfo.position}{ordSuffix(eliminatedInfo.position)}</span>
+            </p>
+            <p className="text-xs text-gray-500 mb-6">out of {eliminatedInfo.total} players</p>
+            <Link
+              href="/poker"
+              className="inline-block w-full py-3 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-xl transition-colors text-sm"
+            >
+              Back to Lobby
+            </Link>
+          </div>
+        </div>
+      )}
+
       {sybilError && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
           <div className="bg-gray-900 rounded-2xl border border-red-500/30 w-full max-w-sm shadow-2xl">
@@ -402,4 +453,10 @@ export default function PokerTable({ params }: PageProps) {
       )}
     </div>
   );
+}
+
+function ordSuffix(n: number): string {
+  const s = ['th', 'st', 'nd', 'rd'];
+  const v = n % 100;
+  return s[(v - 20) % 10] || s[v] || s[0];
 }

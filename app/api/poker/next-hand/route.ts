@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 import { startHand, toClientState } from '@/lib/poker/engine';
-import { GameState } from '@/lib/poker/types';
+import { GameState, TableInfo } from '@/lib/poker/types';
 import { updateLobbyStatus } from '@/lib/poker/lobby';
+import { runPostHand } from '@/lib/poker/tournament';
 
 const redis = Redis.fromEnv();
 
@@ -34,6 +35,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Player not at this table' }, { status: 403 });
     }
 
+    // MTT post-hand hook: handle eliminations, balancing, blinds BEFORE starting next hand
+    const tournamentId = await findTournamentId(tableId);
+    if (tournamentId) {
+      gameState = await runPostHand(redis, tableId, gameState, tournamentId);
+      // If tournament logic emptied this table or set it to finished, save and return
+      if (gameState.phase === 'finished' || gameState.players.length === 0) {
+        await redis.set(`poker:table:${tableId}:state`, JSON.stringify(gameState));
+        return NextResponse.json({
+          success: true,
+          gameState: toClientState(gameState, playerId),
+        });
+      }
+    }
+
     // Start next hand
     gameState = startHand(gameState);
 
@@ -59,4 +74,19 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+}
+
+async function findTournamentId(tableId: string): Promise<string | null> {
+  try {
+    const entries = await redis.zrange('poker:lobby', 0, -1);
+    for (const entry of entries) {
+      const info: TableInfo = typeof entry === 'string' ? JSON.parse(entry) : entry;
+      if (info.tableId === tableId && info.tournamentId?.startsWith('mtt_')) {
+        return info.tournamentId;
+      }
+    }
+  } catch {
+    // Silently fail — non-tournament tables don't need this
+  }
+  return null;
 }

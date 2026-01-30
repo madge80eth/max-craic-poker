@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 import { processAction, removePlayer, toClientState } from '@/lib/poker/engine';
-import { GameState } from '@/lib/poker/types';
+import { GameState, TableInfo } from '@/lib/poker/types';
 import { updateLobbyStatus } from '@/lib/poker/lobby';
+import { getPlayerMoveNotification, getPlayerTournamentEntry, getTournamentState } from '@/lib/poker/tournament';
 
 const redis = Redis.fromEnv();
 
@@ -63,6 +64,36 @@ export async function GET(request: Request) {
       }
     }
 
+    // MTT: Check if this player was moved or eliminated
+    if (playerId) {
+      const tournamentId = await findTableTournamentId(tableId);
+      if (tournamentId) {
+        // Check for move notification
+        const move = await getPlayerMoveNotification(redis, tournamentId, playerId);
+        if (move) {
+          return NextResponse.json({
+            success: true,
+            moved: true,
+            newTableId: move.toTableId,
+            reason: move.reason,
+          });
+        }
+
+        // Check if player was eliminated
+        const entry = await getPlayerTournamentEntry(redis, tournamentId, playerId);
+        if (entry && entry.status === 'eliminated') {
+          const tournament = await getTournamentState(redis, tournamentId);
+          return NextResponse.json({
+            success: true,
+            eliminated: true,
+            finishPosition: entry.finishPosition,
+            totalPlayers: tournament?.registeredCount || 0,
+            gameState: toClientState(gameState, playerId),
+          });
+        }
+      }
+    }
+
     return NextResponse.json({
       success: true,
       gameState: toClientState(gameState, playerId || null),
@@ -74,4 +105,19 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
+}
+
+async function findTableTournamentId(tableId: string): Promise<string | null> {
+  try {
+    const entries = await redis.zrange('poker:lobby', 0, -1);
+    for (const entry of entries) {
+      const info: TableInfo = typeof entry === 'string' ? JSON.parse(entry) : entry;
+      if (info.tableId === tableId && info.tournamentId?.startsWith('mtt_')) {
+        return info.tournamentId;
+      }
+    }
+  } catch {
+    // Non-tournament tables don't need this
+  }
+  return null;
 }
