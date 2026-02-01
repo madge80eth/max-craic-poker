@@ -1,32 +1,25 @@
-'use client';
+import type { Metadata } from 'next';
+import LandingPage from './components/LandingPage';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+export const metadata: Metadata = {
+  title: 'Craic Protocol | Poker Infrastructure for Onchain Communities',
+  description:
+    'From creator monetization to trustless home games to portable player reputation. Three products. One protocol. Zero rake. Built on Base.',
+  openGraph: {
+    title: 'Craic Protocol | Poker Infrastructure for Onchain Communities',
+    description:
+      'Three products. One protocol. Zero rake. Built on Base.',
+    images: [
+      {
+        url: 'https://craicprotocol.com/mcp-logo.png',
+        width: 1024,
+        height: 1024,
+        alt: 'Craic Protocol',
+      },
+    ],
+  },
+};
 
 export default function HomePage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    // Auto-redirect root to Mini App
-    router.push('/mini-app');
-  }, [router]);
-
-  // Show simple loading while redirect happens
-  return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #4c1d95 0%, #581c87 50%, #7c3aed 100%)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center'
-    }}>
-      <div style={{
-        color: 'white',
-        fontSize: '1.5rem',
-        textAlign: 'center'
-      }}>
-        Loading Max Craic Poker...
-      </div>
-    </div>
-  );
+  return <LandingPage />;
 }
