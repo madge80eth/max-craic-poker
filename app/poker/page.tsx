@@ -429,41 +429,20 @@ export default function PokerLobby() {
               </button>
             )}
 
-            {/* Action Buttons */}
-            <div className="grid grid-cols-3 gap-3 mb-6">
+            {/* Create Game Button */}
+            <div className="mb-6">
               <button
                 onClick={openWizard}
                 disabled={creating || !playerName}
-                className="p-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:from-gray-700 disabled:to-gray-600 rounded-2xl font-semibold shadow-lg shadow-emerald-500/25 transition-all active:scale-[0.98] flex flex-col items-center gap-2"
+                className="w-full p-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:from-gray-700 disabled:to-gray-600 rounded-2xl font-semibold shadow-lg shadow-emerald-500/25 transition-all active:scale-[0.98] flex items-center justify-center gap-3"
               >
                 {creating ? (
                   <Loader2 className="w-6 h-6 animate-spin" />
                 ) : (
                   <Plus className="w-6 h-6" />
                 )}
-                <span className="text-sm">Free Table</span>
+                <span>Create Game</span>
               </button>
-
-              <button
-                onClick={handleCreateTournament}
-                disabled={creatingTournament || !playerName}
-                className="p-4 bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 disabled:from-gray-700 disabled:to-gray-600 rounded-2xl font-semibold shadow-lg shadow-purple-500/25 transition-all active:scale-[0.98] flex flex-col items-center gap-2"
-              >
-                {creatingTournament ? (
-                  <Loader2 className="w-6 h-6 animate-spin" />
-                ) : (
-                  <Trophy className="w-6 h-6" />
-                )}
-                <span className="text-sm">Tournament</span>
-              </button>
-
-              <Link
-                href="/poker/sponsored"
-                className="p-4 bg-gradient-to-r from-yellow-600 to-orange-500 hover:from-yellow-500 hover:to-orange-400 rounded-2xl font-semibold shadow-lg shadow-yellow-500/25 transition-all active:scale-[0.98] flex flex-col items-center gap-2"
-              >
-                <DollarSign className="w-6 h-6" />
-                <span className="text-sm">Sponsored</span>
-              </Link>
             </div>
 
             {/* Game Info Cards */}
