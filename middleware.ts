@@ -19,6 +19,14 @@ export function middleware(request: NextRequest) {
   // Root path on craic domains serves the landing page (app/page.tsx)
   // No rewrite needed — let Next.js serve it directly
 
+  // maxcraicpoker.com root -> /mini-app (the MCP app)
+  const isMcpDomain = hostname.includes('maxcraicpoker.com');
+  if (isMcpDomain && pathname === '/') {
+    const url = request.nextUrl.clone();
+    url.pathname = '/mini-app';
+    return NextResponse.rewrite(url);
+  }
+
   // Rewrite /create, /game/* paths to (craic) routes for craic domains
   if (isCraicDomain) {
     if (pathname === '/create') {
