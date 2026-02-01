@@ -16,7 +16,9 @@ import {
   BadgeCheck,
   Loader2,
   Sparkles,
-  Zap
+  Zap,
+  Gamepad2,
+  Megaphone,
 } from 'lucide-react';
 import GlowButton from '@/components/craic/ui/GlowButton';
 import NeonBadge from '@/components/craic/ui/NeonBadge';
@@ -27,25 +29,34 @@ import {
   estimateGameTime,
 } from '@/lib/craic/types';
 
-type WizardStep = 'settings' | 'sybil' | 'prize' | 'confirm';
+type GameType = 'fun' | 'sponsored';
+type WizardStep = 'type' | 'settings' | 'sybil' | 'prize' | 'confirm';
 
-const STEPS: { id: WizardStep; title: string; icon: React.ReactNode }[] = [
-  { id: 'settings', title: 'Game Settings', icon: <Clock className="w-5 h-5" /> },
-  { id: 'sybil', title: 'Sybil Protection', icon: <Shield className="w-5 h-5" /> },
-  { id: 'prize', title: 'Prize Pool', icon: <DollarSign className="w-5 h-5" /> },
-  { id: 'confirm', title: 'Confirm', icon: <Check className="w-5 h-5" /> },
-];
+function getSteps(gameType: GameType | null): { id: WizardStep; title: string; icon: React.ReactNode }[] {
+  const steps: { id: WizardStep; title: string; icon: React.ReactNode }[] = [
+    { id: 'type', title: 'Game Type', icon: <Gamepad2 className="w-5 h-5" /> },
+    { id: 'settings', title: 'Game Settings', icon: <Clock className="w-5 h-5" /> },
+    { id: 'sybil', title: 'Sybil Protection', icon: <Shield className="w-5 h-5" /> },
+  ];
+  if (gameType === 'sponsored') {
+    steps.push({ id: 'prize', title: 'Prize Pool', icon: <DollarSign className="w-5 h-5" /> });
+  }
+  steps.push({ id: 'confirm', title: 'Confirm', icon: <Check className="w-5 h-5" /> });
+  return steps;
+}
 
 export default function CreateGameWizard() {
   const { address, isConnected } = useAccount();
   const { connect, connectors } = useConnect();
   const router = useRouter();
 
-  const [step, setStep] = useState<WizardStep>('settings');
+  const [step, setStep] = useState<WizardStep>('type');
+  const [gameType, setGameType] = useState<GameType | null>(null);
   const [form, setForm] = useState<CreateGameFormState>(DEFAULT_CREATE_FORM);
   const [creating, setCreating] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
 
+  const STEPS = getSteps(gameType);
   const stepIndex = STEPS.findIndex(s => s.id === step);
 
   // Auto-connect
@@ -79,6 +90,14 @@ export default function CreateGameWizard() {
     } else {
       router.push('/');
     }
+  };
+
+  const selectGameType = (type: GameType) => {
+    setGameType(type);
+    if (type === 'fun') {
+      setForm({ ...form, prizePool: 0 });
+    }
+    setStep('settings');
   };
 
   const handleCreate = async () => {
@@ -176,7 +195,60 @@ export default function CreateGameWizard() {
 
       {/* Content */}
       <div className="px-4 py-6">
-        {/* Step 1: Game Settings */}
+        {/* Step: Game Type */}
+        {step === 'type' && (
+          <div className="space-y-6">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                <Gamepad2 className="w-6 h-6 text-emerald-400" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold">What kind of game?</h2>
+                <p className="text-sm text-gray-400">Choose how your tournament works</p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => selectGameType('fun')}
+              className={`w-full text-left p-5 rounded-2xl border transition-all ${
+                gameType === 'fun'
+                  ? 'bg-emerald-500/10 border-emerald-500/30'
+                  : 'bg-gray-800/30 border-gray-700/30 hover:border-gray-600/50'
+              }`}
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <Gamepad2 className="w-5 h-5 text-emerald-400" />
+                <h3 className="text-lg font-semibold">Play for Fun</h3>
+              </div>
+              <p className="text-sm text-gray-400 leading-relaxed">
+                No prize pool, no money on the line. Just a straight-up poker tournament
+                for your community. Great for practice, community nights, or settling
+                arguments about who actually plays better.
+              </p>
+            </button>
+
+            <button
+              onClick={() => selectGameType('sponsored')}
+              className={`w-full text-left p-5 rounded-2xl border transition-all ${
+                gameType === 'sponsored'
+                  ? 'bg-yellow-500/10 border-yellow-500/30'
+                  : 'bg-gray-800/30 border-gray-700/30 hover:border-gray-600/50'
+              }`}
+            >
+              <div className="flex items-center gap-3 mb-2">
+                <Megaphone className="w-5 h-5 text-yellow-400" />
+                <h3 className="text-lg font-semibold">Sponsored</h3>
+              </div>
+              <p className="text-sm text-gray-400 leading-relaxed">
+                Fund a USDC prize pool for the tournament. You set the amount, the smart
+                contract handles payouts to the top 3 finishers. Zero rake, 100% of the
+                pool goes to players.
+              </p>
+            </button>
+          </div>
+        )}
+
+        {/* Step: Game Settings */}
         {step === 'settings' && (
           <div className="space-y-6">
             <div className="flex items-center gap-3 mb-6">
@@ -258,7 +330,7 @@ export default function CreateGameWizard() {
           </div>
         )}
 
-        {/* Step 2: Sybil Protection */}
+        {/* Step: Sybil Protection */}
         {step === 'sybil' && (
           <div className="space-y-6">
             <div className="flex items-center gap-3 mb-6">
@@ -425,7 +497,7 @@ export default function CreateGameWizard() {
           </div>
         )}
 
-        {/* Step 3: Prize Pool */}
+        {/* Step: Prize Pool (sponsored only) */}
         {step === 'prize' && (
           <div className="space-y-6">
             <div className="flex items-center gap-3 mb-6">
@@ -434,7 +506,7 @@ export default function CreateGameWizard() {
               </div>
               <div>
                 <h2 className="text-xl font-bold">Prize Pool</h2>
-                <p className="text-sm text-gray-400">Sponsor the tournament</p>
+                <p className="text-sm text-gray-400">Fund the tournament</p>
               </div>
             </div>
 
@@ -512,7 +584,7 @@ export default function CreateGameWizard() {
           </div>
         )}
 
-        {/* Step 4: Confirmation */}
+        {/* Step: Confirmation */}
         {step === 'confirm' && (
           <div className="space-y-6">
             <div className="flex items-center gap-3 mb-6">
@@ -527,6 +599,18 @@ export default function CreateGameWizard() {
 
             {/* Summary */}
             <div className="bg-gray-800/30 rounded-2xl border border-gray-700/30 overflow-hidden">
+              {/* Game Type */}
+              <div className="p-4 border-b border-gray-700/30">
+                <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">Game Type</div>
+                <div className="flex items-center gap-2">
+                  {gameType === 'fun' ? (
+                    <NeonBadge variant="green">Play for Fun</NeonBadge>
+                  ) : (
+                    <NeonBadge variant="gold">Sponsored</NeonBadge>
+                  )}
+                </div>
+              </div>
+
               {/* Game Settings */}
               <div className="p-4 border-b border-gray-700/30">
                 <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">Game Settings</div>
@@ -592,7 +676,12 @@ export default function CreateGameWizard() {
       {/* Footer Actions */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#0a0a0a]/95 backdrop-blur-lg border-t border-gray-800/50 pb-safe">
         <div className="max-w-md mx-auto">
-          {step !== 'confirm' ? (
+          {step === 'type' ? (
+            // No continue button on type step, selection advances automatically
+            <div className="text-center text-sm text-gray-500">
+              Select a game type to continue
+            </div>
+          ) : step !== 'confirm' ? (
             <GlowButton onClick={goNext} variant="primary" size="lg" fullWidth>
               Continue
               <ArrowRight className="w-5 h-5 ml-2" />
