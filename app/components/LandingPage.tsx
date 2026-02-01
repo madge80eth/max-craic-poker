@@ -193,9 +193,9 @@ export default function LandingPage() {
                 Max Craic Poker
               </h2>
               <p className="mt-4 text-zinc-400 leading-relaxed text-[15px]">
-                A creator monetization and engagement platform built around live poker.
-                Viewers enter free daily raffles for a share of tournament profits,
-                paid out automatically in USDC on Base.
+                A creator monetization and engagement platform built around streaming
+                online poker. Viewers enter free daily raffles for a share of tournament
+                profits, paid out automatically in USDC on Base.
               </p>
               <p className="mt-3 text-zinc-500 leading-relaxed text-sm">
                 Hand of the Hour competitions, tipping, memberships, and video content
