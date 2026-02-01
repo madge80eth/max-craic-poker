@@ -16,12 +16,8 @@ export function middleware(request: NextRequest) {
     return NextResponse.rewrite(new URL('/api/craic-manifest', request.url));
   }
 
-  // Redirect root to Craic Protocol app for craic domains
-  if (isCraicDomain && pathname === '/') {
-    const url = request.nextUrl.clone();
-    url.pathname = '/craic-home';
-    return NextResponse.rewrite(url);
-  }
+  // Root path on craic domains serves the landing page (app/page.tsx)
+  // No rewrite needed — let Next.js serve it directly
 
   // Rewrite /create, /game/* paths to (craic) routes for craic domains
   if (isCraicDomain) {
