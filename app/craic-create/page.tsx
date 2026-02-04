@@ -17,7 +17,6 @@ import {
   Sparkles,
   Zap,
   Gamepad2,
-  Megaphone,
   CheckCircle2,
   AlertCircle,
   Calendar,
@@ -362,7 +361,7 @@ function CreateGameWizard() {
           </div>
 
           {/* Card Container */}
-          <div className="bg-gray-800/40 rounded-2xl border border-gray-700/50 overflow-hidden">
+          <div className="bg-gray-800/50 rounded-2xl border border-gray-700/50 overflow-hidden">
             {/* Step: Game Type */}
             {step === 'type' && (
               <div className="p-6">
@@ -377,10 +376,10 @@ function CreateGameWizard() {
                 <div className="space-y-3">
                   <button
                     onClick={() => selectGameType('fun')}
-                    className={`w-full text-left p-4 rounded-xl transition-all border ${
+                    className={`w-full text-left p-4 rounded-xl border transition-colors ${
                       gameType === 'fun'
                         ? 'bg-emerald-500/20 border-emerald-500/50'
-                        : 'bg-gray-800/50 border-gray-700/50 hover:bg-gray-700/50 hover:border-gray-600/50'
+                        : 'bg-gray-800/40 hover:bg-gray-800/60 border-gray-700/30'
                     }`}
                   >
                     <div className="flex items-center gap-3 mb-2">
@@ -398,10 +397,10 @@ function CreateGameWizard() {
 
                   <button
                     onClick={() => selectGameType('sponsored')}
-                    className={`w-full text-left p-4 rounded-xl transition-all border ${
+                    className={`w-full text-left p-4 rounded-xl border transition-colors ${
                       gameType === 'sponsored'
                         ? 'bg-yellow-500/20 border-yellow-500/50'
-                        : 'bg-gray-800/50 border-gray-700/50 hover:bg-gray-700/50 hover:border-gray-600/50'
+                        : 'bg-gray-800/40 hover:bg-gray-800/60 border-gray-700/30'
                     }`}
                   >
                     <div className="flex items-center gap-3 mb-2">
@@ -456,7 +455,7 @@ function CreateGameWizard() {
                         className={`py-2.5 rounded-xl text-sm font-semibold transition-colors ${
                           form.prizePool === amount * 100
                             ? 'bg-yellow-500 text-gray-900'
-                            : 'bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 border border-gray-700/50'
+                            : 'bg-gray-800/40 text-gray-400 hover:bg-gray-800/60 border border-gray-700/30'
                         }`}
                       >
                         ${amount}
@@ -647,7 +646,7 @@ function CreateGameWizard() {
                           className={`py-2 rounded-xl text-xs font-semibold transition-colors ${
                             form.startingStack === stack
                               ? 'bg-emerald-500 text-white'
-                              : 'bg-gray-800/50 text-gray-400 hover:bg-gray-700/50 border border-gray-700/50'
+                              : 'bg-gray-800/40 text-gray-400 hover:bg-gray-800/60 border border-gray-700/30'
                           }`}
                         >
                           {stack.toLocaleString()}
@@ -664,10 +663,10 @@ function CreateGameWizard() {
                         <button
                           key={speed}
                           onClick={() => setForm({ ...form, blindSpeed: speed })}
-                          className={`p-3 rounded-xl border transition-all ${
+                          className={`p-3 rounded-xl border transition-colors ${
                             form.blindSpeed === speed
                               ? 'bg-emerald-500/20 border-emerald-500/50'
-                              : 'bg-gray-800/50 border-gray-700/50 hover:border-gray-600/50'
+                              : 'bg-gray-800/40 border-gray-700/30 hover:bg-gray-800/60'
                           }`}
                         >
                           <Zap className={`w-5 h-5 mx-auto mb-1 ${
@@ -966,7 +965,7 @@ function CreateGameWizard() {
                 <button
                   onClick={goNext}
                   disabled={CONTRACT_DEPLOYED && fundingPhase !== 'deposited'}
-                  className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:from-gray-700 disabled:to-gray-600 disabled:text-gray-400 text-white font-semibold rounded-xl transition-all shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2"
+                  className="w-full p-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:from-gray-700 disabled:to-gray-600 disabled:text-gray-400 text-white font-semibold rounded-2xl transition-all shadow-lg shadow-emerald-500/25 active:scale-[0.98] flex items-center justify-center gap-2"
                 >
                   {CONTRACT_DEPLOYED && fundingPhase !== 'deposited' ? 'Complete funding above' : (
                     <>Continue <ArrowRight className="w-5 h-5" /></>
@@ -976,7 +975,7 @@ function CreateGameWizard() {
                 <button
                   onClick={goNext}
                   disabled={step === 'prize' && form.prizePool < 100}
-                  className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:from-gray-700 disabled:to-gray-600 disabled:text-gray-400 text-white font-semibold rounded-xl transition-all shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2"
+                  className="w-full p-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:from-gray-700 disabled:to-gray-600 disabled:text-gray-400 text-white font-semibold rounded-2xl transition-all shadow-lg shadow-emerald-500/25 active:scale-[0.98] flex items-center justify-center gap-2"
                 >
                   Continue <ArrowRight className="w-5 h-5" />
                 </button>
@@ -984,7 +983,7 @@ function CreateGameWizard() {
                 <button
                   onClick={handleCreate}
                   disabled={creating}
-                  className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:from-gray-700 disabled:to-gray-600 text-white font-semibold rounded-xl transition-all shadow-lg shadow-emerald-500/25 flex items-center justify-center gap-2"
+                  className="w-full p-4 bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 disabled:from-gray-700 disabled:to-gray-600 text-white font-semibold rounded-2xl transition-all shadow-lg shadow-emerald-500/25 active:scale-[0.98] flex items-center justify-center gap-2"
                 >
                   {creating ? (
                     <>
