@@ -14,6 +14,6 @@ export const config = createConfig({
     injected() // Fallback for browser wallets (MetaMask, Rabby, etc.)
   ],
   transports: {
-    [base.id]: http(),
+    [base.id]: http('https://mainnet.base.org'),
   },
 })
