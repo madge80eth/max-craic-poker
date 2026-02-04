@@ -5,8 +5,6 @@ import { GameState } from '@/lib/poker/types';
 import {
   SponsoredTournament,
   SponsoredPlayer,
-  centsToUsdc,
-  usdcToCents,
 } from '@/lib/poker/sponsored-types';
 
 const redis = Redis.fromEnv();
@@ -173,11 +171,11 @@ async function handleEnter(
     return NextResponse.json({ error: 'Tournament full' }, { status: 400 });
   }
 
-  // Add player to tournament
+  // Add player to tournament (bonded = false when no bond required)
   const player: SponsoredPlayer = {
     wallet: playerId,
     seatIndex,
-    bonded: true,
+    bonded: tournament.bondAmount > 0,
     refunded: false,
     name: playerName,
   };
@@ -207,7 +205,9 @@ async function handleEnter(
   return NextResponse.json({
     success: true,
     tournament,
-    message: `Joined tournament with $${(tournament.bondAmount / 100).toFixed(2)} bond`,
+    message: tournament.bondAmount > 0
+      ? `Joined tournament with $${(tournament.bondAmount / 100).toFixed(2)} bond`
+      : 'Joined tournament',
   });
 }
 
@@ -272,9 +272,15 @@ async function handleComplete(
     return NextResponse.json({ error: 'Missing winner or second place' }, { status: 400 });
   }
 
-  // Calculate payouts
-  const winnerPrize = Math.floor((tournament.prizePool * 65) / 100);
-  const secondPrize = Math.floor((tournament.prizePool * 35) / 100);
+  // NOTE: Platform fee would be deducted here before payout calculation
+  // const fee = Math.floor((tournament.prizePool * platformFeePercent) / 100);
+  // const distributablePrize = tournament.prizePool - fee;
+  // For now, 0% fee — 100% of prize pool goes to players
+  const distributablePrize = tournament.prizePool;
+
+  // Calculate payouts (65/35 split, bonds refunded if any)
+  const winnerPrize = Math.floor((distributablePrize * 65) / 100);
+  const secondPrize = Math.floor((distributablePrize * 35) / 100);
 
   const winnerPayout = tournament.bondAmount + winnerPrize;
   const secondPayout = tournament.bondAmount + secondPrize;

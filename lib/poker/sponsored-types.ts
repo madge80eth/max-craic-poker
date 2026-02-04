@@ -326,8 +326,8 @@ export const CONTRACTS = {
   // Base mainnet USDC
   USDC: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913' as `0x${string}`,
 
-  // Sponsored Tournament contract (UPDATE AFTER DEPLOYMENT)
-  SPONSORED_TOURNAMENT: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+  // Sponsored Tournament contract - deployed to Base mainnet Feb 4, 2026
+  SPONSORED_TOURNAMENT: '0x00Ea3774411832d2FF061d1Db02238C44dFE26a8' as `0x${string}`,
 } as const;
 
 // Helper to convert cents to USDC (6 decimals)

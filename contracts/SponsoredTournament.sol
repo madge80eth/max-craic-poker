@@ -7,14 +7,18 @@ import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title SponsoredTournament
- * @notice Manages bonding + sponsored prize pools for MCP Poker tournaments
- * @dev Players deposit bonds, sponsors add prize pools, contract pays winners automatically
+ * @notice Manages sponsored prize pools for MCP Poker tournaments
+ * @dev Sponsors deposit prize pools, players join for free, contract pays winners automatically
  *
  * Flow:
- * 1. Sponsor calls sponsorTournament() with prize pool amount
- * 2. Players call enterTournament() to deposit bonds
- * 3. Game server calls finishTournament() with results
- * 4. Contract automatically distributes: bonds back + prize pool to winners
+ * 1. Anyone calls createTournament() with tableId and maxPlayers (bondAmount can be 0)
+ * 2. Sponsor calls sponsorTournament() with prize pool amount (USDC transferred to contract)
+ * 3. Players call enterTournament() to register (bond deposited only if bondAmount > 0)
+ * 4. Game server calls finishTournament() with results
+ * 5. Contract distributes: 65% prize to 1st, 35% to 2nd, bonds refunded if applicable
+ *
+ * NOTE: Platform fee hook - currently 0%. To add a fee, deduct from prizePool
+ * in finishTournament() before calculating winner/second payouts.
  */
 contract SponsoredTournament is ReentrancyGuard {
     using SafeERC20 for IERC20;
@@ -112,7 +116,7 @@ contract SponsoredTournament is ReentrancyGuard {
         uint256 maxPlayers
     ) external returns (bytes32 tournamentId) {
         require(bytes(tableId).length > 0, "Invalid tableId");
-        require(bondAmount > 0, "Bond must be > 0");
+        // bondAmount = 0 is valid (sponsor-only, no player bonds)
         require(maxPlayers >= 2 && maxPlayers <= 9, "Invalid player count");
 
         tournamentId = keccak256(abi.encodePacked(tableId, block.timestamp, msg.sender));
@@ -176,12 +180,14 @@ contract SponsoredTournament is ReentrancyGuard {
         require(playerEntries[tournamentId][seatIndex].player == address(0), "Seat taken");
         require(t.playerCount < t.maxPlayers, "Tournament full");
 
-        // Transfer bond from player to contract
-        usdc.safeTransferFrom(msg.sender, address(this), t.bondAmount);
+        // Transfer bond from player to contract (skip if no bond required)
+        if (t.bondAmount > 0) {
+            usdc.safeTransferFrom(msg.sender, address(this), t.bondAmount);
+        }
 
         playerEntries[tournamentId][seatIndex] = PlayerEntry({
             player: msg.sender,
-            bonded: true,
+            bonded: t.bondAmount > 0,
             refunded: false
         });
         playerSeats[tournamentId][msg.sender] = seatIndex;
@@ -234,26 +240,34 @@ contract SponsoredTournament is ReentrancyGuard {
         t.status = TournamentStatus.Completed;
         t.completedAt = block.timestamp;
 
-        // Calculate payouts
-        uint256 winnerPrize = (t.prizePool * firstPlacePercent) / 100;
-        uint256 secondPrize = (t.prizePool * secondPlacePercent) / 100;
+        // NOTE: Platform fee would be deducted here before payout calculation
+        // uint256 fee = (t.prizePool * platformFeePercent) / 100;
+        // uint256 distributablePrize = t.prizePool - fee;
+        // For now, 0% fee — 100% of prize pool goes to players
+        uint256 distributablePrize = t.prizePool;
 
-        // Pay winner: bond back + 65% of prize pool
+        // Calculate payouts from prize pool
+        uint256 winnerPrize = (distributablePrize * firstPlacePercent) / 100;
+        uint256 secondPrize = (distributablePrize * secondPlacePercent) / 100;
+
+        // Pay winner: bond back (if any) + 65% of prize pool
         uint256 winnerTotal = t.bondAmount + winnerPrize;
         usdc.safeTransfer(winner, winnerTotal);
         _markRefunded(tournamentId, winner);
 
-        // Pay second: bond back + 35% of prize pool
+        // Pay second: bond back (if any) + 35% of prize pool
         uint256 secondTotal = t.bondAmount + secondPrize;
         usdc.safeTransfer(second, secondTotal);
         _markRefunded(tournamentId, second);
 
-        // Refund other players (just their bonds)
-        for (uint256 i = 0; i < otherPlayers.length; i++) {
-            if (hasJoined[tournamentId][otherPlayers[i]] && otherPlayers[i] != winner && otherPlayers[i] != second) {
-                usdc.safeTransfer(otherPlayers[i], t.bondAmount);
-                _markRefunded(tournamentId, otherPlayers[i]);
-                emit PlayerRefunded(tournamentId, otherPlayers[i], t.bondAmount);
+        // Refund other players' bonds (only if bondAmount > 0)
+        if (t.bondAmount > 0) {
+            for (uint256 i = 0; i < otherPlayers.length; i++) {
+                if (hasJoined[tournamentId][otherPlayers[i]] && otherPlayers[i] != winner && otherPlayers[i] != second) {
+                    usdc.safeTransfer(otherPlayers[i], t.bondAmount);
+                    _markRefunded(tournamentId, otherPlayers[i]);
+                    emit PlayerRefunded(tournamentId, otherPlayers[i], t.bondAmount);
+                }
             }
         }
 
@@ -281,13 +295,15 @@ contract SponsoredTournament is ReentrancyGuard {
             usdc.safeTransfer(t.sponsor, t.prizePool);
         }
 
-        // Refund all players' bonds
-        for (uint256 i = 0; i < t.maxPlayers; i++) {
-            PlayerEntry storage entry = playerEntries[tournamentId][i];
-            if (entry.player != address(0) && entry.bonded && !entry.refunded) {
-                usdc.safeTransfer(entry.player, t.bondAmount);
-                entry.refunded = true;
-                emit PlayerRefunded(tournamentId, entry.player, t.bondAmount);
+        // Refund all players' bonds (only if bondAmount > 0)
+        if (t.bondAmount > 0) {
+            for (uint256 i = 0; i < t.maxPlayers; i++) {
+                PlayerEntry storage entry = playerEntries[tournamentId][i];
+                if (entry.player != address(0) && entry.bonded && !entry.refunded) {
+                    usdc.safeTransfer(entry.player, t.bondAmount);
+                    entry.refunded = true;
+                    emit PlayerRefunded(tournamentId, entry.player, t.bondAmount);
+                }
             }
         }
 
@@ -309,13 +325,15 @@ contract SponsoredTournament is ReentrancyGuard {
         // Refund sponsor's prize pool
         usdc.safeTransfer(t.sponsor, t.prizePool);
 
-        // Refund all players' bonds
-        for (uint256 i = 0; i < t.maxPlayers; i++) {
-            PlayerEntry storage entry = playerEntries[tournamentId][i];
-            if (entry.player != address(0) && entry.bonded && !entry.refunded) {
-                usdc.safeTransfer(entry.player, t.bondAmount);
-                entry.refunded = true;
-                emit PlayerRefunded(tournamentId, entry.player, t.bondAmount);
+        // Refund all players' bonds (only if bondAmount > 0)
+        if (t.bondAmount > 0) {
+            for (uint256 i = 0; i < t.maxPlayers; i++) {
+                PlayerEntry storage entry = playerEntries[tournamentId][i];
+                if (entry.player != address(0) && entry.bonded && !entry.refunded) {
+                    usdc.safeTransfer(entry.player, t.bondAmount);
+                    entry.refunded = true;
+                    emit PlayerRefunded(tournamentId, entry.player, t.bondAmount);
+                }
             }
         }
 

@@ -150,10 +150,10 @@ export const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
 // Coinbase Verified Account schema ID (EAS on Base)
 export const COINBASE_VERIFIED_SCHEMA_ID = '0xf8b05c79f090979bf4a80270aba232dff11a10d9ca55c4f88de95317970f0de9';
 
-// Payout structure based on player count
-export function getPayoutStructure(playerCount: number): number[] {
-  if (playerCount <= 2) return [100]; // Winner takes all
-  if (playerCount <= 4) return [65, 35]; // Top 2
-  if (playerCount <= 6) return [50, 30, 20]; // Top 3
-  return [40, 25, 18, 17]; // Top 4 for 7+
+// Payout structure: 65/35 to top 2 (matches SponsoredTournament.sol contract)
+export function getPayoutStructure(_playerCount: number): number[] {
+  // All formats use 65/35 split to top 2
+  // This matches the on-chain contract's firstPlacePercent/secondPlacePercent
+  if (_playerCount <= 1) return [100];
+  return [65, 35];
 }

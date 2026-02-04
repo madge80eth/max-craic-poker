@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
-import { createGame, addPlayer, toClientState } from '@/lib/poker/engine';
-import { TableInfo, DEFAULT_CONFIG } from '@/lib/poker/types';
+import { createGame } from '@/lib/poker/engine';
+import { TableInfo, DEFAULT_CONFIG, buildBlindLevels } from '@/lib/poker/types';
 import {
   SponsoredTournament,
-  SponsoredTournamentStatus,
   centsToUsdc,
 } from '@/lib/poker/sponsored-types';
 
@@ -50,24 +49,34 @@ export async function GET() {
  * Create a new sponsored tournament
  *
  * Body: {
- *   creatorId: string,       // Wallet address of creator
+ *   creatorId: string,       // Wallet address of creator (also the sponsor)
  *   creatorName: string,     // Display name
- *   bondAmount: number,      // Required bond in cents (e.g., 1000 = $10)
- *   prizePool?: number,      // Optional initial prize pool in cents (if creator is also sponsor)
+ *   prizePool: number,       // Prize pool in cents (required, e.g., 5000 = $50)
+ *   bondAmount?: number,     // Optional bond in cents (default 0 = no bonds)
  *   maxPlayers?: number,     // Default 6
+ *   startingStack?: number,  // Starting chips (default 1500)
+ *   blindSpeed?: string,     // 'turbo' | 'standard' | 'deep' (default 'standard')
  * }
  */
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { creatorId, creatorName, bondAmount, prizePool, maxPlayers = 6 } = body;
+    const {
+      creatorId,
+      creatorName,
+      prizePool,
+      bondAmount = 0,
+      maxPlayers = 6,
+      startingStack = 1500,
+      blindSpeed = 'standard',
+    } = body;
 
     if (!creatorId || !creatorName) {
       return NextResponse.json({ error: 'Missing creatorId or creatorName' }, { status: 400 });
     }
 
-    if (!bondAmount || bondAmount < 100) {
-      return NextResponse.json({ error: 'Bond amount must be at least $1 (100 cents)' }, { status: 400 });
+    if (!prizePool || prizePool < 100) {
+      return NextResponse.json({ error: 'Prize pool must be at least $1 (100 cents)' }, { status: 400 });
     }
 
     if (maxPlayers < 2 || maxPlayers > 6) {
@@ -75,37 +84,44 @@ export async function POST(request: Request) {
     }
 
     // Generate table ID
-    const tableId = `sponsored_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const tableId = `sponsored_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 
     // Generate tournament ID (matches contract's keccak256)
     const tournamentId = `0x${Buffer.from(
       tableId + Date.now().toString() + creatorId
     ).toString('hex').slice(0, 64).padEnd(64, '0')}`;
 
-    // Create game state (using existing poker engine)
-    let gameState = createGame(tableId, {
+    // Build game config from settings
+    const blindIntervalMinutes = blindSpeed === 'turbo' ? 5 : blindSpeed === 'deep' ? 15 : 10;
+    const gameConfig = {
       ...DEFAULT_CONFIG,
       maxPlayers: maxPlayers as 6,
-    });
+      startingChips: startingStack,
+      blindLevels: buildBlindLevels(startingStack, blindIntervalMinutes),
+    };
+
+    // Create game state (using existing poker engine)
+    const gameState = createGame(tableId, gameConfig);
 
     // Store game state in Redis
     await redis.set(`poker:table:${tableId}:state`, JSON.stringify(gameState));
 
     // Create sponsored tournament record
+    // Sponsor = creator. Status = 'sponsored' because prize pool is provided at creation.
     const tournament: SponsoredTournament = {
       tournamentId,
       tableId,
-      contractAddress: '', // Will be set when contract interaction happens
+      contractAddress: '', // Updated after contract deployment — see contracts/DEPLOY.md
 
-      sponsor: prizePool ? creatorId : null,
-      prizePool: prizePool || 0,
+      sponsor: creatorId,
+      prizePool,
       bondAmount,
 
       maxPlayers,
       playerCount: 0,
       players: [],
 
-      status: prizePool ? 'sponsored' : 'pending',
+      status: 'sponsored',
       createdAt: Date.now(),
       startedAt: null,
       completedAt: null,
@@ -118,13 +134,14 @@ export async function POST(request: Request) {
     // Also add to regular lobby (so it shows up with sponsored badge)
     const tableInfo: TableInfo = {
       tableId,
-      name: `Sponsored: $${(prizePool || 0) / 100} Prize Pool`,
+      name: `Sponsored: $${prizePool / 100} Prize Pool`,
       playerCount: 0,
       maxPlayers,
-      blinds: `${DEFAULT_CONFIG.blindLevels[0].smallBlind}/${DEFAULT_CONFIG.blindLevels[0].bigBlind}`,
+      blinds: `${gameConfig.blindLevels[0].smallBlind}/${gameConfig.blindLevels[0].bigBlind}`,
       status: 'waiting',
       createdAt: Date.now(),
       creatorId,
+      startingChips: startingStack,
     };
 
     await redis.zadd('poker:lobby', { score: Date.now(), member: JSON.stringify(tableInfo) });
