@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useAccount, useConnect, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -56,7 +56,28 @@ const CONTRACT_DEPLOYED = CONTRACTS.SPONSORED_TOURNAMENT !== '0x0000000000000000
 
 type FundingPhase = 'idle' | 'approving' | 'approved' | 'depositing' | 'deposited' | 'error';
 
-export default function CreateGameWizard() {
+// Loading fallback for Suspense
+function CreateGameLoading() {
+  return (
+    <div className="min-h-screen bg-[#0d1117] flex items-center justify-center">
+      <div className="flex items-center gap-3 text-gray-400">
+        <Loader2 className="w-6 h-6 animate-spin" />
+        <span>Loading...</span>
+      </div>
+    </div>
+  );
+}
+
+// Main page component wrapped in Suspense
+export default function CreateGamePage() {
+  return (
+    <Suspense fallback={<CreateGameLoading />}>
+      <CreateGameWizard />
+    </Suspense>
+  );
+}
+
+function CreateGameWizard() {
   const { address, isConnected } = useAccount();
   const { connect, connectors } = useConnect();
   const router = useRouter();
