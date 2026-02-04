@@ -43,7 +43,7 @@ export const CRAIC_CONTRACT_ADDRESS = process.env.NEXT_PUBLIC_CRAIC_CONTRACT_ADD
 // Public client for reading
 const publicClient = createPublicClient({
   chain: base,
-  transport: http(),
+  transport: http('https://mainnet.base.org'),
 });
 
 // Tournament status enum (matches contract)

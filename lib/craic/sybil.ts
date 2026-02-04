@@ -8,7 +8,7 @@ import { COINBASE_VERIFIED_SCHEMA_ID, USDC_ADDRESS } from './types';
 // Public client for Base mainnet
 const publicClient = createPublicClient({
   chain: base,
-  transport: http(),
+  transport: http('https://mainnet.base.org'),
 });
 
 // ERC-721 ABI (balanceOf)

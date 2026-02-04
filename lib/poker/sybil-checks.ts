@@ -8,7 +8,7 @@ import { verifyCoinbaseAttestation, verifyNFTOwnership } from '../craic/sybil';
 
 const publicClient = createPublicClient({
   chain: base,
-  transport: http(),
+  transport: http('https://mainnet.base.org'),
 });
 
 const ERC20_ABI = parseAbi([

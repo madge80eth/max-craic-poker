@@ -10,9 +10,10 @@ const isTestnet = process.env.NEXT_PUBLIC_TESTNET === 'true';
 const activeChain = isTestnet ? baseSepolia : base;
 
 // Basename text records follow ENS standard
+const rpcUrl = isTestnet ? 'https://sepolia.base.org' : 'https://mainnet.base.org';
 const client = createPublicClient({
   chain: activeChain,
-  transport: http(),
+  transport: http(rpcUrl),
 });
 
 /**
