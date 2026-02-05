@@ -147,10 +147,51 @@ function CreateGameWizard() {
     }
   }, [sponsorConfirmed, fundingPhase]);
 
-  const goNext = () => {
+  const goNext = async () => {
     const nextIndex = stepIndex + 1;
     if (nextIndex < STEPS.length) {
-      setStep(STEPS[nextIndex].id);
+      const nextStep = STEPS[nextIndex].id;
+
+      // For sponsored games, skip Fund step entirely - create tournament and redirect to /fund-game
+      if (nextStep === 'fund' && gameType === 'sponsored' && !CONTRACT_DEPLOYED) {
+        setCreating(true);
+        try {
+          const creatorId = address || urlPlayerId;
+          const playerName = urlPlayerName || (address ? `Player_${address.slice(2, 6)}` : 'Player');
+
+          const res = await fetch('/api/poker/sponsored', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              creatorId,
+              creatorName: playerName,
+              prizePool: form.prizePool,
+              bondAmount: 0,
+              maxPlayers: 6,
+              startingStack: form.startingStack,
+              blindSpeed: form.blindSpeed,
+            }),
+          });
+          const data = await res.json();
+
+          if (data.success) {
+            // Redirect to standalone fund page immediately
+            router.push(
+              `/fund-game?tournamentId=${encodeURIComponent(data.tournamentId)}&tableId=${encodeURIComponent(data.tableId)}&amount=${form.prizePool}&playerId=${encodeURIComponent(creatorId || '')}&playerName=${encodeURIComponent(playerName)}`
+            );
+            return;
+          } else {
+            setFundingError(data.error || 'Failed to create tournament');
+          }
+        } catch (err) {
+          setFundingError(err instanceof Error ? err.message : 'Network error');
+        } finally {
+          setCreating(false);
+        }
+        return;
+      }
+
+      setStep(nextStep);
     }
   };
 
