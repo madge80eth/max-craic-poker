@@ -1,7 +1,7 @@
 // app/mini-app/providers.tsx
 'use client'
 
-import { WagmiProvider, createConfig, http } from 'wagmi'
+import { WagmiProvider, createConfig, http, fallback } from 'wagmi'
 import { base, baseSepolia } from 'wagmi/chains'
 import { coinbaseWallet } from 'wagmi/connectors'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -11,8 +11,12 @@ import { useState, useEffect } from 'react'
 const isTestnet = process.env.NEXT_PUBLIC_TESTNET === 'true'
 const activeChain = isTestnet ? baseSepolia : base
 
-// Explicit RPC URLs to avoid /pipeline proxy issues
-const BASE_RPC_URL = 'https://mainnet.base.org'
+// Multiple RPC URLs for fallback to avoid /pipeline proxy issues
+const BASE_RPC_URLS = [
+  'https://mainnet.base.org',
+  'https://base.llamarpc.com',
+  'https://base.drpc.org',
+]
 const BASE_SEPOLIA_RPC_URL = 'https://sepolia.base.org'
 
 const config = createConfig({
@@ -21,13 +25,15 @@ const config = createConfig({
     coinbaseWallet({
       appName: 'Max Craic Poker',
       appLogoUrl: '/mcp-logo.png',
-      // Use 'all' to avoid Coinbase proxy /pipeline issues outside mini-app context
+      // Use 'all' to allow both Smart Wallet and EOA connections
       preference: 'all',
     }),
   ],
   transports: {
-    [base.id]: http(BASE_RPC_URL),
-    [baseSepolia.id]: http(BASE_SEPOLIA_RPC_URL),
+    [base.id]: fallback(
+      BASE_RPC_URLS.map(url => http(url, { batch: false }))
+    ),
+    [baseSepolia.id]: http(BASE_SEPOLIA_RPC_URL, { batch: false }),
   },
 })
 
