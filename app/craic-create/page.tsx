@@ -257,7 +257,7 @@ function CreateGameWizard() {
       createSponsoredBackend();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, address, urlPlayerId]);
+  }, [step, address, urlPlayerId, fundingError]);
 
   // Copy escrow address to clipboard
   const copyEscrowAddress = async () => {
