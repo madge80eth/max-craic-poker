@@ -199,14 +199,21 @@ function CreateGameWizard() {
   };
 
   const createSponsoredBackend = async () => {
-    if (!address || sponsoredTournamentId) return;
+    // For sponsored games, we need a wallet address for USDC transactions
+    const creatorId = address || urlPlayerId;
+    if (!creatorId) {
+      setFundingError('Wallet not connected. Please connect your wallet for sponsored games.');
+      return;
+    }
+    if (sponsoredTournamentId) return; // Already created
+
     try {
       const res = await fetch('/api/poker/sponsored', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          creatorId: address,
-          creatorName: `Player_${address.slice(2, 6)}`,
+          creatorId,
+          creatorName: urlPlayerName || (address ? `Player_${address.slice(2, 6)}` : 'Player'),
           prizePool: form.prizePool,
           bondAmount: 0,
           maxPlayers: 6,
@@ -218,6 +225,7 @@ function CreateGameWizard() {
       if (data.success) {
         setSponsoredTournamentId(data.tournamentId);
         setSponsoredTableId(data.tableId);
+        setFundingError(null); // Clear any previous error
       } else {
         setFundingError(data.error || 'Failed to create tournament');
       }
@@ -227,11 +235,11 @@ function CreateGameWizard() {
   };
 
   useEffect(() => {
-    if (step === 'fund' && !sponsoredTournamentId && address) {
+    if (step === 'fund' && !sponsoredTournamentId && !fundingError) {
       createSponsoredBackend();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, address]);
+  }, [step, address, urlPlayerId]);
 
   const handleCreate = async () => {
     const playerId = urlPlayerId || address;
@@ -519,6 +527,38 @@ function CreateGameWizard() {
                     <span className="text-yellow-400 font-bold text-lg">{formatUSDC(form.prizePool)}</span>
                   </div>
                 </div>
+                {!sponsoredTournamentId && !fundingError && (
+                  <div className="flex items-center justify-center gap-2 text-gray-400 text-sm py-2">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Setting up tournament...</span>
+                  </div>
+                )}
+                {fundingError && (
+                  <div className="p-3 bg-red-500/10 rounded-xl border border-red-500/20">
+                    <div className="flex items-center gap-2 text-red-400 text-sm">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                      <span>{fundingError}</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setFundingError(null);
+                        createSponsoredBackend();
+                      }}
+                      className="mt-2 w-full py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-red-400 text-sm font-medium transition-colors"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                )}
+                {sponsoredTournamentId && (
+                  <div className="flex items-center gap-3 p-4 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                    <div>
+                      <p className="text-emerald-400 font-medium text-sm">Tournament created</p>
+                      <p className="text-gray-400 text-xs mt-0.5">Ready to continue</p>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="space-y-3">
@@ -595,9 +635,20 @@ function CreateGameWizard() {
                 </div>
 
                 {fundingError && (
-                  <div className="flex items-center gap-2 p-3 bg-red-500/10 rounded-xl border border-red-500/20 text-red-400 text-sm">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                    <span>{fundingError}</span>
+                  <div className="p-3 bg-red-500/10 rounded-xl border border-red-500/20">
+                    <div className="flex items-center gap-2 text-red-400 text-sm">
+                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                      <span>{fundingError}</span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setFundingError(null);
+                        createSponsoredBackend();
+                      }}
+                      className="mt-2 w-full py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-red-400 text-sm font-medium transition-colors"
+                    >
+                      Retry
+                    </button>
                   </div>
                 )}
 
