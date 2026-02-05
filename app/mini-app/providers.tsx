@@ -11,18 +11,23 @@ import { useState, useEffect } from 'react'
 const isTestnet = process.env.NEXT_PUBLIC_TESTNET === 'true'
 const activeChain = isTestnet ? baseSepolia : base
 
+// Explicit RPC URLs to avoid /pipeline proxy issues
+const BASE_RPC_URL = 'https://mainnet.base.org'
+const BASE_SEPOLIA_RPC_URL = 'https://sepolia.base.org'
+
 const config = createConfig({
   chains: [base, baseSepolia], // Support both mainnet and testnet
   connectors: [
     coinbaseWallet({
       appName: 'Max Craic Poker',
       appLogoUrl: '/mcp-logo.png',
-      preference: 'smartWalletOnly', // Enable Base Account (Smart Wallet) support
+      // Use 'all' to avoid Coinbase proxy /pipeline issues outside mini-app context
+      preference: 'all',
     }),
   ],
   transports: {
-    [base.id]: http('https://mainnet.base.org'),
-    [baseSepolia.id]: http('https://sepolia.base.org'),
+    [base.id]: http(BASE_RPC_URL),
+    [baseSepolia.id]: http(BASE_SEPOLIA_RPC_URL),
   },
 })
 
