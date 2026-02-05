@@ -238,10 +238,17 @@ function CreateGameWizard() {
         setSponsoredTableId(data.tableId);
         setFundingError(null); // Clear any previous error
       } else {
-        setFundingError(data.error || 'Failed to create tournament');
+        // Ignore /pipeline errors - they're from wagmi, not relevant to off-chain flow
+        if (data.error && !data.error.includes('/pipeline')) {
+          setFundingError(data.error);
+        }
       }
     } catch (err) {
-      setFundingError(err instanceof Error ? err.message : 'Network error');
+      const errMsg = err instanceof Error ? err.message : 'Network error';
+      // Ignore /pipeline errors - they're from wagmi background RPC calls
+      if (!errMsg.includes('/pipeline')) {
+        setFundingError(errMsg);
+      }
     }
   };
 
@@ -262,6 +269,13 @@ function CreateGameWizard() {
       console.error('Failed to copy:', err);
     }
   };
+
+  // Clear /pipeline errors automatically - they're from wagmi, not relevant to off-chain flow
+  useEffect(() => {
+    if (fundingError && fundingError.includes('/pipeline')) {
+      setFundingError(null);
+    }
+  }, [fundingError]);
 
   // Poll for funding confirmation (off-chain flow)
   useEffect(() => {
