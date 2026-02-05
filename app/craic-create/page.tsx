@@ -23,6 +23,8 @@ import {
   Calendar,
   Users,
   X,
+  Copy,
+  ExternalLink,
 } from 'lucide-react';
 import {
   CreateGameFormState,
@@ -55,6 +57,9 @@ function getSteps(gameType: GameType | null): { id: WizardStep; title: string }[
 }
 
 const CONTRACT_DEPLOYED = CONTRACTS.SPONSORED_TOURNAMENT !== '0x0000000000000000000000000000000000000000';
+
+// Escrow address for off-chain funding
+const ESCROW_ADDRESS = '0xCc7659fbE122AcdE826725cf3a4cd5dfD72763F0';
 
 type FundingPhase = 'idle' | 'approving' | 'approved' | 'depositing' | 'deposited' | 'error';
 
@@ -99,6 +104,12 @@ function CreateGameWizard() {
   const [fundingError, setFundingError] = useState<string | null>(null);
   const [sponsoredTournamentId, setSponsoredTournamentId] = useState<string | null>(null);
   const [sponsoredTableId, setSponsoredTableId] = useState<string | null>(null);
+
+  // Off-chain funding state
+  const [copied, setCopied] = useState(false);
+  const [fundingConfirmed, setFundingConfirmed] = useState(false);
+  const [fundingTxHash, setFundingTxHash] = useState<string | null>(null);
+  const [checkingFunding, setCheckingFunding] = useState(false);
 
   const { writeContract: writeApprove, data: approveTxHash, isPending: isApproving } = useWriteContract();
   const { writeContract: writeSponsor, data: sponsorTxHash, isPending: isSponsoring } = useWriteContract();
@@ -240,6 +251,49 @@ function CreateGameWizard() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, address, urlPlayerId]);
+
+  // Copy escrow address to clipboard
+  const copyEscrowAddress = async () => {
+    try {
+      await navigator.clipboard.writeText(ESCROW_ADDRESS);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  // Poll for funding confirmation (off-chain flow)
+  useEffect(() => {
+    if (step !== 'fund' || !sponsoredTournamentId || fundingConfirmed || CONTRACT_DEPLOYED) {
+      return;
+    }
+
+    const checkFunding = async () => {
+      setCheckingFunding(true);
+      try {
+        const res = await fetch(
+          `/api/poker/check-funding?tournamentId=${encodeURIComponent(sponsoredTournamentId)}&amount=${form.prizePool}`
+        );
+        const data = await res.json();
+        if (data.funded) {
+          setFundingConfirmed(true);
+          setFundingTxHash(data.txHash || null);
+        }
+      } catch (err) {
+        console.error('Error checking funding:', err);
+      } finally {
+        setCheckingFunding(false);
+      }
+    };
+
+    // Check immediately
+    checkFunding();
+
+    // Then poll every 5 seconds
+    const interval = setInterval(checkFunding, 5000);
+    return () => clearInterval(interval);
+  }, [step, sponsoredTournamentId, fundingConfirmed, form.prizePool]);
 
   const handleCreate = async () => {
     const playerId = urlPlayerId || address;
@@ -507,159 +561,136 @@ function CreateGameWizard() {
                 <Wallet className="w-6 h-6 text-yellow-400" />
               </div>
               <div>
-                <h2 className="text-xl font-bold">Fund Escrow</h2>
-                <p className="text-sm text-gray-400">Deposit {formatUSDC(form.prizePool)} to the contract</p>
+                <h2 className="text-xl font-bold">Fund Prize Pool</h2>
+                <p className="text-sm text-gray-400">Send {formatUSDC(form.prizePool)} USDC to escrow</p>
               </div>
             </div>
 
-            {!CONTRACT_DEPLOYED ? (
-              <div className="space-y-4">
-                <div className="flex items-start gap-3 p-4 bg-yellow-500/10 rounded-xl border border-yellow-500/20">
-                  <AlertCircle className="w-5 h-5 text-yellow-400 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-yellow-400 font-medium text-sm">Contract not deployed</p>
-                    <p className="text-gray-400 text-xs mt-1">Prize pool tracking is handled by the backend.</p>
-                  </div>
-                </div>
-                <div className="p-4 bg-gray-800/30 rounded-xl border border-gray-700/30">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Prize Pool</span>
-                    <span className="text-yellow-400 font-bold text-lg">{formatUSDC(form.prizePool)}</span>
-                  </div>
-                </div>
-                {!sponsoredTournamentId && !fundingError && (
-                  <div className="flex items-center justify-center gap-2 text-gray-400 text-sm py-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>Setting up tournament...</span>
-                  </div>
-                )}
-                {fundingError && (
-                  <div className="p-3 bg-red-500/10 rounded-xl border border-red-500/20">
-                    <div className="flex items-center gap-2 text-red-400 text-sm">
-                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                      <span>{fundingError}</span>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setFundingError(null);
-                        createSponsoredBackend();
-                      }}
-                      className="mt-2 w-full py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-red-400 text-sm font-medium transition-colors"
-                    >
-                      Retry
-                    </button>
-                  </div>
-                )}
-                {sponsoredTournamentId && (
-                  <div className="flex items-center gap-3 p-4 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-                    <div>
-                      <p className="text-emerald-400 font-medium text-sm">Tournament created</p>
-                      <p className="text-gray-400 text-xs mt-0.5">Ready to continue</p>
-                    </div>
-                  </div>
-                )}
+            {/* Setting up tournament */}
+            {!sponsoredTournamentId && !fundingError && (
+              <div className="flex items-center justify-center gap-2 text-gray-400 text-sm py-4">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Setting up tournament...</span>
               </div>
-            ) : (
-              <div className="space-y-3">
-                {/* Step 1: Approve */}
-                <div className={`p-4 rounded-xl border transition-all ${
-                  fundingPhase === 'approved' || fundingPhase === 'depositing' || fundingPhase === 'deposited'
-                    ? 'bg-emerald-500/10 border-emerald-500/30'
-                    : fundingPhase === 'approving'
-                    ? 'bg-yellow-500/10 border-yellow-500/30'
-                    : 'bg-gray-800/30 border-gray-700/30'
-                }`}>
-                  <div className="flex items-center gap-3">
-                    {fundingPhase === 'approved' || fundingPhase === 'depositing' || fundingPhase === 'deposited' ? (
-                      <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center">
-                        <Check className="w-4 h-4 text-white" />
-                      </div>
-                    ) : fundingPhase === 'approving' || isApproving ? (
-                      <div className="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center">
-                        <Loader2 className="w-4 h-4 text-yellow-400 animate-spin" />
-                      </div>
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-sm font-semibold">1</div>
-                    )}
-                    <div className="flex-1">
-                      <div className="text-sm font-medium">Approve USDC</div>
-                      <div className="text-xs text-gray-500">Allow contract to spend {formatUSDC(form.prizePool)}</div>
-                    </div>
+            )}
+
+            {/* Error state */}
+            {fundingError && (
+              <div className="p-3 bg-red-500/10 rounded-xl border border-red-500/20">
+                <div className="flex items-center gap-2 text-red-400 text-sm">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span>{fundingError}</span>
+                </div>
+                <button
+                  onClick={() => {
+                    setFundingError(null);
+                    createSponsoredBackend();
+                  }}
+                  className="mt-2 w-full py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-red-400 text-sm font-medium transition-colors"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+
+            {/* Ready to fund - show address */}
+            {sponsoredTournamentId && !fundingConfirmed && (
+              <div className="space-y-4">
+                {/* Amount to send */}
+                <div className="p-4 bg-yellow-500/10 rounded-xl border border-yellow-500/30">
+                  <div className="text-center">
+                    <div className="text-sm text-gray-400 mb-1">Send exactly</div>
+                    <div className="text-3xl font-black text-yellow-400">{formatUSDC(form.prizePool)}</div>
+                    <div className="text-sm text-gray-500 mt-1">USDC on Base</div>
                   </div>
-                  {fundingPhase === 'idle' && (
+                </div>
+
+                {/* Escrow address */}
+                <div className="p-4 bg-gray-800/30 rounded-xl border border-gray-700/30">
+                  <div className="text-sm text-gray-400 mb-2">To this address:</div>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 text-sm font-mono text-white bg-gray-900/50 px-3 py-2 rounded-lg truncate">
+                      {ESCROW_ADDRESS}
+                    </code>
                     <button
-                      onClick={handleApproveUsdc}
-                      disabled={isApproving || !sponsoredTournamentId}
-                      className="w-full mt-3 py-2.5 bg-yellow-500 hover:bg-yellow-400 disabled:bg-gray-700 disabled:text-gray-400 rounded-xl text-gray-900 font-semibold transition-colors"
+                      onClick={copyEscrowAddress}
+                      className={`p-2 rounded-lg transition-colors ${
+                        copied ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-700 text-gray-400 hover:text-white'
+                      }`}
                     >
-                      {!sponsoredTournamentId ? 'Setting up...' : 'Approve USDC'}
+                      {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
                     </button>
+                  </div>
+                  {copied && (
+                    <div className="text-xs text-emerald-400 mt-2">Address copied!</div>
                   )}
                 </div>
 
-                {/* Step 2: Deposit */}
-                <div className={`p-4 rounded-xl border transition-all ${
-                  fundingPhase === 'deposited'
-                    ? 'bg-emerald-500/10 border-emerald-500/30'
-                    : fundingPhase === 'depositing'
-                    ? 'bg-yellow-500/10 border-yellow-500/30'
-                    : 'bg-gray-800/30 border-gray-700/30'
-                }`}>
-                  <div className="flex items-center gap-3">
-                    {fundingPhase === 'deposited' ? (
-                      <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center">
-                        <Check className="w-4 h-4 text-white" />
-                      </div>
-                    ) : fundingPhase === 'depositing' || isSponsoring ? (
-                      <div className="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center">
-                        <Loader2 className="w-4 h-4 text-yellow-400 animate-spin" />
-                      </div>
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-sm font-semibold">2</div>
-                    )}
-                    <div className="flex-1">
-                      <div className="text-sm font-medium">Deposit to Contract</div>
-                      <div className="text-xs text-gray-500">Transfer {formatUSDC(form.prizePool)} to escrow</div>
-                    </div>
-                  </div>
-                  {fundingPhase === 'approved' && (
-                    <button
-                      onClick={handleDepositToContract}
-                      disabled={isSponsoring}
-                      className="w-full mt-3 py-2.5 bg-yellow-500 hover:bg-yellow-400 disabled:bg-gray-700 disabled:text-gray-400 rounded-xl text-gray-900 font-semibold transition-colors"
-                    >
-                      Deposit {formatUSDC(form.prizePool)}
-                    </button>
-                  )}
-                </div>
-
-                {fundingError && (
-                  <div className="p-3 bg-red-500/10 rounded-xl border border-red-500/20">
-                    <div className="flex items-center gap-2 text-red-400 text-sm">
-                      <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                      <span>{fundingError}</span>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setFundingError(null);
-                        createSponsoredBackend();
-                      }}
-                      className="mt-2 w-full py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-red-400 text-sm font-medium transition-colors"
-                    >
-                      Retry
-                    </button>
-                  </div>
-                )}
-
-                {fundingPhase === 'deposited' && (
-                  <div className="flex items-center gap-3 p-4 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                {/* Instructions */}
+                <div className="p-4 bg-blue-500/10 rounded-xl border border-blue-500/20">
+                  <div className="flex items-start gap-3">
+                    <Sparkles className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
                     <div>
-                      <p className="text-emerald-400 font-medium text-sm">Prize pool funded</p>
-                      <p className="text-gray-400 text-xs mt-0.5">{formatUSDC(form.prizePool)} deposited to escrow</p>
+                      <p className="text-blue-400 font-medium text-sm">How to fund</p>
+                      <ol className="text-gray-400 text-xs mt-2 space-y-1 list-decimal list-inside">
+                        <li>Copy the address above</li>
+                        <li>Open your wallet (Coinbase, MetaMask, etc.)</li>
+                        <li>Send {formatUSDC(form.prizePool)} USDC on Base network</li>
+                        <li>Wait for confirmation below</li>
+                      </ol>
                     </div>
                   </div>
+                </div>
+
+                {/* Waiting for confirmation */}
+                <div className="p-4 bg-gray-800/30 rounded-xl border border-gray-700/30">
+                  <div className="flex items-center gap-3">
+                    {checkingFunding ? (
+                      <Loader2 className="w-5 h-5 text-yellow-400 animate-spin" />
+                    ) : (
+                      <Clock className="w-5 h-5 text-gray-400" />
+                    )}
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-gray-300">Waiting for payment...</div>
+                      <div className="text-xs text-gray-500">Auto-detects when USDC arrives</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* View on Basescan link */}
+                <a
+                  href={`https://basescan.org/address/${ESCROW_ADDRESS}#tokentxns`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
+                >
+                  <ExternalLink className="w-4 h-4" />
+                  View escrow on Basescan
+                </a>
+              </div>
+            )}
+
+            {/* Funding confirmed */}
+            {fundingConfirmed && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 p-4 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
+                  <CheckCircle2 className="w-6 h-6 text-emerald-400" />
+                  <div>
+                    <p className="text-emerald-400 font-medium">Prize pool funded!</p>
+                    <p className="text-gray-400 text-sm mt-0.5">{formatUSDC(form.prizePool)} USDC received</p>
+                  </div>
+                </div>
+
+                {fundingTxHash && (
+                  <a
+                    href={`https://basescan.org/tx/${fundingTxHash}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    View transaction on Basescan
+                  </a>
                 )}
               </div>
             )}
@@ -1019,10 +1050,12 @@ function CreateGameWizard() {
           ) : step === 'fund' ? (
             <button
               onClick={goNext}
-              disabled={CONTRACT_DEPLOYED && fundingPhase !== 'deposited'}
+              disabled={CONTRACT_DEPLOYED ? fundingPhase !== 'deposited' : !fundingConfirmed}
               className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-400 rounded-xl text-white font-semibold transition-colors flex items-center justify-center gap-2"
             >
-              {CONTRACT_DEPLOYED && fundingPhase !== 'deposited' ? 'Complete funding above' : (
+              {(CONTRACT_DEPLOYED ? fundingPhase !== 'deposited' : !fundingConfirmed) ? (
+                'Waiting for payment...'
+              ) : (
                 <>Continue <ArrowRight className="w-5 h-5" /></>
               )}
             </button>
