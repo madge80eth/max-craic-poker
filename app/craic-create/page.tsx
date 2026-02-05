@@ -22,9 +22,8 @@ import {
   AlertCircle,
   Calendar,
   Users,
+  X,
 } from 'lucide-react';
-import GlowButton from '@/components/craic/ui/GlowButton';
-import NeonBadge from '@/components/craic/ui/NeonBadge';
 import {
   CreateGameFormState,
   DEFAULT_CREATE_FORM,
@@ -280,80 +279,88 @@ function CreateGameWizard() {
   const formatUSDC = (cents: number) => `$${(cents / 100).toFixed(2)}`;
   const canCreateFreeGame = urlPlayerId && urlPlayerName;
 
-  // Wallet connect screen
+  // Wallet connect screen - modal style
   if (!isConnected && !canCreateFreeGame) {
     return (
-      <div className="min-h-screen pb-safe flex items-center justify-center p-4">
-        <div className="bg-gray-800/50 rounded-3xl p-8 border border-gray-700/50 text-center max-w-sm w-full">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/20 flex items-center justify-center">
-            <Wallet className="w-8 h-8 text-emerald-400" />
-          </div>
-          <h2 className="text-xl font-bold mb-2">Connect Wallet</h2>
-          <p className="text-gray-400 text-sm mb-6">Connect a wallet or go back to lobby</p>
-          {isConnecting ? (
-            <div className="flex items-center justify-center gap-2 text-emerald-400">
-              <Loader2 className="w-5 h-5 animate-spin" />
-              <span>Connecting...</span>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+        <div className="bg-gray-900 rounded-2xl border border-gray-700/50 w-full max-w-sm shadow-2xl">
+          <div className="p-6 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/20 flex items-center justify-center">
+              <Wallet className="w-8 h-8 text-emerald-400" />
             </div>
-          ) : (
-            <div className="space-y-3">
-              {connectors.map((connector) => (
-                <GlowButton
-                  key={connector.id}
-                  onClick={() => connect({ connector })}
-                  variant="primary"
-                  fullWidth
+            <h2 className="text-xl font-bold mb-2">Connect Wallet</h2>
+            <p className="text-gray-400 text-sm mb-6">Connect a wallet or go back to lobby</p>
+            {isConnecting ? (
+              <div className="flex items-center justify-center gap-2 text-emerald-400">
+                <Loader2 className="w-5 h-5 animate-spin" />
+                <span>Connecting...</span>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {connectors.map((connector) => (
+                  <button
+                    key={connector.id}
+                    onClick={() => connect({ connector })}
+                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-white font-medium transition-colors"
+                  >
+                    Connect {connector.name}
+                  </button>
+                ))}
+                <button
+                  onClick={() => router.push('/poker')}
+                  className="w-full py-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-xl text-gray-400 font-medium transition-colors"
                 >
-                  Connect {connector.name}
-                </GlowButton>
-              ))}
-              <button
-                onClick={() => router.push('/poker')}
-                className="w-full py-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-xl text-gray-400 font-medium transition-colors"
-              >
-                Back to Lobby
-              </button>
-            </div>
-          )}
+                  Back to Lobby
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen pb-safe">
-      {/* Header */}
-      <div className="sticky top-0 z-50 bg-[#0a0a0a]/95 backdrop-blur-lg border-b border-gray-800/50">
-        <div className="px-4 py-3">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+      <div className="bg-gray-900 rounded-2xl border border-gray-700/50 w-full max-w-sm shadow-2xl max-h-[90vh] flex flex-col">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-800 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <button
-              onClick={goBack}
-              className="w-10 h-10 rounded-xl bg-gray-800/50 flex items-center justify-center hover:bg-gray-700/50 transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
+            {stepIndex > 0 && (
+              <button
+                onClick={goBack}
+                className="p-1 text-gray-400 hover:text-white transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+            )}
             <div>
-              <h1 className="text-lg font-bold">Create Game</h1>
+              <h3 className="text-lg font-bold">Create Game</h3>
               <p className="text-xs text-gray-500">Step {stepIndex + 1} of {STEPS.length}</p>
             </div>
           </div>
-
-          {/* Progress bar */}
-          <div className="flex gap-1 mt-3">
-            {STEPS.map((s, i) => (
-              <div
-                key={s.id}
-                className={`flex-1 h-1 rounded-full transition-colors ${
-                  i <= stepIndex ? 'bg-emerald-500' : 'bg-gray-800'
-                }`}
-              />
-            ))}
-          </div>
+          <button
+            onClick={() => router.push('/poker')}
+            className="p-1 text-gray-400 hover:text-white transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="px-4 py-6">
+        {/* Progress bar */}
+        <div className="flex gap-1 px-4 pt-3 flex-shrink-0">
+          {STEPS.map((s, i) => (
+            <div
+              key={s.id}
+              className={`flex-1 h-1 rounded-full transition-colors ${
+                i <= stepIndex ? 'bg-emerald-500' : 'bg-gray-800'
+              }`}
+            />
+          ))}
+        </div>
+
+        {/* Scrollable Content */}
+        <div className="p-4 space-y-4 overflow-y-auto flex-1">
         {/* Step: Game Type */}
         {step === 'type' && (
           <div className="space-y-6">
@@ -541,15 +548,13 @@ function CreateGameWizard() {
                     </div>
                   </div>
                   {fundingPhase === 'idle' && (
-                    <GlowButton
+                    <button
                       onClick={handleApproveUsdc}
                       disabled={isApproving || !sponsoredTournamentId}
-                      variant="gold"
-                      fullWidth
-                      className="mt-3"
+                      className="w-full mt-3 py-2.5 bg-yellow-500 hover:bg-yellow-400 disabled:bg-gray-700 disabled:text-gray-400 rounded-xl text-gray-900 font-semibold transition-colors"
                     >
                       {!sponsoredTournamentId ? 'Setting up...' : 'Approve USDC'}
-                    </GlowButton>
+                    </button>
                   )}
                 </div>
 
@@ -579,15 +584,13 @@ function CreateGameWizard() {
                     </div>
                   </div>
                   {fundingPhase === 'approved' && (
-                    <GlowButton
+                    <button
                       onClick={handleDepositToContract}
                       disabled={isSponsoring}
-                      variant="gold"
-                      fullWidth
-                      className="mt-3"
+                      className="w-full mt-3 py-2.5 bg-yellow-500 hover:bg-yellow-400 disabled:bg-gray-700 disabled:text-gray-400 rounded-xl text-gray-900 font-semibold transition-colors"
                     >
                       Deposit {formatUSDC(form.prizePool)}
-                    </GlowButton>
+                    </button>
                   )}
                 </div>
 
@@ -887,9 +890,9 @@ function CreateGameWizard() {
                 <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">Game Type</div>
                 <div className="flex items-center gap-2">
                   {gameType === 'fun' ? (
-                    <NeonBadge variant="green">Play for Fun</NeonBadge>
+                    <span className="px-3 py-1 text-sm font-medium rounded-lg bg-emerald-500/20 text-emerald-400">Play for Fun</span>
                   ) : (
-                    <NeonBadge variant="gold">Sponsored</NeonBadge>
+                    <span className="px-3 py-1 text-sm font-medium rounded-lg bg-yellow-500/20 text-yellow-400">Sponsored</span>
                   )}
                 </div>
               </div>
@@ -918,13 +921,13 @@ function CreateGameWizard() {
                 <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">Sybil Protection</div>
                 <div className="flex flex-wrap gap-2">
                   {form.sybilOptions.nftGating.enabled && (
-                    <NeonBadge variant="purple">NFT Required</NeonBadge>
+                    <span className="px-3 py-1 text-sm font-medium rounded-lg bg-purple-500/20 text-purple-400">NFT Required</span>
                   )}
                   {form.sybilOptions.coinbaseVerification.enabled && (
-                    <NeonBadge variant="blue">Coinbase Verified</NeonBadge>
+                    <span className="px-3 py-1 text-sm font-medium rounded-lg bg-blue-500/20 text-blue-400">Coinbase Verified</span>
                   )}
                   {!form.sybilOptions.nftGating.enabled && !form.sybilOptions.coinbaseVerification.enabled && (
-                    <NeonBadge variant="gray">None</NeonBadge>
+                    <span className="px-3 py-1 text-sm font-medium rounded-lg bg-gray-500/20 text-gray-400">None</span>
                   )}
                 </div>
               </div>
@@ -954,49 +957,48 @@ function CreateGameWizard() {
             )}
           </div>
         )}
-      </div>
+        </div>
 
-      {/* Footer Actions */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#0a0a0a]/95 backdrop-blur-lg border-t border-gray-800/50 pb-safe">
-        <div className="max-w-md mx-auto">
+        {/* Footer Actions - inside modal */}
+        <div className="p-4 border-t border-gray-800 flex-shrink-0">
           {step === 'type' ? (
             <div className="text-center text-sm text-gray-500">
               Select a game type to continue
             </div>
           ) : step === 'fund' ? (
-            <GlowButton
+            <button
               onClick={goNext}
               disabled={CONTRACT_DEPLOYED && fundingPhase !== 'deposited'}
-              variant="primary"
-              size="lg"
-              fullWidth
+              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-400 rounded-xl text-white font-semibold transition-colors flex items-center justify-center gap-2"
             >
               {CONTRACT_DEPLOYED && fundingPhase !== 'deposited' ? 'Complete funding above' : (
-                <>Continue <ArrowRight className="w-5 h-5 ml-2" /></>
+                <>Continue <ArrowRight className="w-5 h-5" /></>
               )}
-            </GlowButton>
+            </button>
           ) : step !== 'confirm' ? (
-            <GlowButton
+            <button
               onClick={goNext}
               disabled={step === 'prize' && form.prizePool < 100}
-              variant="primary"
-              size="lg"
-              fullWidth
+              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-400 rounded-xl text-white font-semibold transition-colors flex items-center justify-center gap-2"
             >
               Continue
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </GlowButton>
+              <ArrowRight className="w-5 h-5" />
+            </button>
           ) : (
-            <GlowButton
+            <button
               onClick={handleCreate}
-              variant="gold"
-              size="lg"
-              fullWidth
-              loading={creating}
-              glow
+              disabled={creating}
+              className="w-full py-3.5 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 disabled:from-gray-700 disabled:to-gray-600 rounded-xl text-gray-900 font-bold transition-all shadow-lg shadow-yellow-500/25 flex items-center justify-center gap-2"
             >
-              {creating ? 'Creating Game...' : 'Create Game'}
-            </GlowButton>
+              {creating ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                'Create Game'
+              )}
+            </button>
           )}
         </div>
       </div>
