@@ -259,6 +259,17 @@ function CreateGameWizard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, address, urlPlayerId, fundingError]);
 
+  // Redirect to standalone fund page once tournament is created (avoids wagmi interference)
+  useEffect(() => {
+    if (step === 'fund' && sponsoredTournamentId && sponsoredTableId && !CONTRACT_DEPLOYED) {
+      const playerId = address || urlPlayerId;
+      const playerName = urlPlayerName || (address ? `Player_${address.slice(2, 6)}` : 'Player');
+      router.push(
+        `/fund-game?tournamentId=${encodeURIComponent(sponsoredTournamentId)}&tableId=${encodeURIComponent(sponsoredTableId)}&amount=${form.prizePool}&playerId=${encodeURIComponent(playerId || '')}&playerName=${encodeURIComponent(playerName)}`
+      );
+    }
+  }, [step, sponsoredTournamentId, sponsoredTableId, address, urlPlayerId, urlPlayerName, form.prizePool, router]);
+
   // Copy escrow address to clipboard
   const copyEscrowAddress = async () => {
     try {
