@@ -5,10 +5,6 @@ import { ClientGameState, PlayerAction } from '@/lib/poker/types';
 import PlayerSeat from './PlayerSeat';
 import Card from './Card';
 import ActionBar from './ActionBar';
-import MobileTable from './MobileTable';
-
-// Breakpoint for mobile vs desktop table layout
-const MOBILE_BREAKPOINT = 500;
 
 interface TableProps {
   gameState: ClientGameState;
@@ -26,18 +22,6 @@ export default function Table({
   onNextHand,
 }: TableProps) {
   const { players, communityCards, pot, phase, yourSeatIndex, validActions, winners, config, lastActionTime } = gameState;
-
-  // Mobile vs Desktop layout detection
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
 
   // Keep onNextHand and phase in refs so the timer callback can access latest values
   const onNextHandRef = useRef(onNextHand);
@@ -118,14 +102,16 @@ export default function Table({
     phase !== 'waiting' && phase !== 'showdown' && phase !== 'finished';
 
   // Responsive card size based on viewport
-  const [cardSize, setCardSize] = useState<'md' | 'lg' | 'xl'>('xl');
+  const [cardSize, setCardSize] = useState<'sm' | 'md' | 'lg' | 'xl'>('xl');
 
   useEffect(() => {
     const updateCardSize = () => {
       if (window.innerWidth < 420) {
-        setCardSize('md'); // 76px height for mini app
-      } else if (window.innerWidth < 640) {
-        setCardSize('lg'); // 92px height for small screens
+        setCardSize('sm'); // 60px height for mini app (5 cards = 215px + gaps)
+      } else if (window.innerWidth < 540) {
+        setCardSize('md'); // 76px height for small screens
+      } else if (window.innerWidth < 768) {
+        setCardSize('lg'); // 92px height for tablets
       } else {
         setCardSize('xl'); // 112px height for desktop
       }
@@ -135,28 +121,14 @@ export default function Table({
     return () => window.removeEventListener('resize', updateCardSize);
   }, []);
 
-  // Card dimensions for placeholders
+  // Card dimensions for placeholders (responsive)
   const cardDimensions = {
+    sm: { width: 43, height: 60 },
     md: { width: 54, height: 76 },
     lg: { width: 66, height: 92 },
     xl: { width: 80, height: 112 },
   };
 
-  // Render mobile layout for narrow viewports
-  if (isMobile) {
-    return (
-      <MobileTable
-        gameState={gameState}
-        onAction={onAction}
-        onSeatClick={onSeatClick}
-        onStartGame={onStartGame}
-        showWinnerBanner={showWinnerBanner}
-        animatingCards={animatingCards}
-      />
-    );
-  }
-
-  // Desktop layout
   return (
     <div className="relative w-full h-full min-h-0">
       {/* Table felt */}
@@ -240,19 +212,19 @@ export default function Table({
       {/* Waiting for players overlay */}
       {phase === 'waiting' && (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
-          <div className="bg-gray-900/95 backdrop-blur-lg px-8 py-6 rounded-2xl text-center shadow-xl border border-gray-700/50 min-w-[240px]">
-            <div className="text-white font-bold text-lg mb-1">{players.length}/6 Players</div>
-            <div className="text-gray-400 text-sm mb-5">Waiting for players to join...</div>
+          <div className="bg-gray-900/95 backdrop-blur-lg px-4 sm:px-8 py-4 sm:py-6 rounded-xl sm:rounded-2xl text-center shadow-xl border border-gray-700/50 min-w-[180px] sm:min-w-[240px]">
+            <div className="text-white font-bold text-base sm:text-lg mb-1">{players.length}/6 Players</div>
+            <div className="text-gray-400 text-xs sm:text-sm mb-3 sm:mb-5">Waiting for players...</div>
             {players.length >= 2 && onStartGame && (
               <button
                 onClick={onStartGame}
-                className="w-full px-6 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl transition-colors text-base"
+                className="w-full px-4 sm:px-6 py-2.5 sm:py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg sm:rounded-xl transition-colors text-sm sm:text-base"
               >
                 Start Game
               </button>
             )}
             {players.length < 2 && (
-              <div className="text-gray-500 text-sm">Need at least 2 players</div>
+              <div className="text-gray-500 text-xs sm:text-sm">Need 2+ players</div>
             )}
           </div>
         </div>
@@ -261,15 +233,15 @@ export default function Table({
       {/* Winner banner - brief 3s flash during showdown */}
       {phase === 'showdown' && showWinnerBanner && winners && winners.length > 0 && (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none">
-          <div className="bg-gray-900/90 backdrop-blur-lg px-8 py-5 rounded-2xl text-center shadow-2xl border border-yellow-500/40 min-w-[260px]">
+          <div className="bg-gray-900/90 backdrop-blur-lg px-4 sm:px-8 py-3 sm:py-5 rounded-xl sm:rounded-2xl text-center shadow-2xl border border-yellow-500/40 min-w-[160px] sm:min-w-[260px]">
             {winners.map((winner, i) => {
               const winnerPlayer = players.find(p => p.odentity === winner.odentity);
               return (
                 <div key={i} className="mb-1">
-                  <div className="text-yellow-400 font-bold text-xl">{winnerPlayer?.name || 'Unknown'} wins!</div>
-                  <div className="text-emerald-400 font-bold text-2xl">+{winner.amount.toLocaleString()}</div>
+                  <div className="text-yellow-400 font-bold text-base sm:text-xl">{winnerPlayer?.name || 'Unknown'} wins!</div>
+                  <div className="text-emerald-400 font-bold text-lg sm:text-2xl">+{winner.amount.toLocaleString()}</div>
                   {winner.handName && winner.handName !== 'Uncontested' && (
-                    <div className="text-gray-300 text-sm mt-1">{winner.handName}</div>
+                    <div className="text-gray-300 text-xs sm:text-sm mt-1">{winner.handName}</div>
                   )}
                 </div>
               );
@@ -281,20 +253,20 @@ export default function Table({
       {/* Game Over overlay */}
       {phase === 'finished' && (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
-          <div className="bg-gray-900/95 backdrop-blur-lg px-8 py-6 rounded-2xl text-center shadow-xl border border-yellow-500/30 min-w-[260px]">
-            <div className="text-yellow-400 font-bold text-xl mb-3">Game Over</div>
+          <div className="bg-gray-900/95 backdrop-blur-lg px-4 sm:px-8 py-4 sm:py-6 rounded-xl sm:rounded-2xl text-center shadow-xl border border-yellow-500/30 min-w-[160px] sm:min-w-[260px]">
+            <div className="text-yellow-400 font-bold text-base sm:text-xl mb-2 sm:mb-3">Game Over</div>
             {winners && winners.map((winner, i) => {
               const winnerPlayer = players.find(p => p.odentity === winner.odentity);
               return (
                 <div key={i} className="mb-2">
-                  <div className="text-white font-semibold text-lg">{winnerPlayer?.name || 'Unknown'}</div>
-                  <div className="text-emerald-400 font-bold text-xl">+{winner.amount.toLocaleString()}</div>
+                  <div className="text-white font-semibold text-sm sm:text-lg">{winnerPlayer?.name || 'Unknown'}</div>
+                  <div className="text-emerald-400 font-bold text-base sm:text-xl">+{winner.amount.toLocaleString()}</div>
                 </div>
               );
             })}
             <a
               href="/poker"
-              className="mt-4 inline-block w-full px-6 py-3.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl transition-colors text-center"
+              className="mt-3 sm:mt-4 inline-block w-full px-4 sm:px-6 py-2.5 sm:py-3.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg sm:rounded-xl transition-colors text-center text-sm sm:text-base"
             >
               Back to Lobby
             </a>

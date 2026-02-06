@@ -877,46 +877,68 @@ function CreateGameWizard() {
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-300">Blind Structure</label>
               <div className="grid grid-cols-3 gap-2">
-                {(['turbo', 'standard', 'deep'] as BlindSpeed[]).map((speed) => {
-                  const isSelected = form.blindSpeed === speed;
-                  const colorClass = speed === 'turbo' ? 'orange' : speed === 'standard' ? 'emerald' : 'blue';
-                  return (
-                    <button
-                      key={speed}
-                      onClick={() => setForm({ ...form, blindSpeed: speed })}
-                      className={`p-3 rounded-xl border-2 transition-all relative ${
-                        isSelected
-                          ? `bg-${colorClass}-500/20 border-${colorClass}-500 ring-2 ring-${colorClass}-500/30`
-                          : 'bg-gray-800/50 border-gray-700/50 hover:border-gray-600'
-                      }`}
-                      style={isSelected ? {
-                        backgroundColor: speed === 'turbo' ? 'rgba(249, 115, 22, 0.2)' : speed === 'standard' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(59, 130, 246, 0.2)',
-                        borderColor: speed === 'turbo' ? 'rgb(249, 115, 22)' : speed === 'standard' ? 'rgb(16, 185, 129)' : 'rgb(59, 130, 246)',
-                        boxShadow: speed === 'turbo' ? '0 0 0 3px rgba(249, 115, 22, 0.3)' : speed === 'standard' ? '0 0 0 3px rgba(16, 185, 129, 0.3)' : '0 0 0 3px rgba(59, 130, 246, 0.3)',
-                      } : {}}
-                    >
-                      {isSelected && (
-                        <div
-                          className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center"
-                          style={{ backgroundColor: speed === 'turbo' ? 'rgb(249, 115, 22)' : speed === 'standard' ? 'rgb(16, 185, 129)' : 'rgb(59, 130, 246)' }}
-                        >
-                          <Check className="w-2.5 h-2.5 text-white" />
-                        </div>
-                      )}
-                      <div className="flex items-center justify-center mb-1.5">
-                        <Zap className={`w-5 h-5 ${
-                          speed === 'turbo' ? 'text-orange-400' :
-                          speed === 'standard' ? 'text-emerald-400' :
-                          'text-blue-400'
-                        }`} />
-                      </div>
-                      <div className={`text-sm font-semibold capitalize ${isSelected ? 'text-white' : ''}`}>{speed}</div>
-                      <div className={`text-xs ${isSelected ? 'text-gray-300' : 'text-gray-500'}`}>
-                        {speed === 'turbo' ? '5 min' : speed === 'standard' ? '10 min' : '15 min'} levels
-                      </div>
-                    </button>
-                  );
-                })}
+                {/* Turbo */}
+                <button
+                  onClick={() => setForm({ ...form, blindSpeed: 'turbo' })}
+                  className={`p-3 rounded-xl border-2 transition-all relative ${
+                    form.blindSpeed === 'turbo'
+                      ? 'bg-orange-500/20 border-orange-500 ring-2 ring-orange-500/30'
+                      : 'bg-gray-800/50 border-gray-700/50 hover:border-gray-600'
+                  }`}
+                >
+                  {form.blindSpeed === 'turbo' && (
+                    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center bg-orange-500">
+                      <Check className="w-2.5 h-2.5 text-white" />
+                    </div>
+                  )}
+                  <div className="flex items-center justify-center mb-1.5">
+                    <Zap className="w-5 h-5 text-orange-400" />
+                  </div>
+                  <div className={`text-sm font-semibold ${form.blindSpeed === 'turbo' ? 'text-white' : ''}`}>Turbo</div>
+                  <div className={`text-xs ${form.blindSpeed === 'turbo' ? 'text-gray-300' : 'text-gray-500'}`}>5 min levels</div>
+                </button>
+
+                {/* Standard */}
+                <button
+                  onClick={() => setForm({ ...form, blindSpeed: 'standard' })}
+                  className={`p-3 rounded-xl border-2 transition-all relative ${
+                    form.blindSpeed === 'standard'
+                      ? 'bg-emerald-500/20 border-emerald-500 ring-2 ring-emerald-500/30'
+                      : 'bg-gray-800/50 border-gray-700/50 hover:border-gray-600'
+                  }`}
+                >
+                  {form.blindSpeed === 'standard' && (
+                    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center bg-emerald-500">
+                      <Check className="w-2.5 h-2.5 text-white" />
+                    </div>
+                  )}
+                  <div className="flex items-center justify-center mb-1.5">
+                    <Zap className="w-5 h-5 text-emerald-400" />
+                  </div>
+                  <div className={`text-sm font-semibold ${form.blindSpeed === 'standard' ? 'text-white' : ''}`}>Standard</div>
+                  <div className={`text-xs ${form.blindSpeed === 'standard' ? 'text-gray-300' : 'text-gray-500'}`}>10 min levels</div>
+                </button>
+
+                {/* Deep */}
+                <button
+                  onClick={() => setForm({ ...form, blindSpeed: 'deep' })}
+                  className={`p-3 rounded-xl border-2 transition-all relative ${
+                    form.blindSpeed === 'deep'
+                      ? 'bg-blue-500/20 border-blue-500 ring-2 ring-blue-500/30'
+                      : 'bg-gray-800/50 border-gray-700/50 hover:border-gray-600'
+                  }`}
+                >
+                  {form.blindSpeed === 'deep' && (
+                    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center bg-blue-500">
+                      <Check className="w-2.5 h-2.5 text-white" />
+                    </div>
+                  )}
+                  <div className="flex items-center justify-center mb-1.5">
+                    <Zap className="w-5 h-5 text-blue-400" />
+                  </div>
+                  <div className={`text-sm font-semibold ${form.blindSpeed === 'deep' ? 'text-white' : ''}`}>Deep</div>
+                  <div className={`text-xs ${form.blindSpeed === 'deep' ? 'text-gray-300' : 'text-gray-500'}`}>15 min levels</div>
+                </button>
               </div>
             </div>
 

@@ -167,9 +167,13 @@ export default function PokerLobby() {
       const data = await res.json();
       if (data.success) {
         setTables([]);
+        alert(`Wiped successfully: ${data.message}`);
+      } else {
+        alert(`Wipe failed: ${data.error || 'Unknown error'}`);
       }
     } catch (err) {
       console.error('Failed to wipe:', err);
+      alert(`Wipe failed: ${err instanceof Error ? err.message : 'Network error'}`);
     } finally {
       setWiping(false);
     }

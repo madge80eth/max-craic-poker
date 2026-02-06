@@ -30,6 +30,17 @@ export async function POST() {
       keysToDelete.push(...(result[1] as string[]));
     } while (cursor2 !== '0');
 
+    // Also find sponsored tournament keys
+    let cursor3 = '0';
+    do {
+      const result = await redis.scan(cursor3, { match: 'poker:sponsored:*', count: 100 });
+      cursor3 = String(result[0]);
+      keysToDelete.push(...(result[1] as string[]));
+    } while (cursor3 !== '0');
+
+    // Delete sponsored:all set
+    await redis.del('poker:sponsored:all');
+
     // Delete all found keys
     if (keysToDelete.length > 0) {
       // Delete in batches of 50
