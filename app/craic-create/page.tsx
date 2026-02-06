@@ -83,7 +83,7 @@ export default function CreateGamePage() {
 }
 
 function CreateGameWizard() {
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, connector } = useAccount();
   const { connect, connectors } = useConnect();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -121,16 +121,28 @@ function CreateGameWizard() {
 
   // Auto-connect wallet - try farcasterMiniApp first, let it fail gracefully
   useEffect(() => {
-    if (isConnected || isConnecting) return;
-    if (connectors.length === 0) return;
+    console.log('🔌 [AUTO-CONNECT] isConnected:', isConnected, 'isConnecting:', isConnecting);
+    console.log('🔌 [AUTO-CONNECT] Available connectors:', connectors.map(c => c.id));
+    if (isConnected || isConnecting) {
+      console.log('🔌 [AUTO-CONNECT] Already connected or connecting, skipping');
+      return;
+    }
+    if (connectors.length === 0) {
+      console.log('🔌 [AUTO-CONNECT] No connectors available');
+      return;
+    }
 
     const miniAppConnector = connectors.find(c => c.id === 'farcasterMiniApp')
       || connectors.find(c => c.id === 'coinbaseWallet');
 
+    console.log('🔌 [AUTO-CONNECT] Selected connector:', miniAppConnector?.id);
     if (miniAppConnector) {
       setIsConnecting(true);
       connect({ connector: miniAppConnector }, {
-        onSettled: () => setIsConnecting(false)
+        onSettled: (data, error) => {
+          console.log('🔌 [AUTO-CONNECT] onSettled - data:', data, 'error:', error);
+          setIsConnecting(false);
+        }
       });
     }
   }, [isConnected, isConnecting, connectors, connect]);
@@ -148,18 +160,32 @@ function CreateGameWizard() {
   }, [sponsorConfirmed, fundingPhase]);
 
   const goNext = async () => {
+    console.log('🎯 [goNext] Called');
+    console.log('🎯 [goNext] isConnected:', isConnected);
+    console.log('🎯 [goNext] connector?.id:', connector?.id);
+    console.log('🎯 [goNext] address:', address);
+    console.log('🎯 [goNext] urlPlayerId:', urlPlayerId);
+    console.log('🎯 [goNext] urlPlayerName:', urlPlayerName);
+    console.log('🎯 [goNext] step:', step, 'gameType:', gameType);
+    console.log('🎯 [goNext] form.prizePool:', form.prizePool);
+
     const nextIndex = stepIndex + 1;
     if (nextIndex < STEPS.length) {
       const nextStep = STEPS[nextIndex].id;
+      console.log('🎯 [goNext] nextStep:', nextStep);
 
       // For sponsored games, skip Fund step entirely - create tournament and redirect to /fund-game
       // Always use off-chain flow regardless of contract deployment status
       if (nextStep === 'fund' && gameType === 'sponsored') {
+        console.log('🎯 [goNext] Entering sponsored game flow');
         setCreating(true);
         try {
           const creatorId = address || urlPlayerId;
           const playerName = urlPlayerName || (address ? `Player_${address.slice(2, 6)}` : 'Player');
+          console.log('🎯 [goNext] creatorId:', creatorId);
+          console.log('🎯 [goNext] playerName:', playerName);
 
+          console.log('🎯 [goNext] Calling /api/poker/sponsored...');
           const res = await fetch('/api/poker/sponsored', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -173,18 +199,23 @@ function CreateGameWizard() {
               blindSpeed: form.blindSpeed,
             }),
           });
+          console.log('🎯 [goNext] Response status:', res.status);
           const data = await res.json();
+          console.log('🎯 [goNext] Response data:', data);
 
           if (data.success) {
+            console.log('🎯 [goNext] Success! Redirecting to /fund-game');
             // Redirect to standalone fund page immediately
             router.push(
               `/fund-game?tournamentId=${encodeURIComponent(data.tournamentId)}&tableId=${encodeURIComponent(data.tableId)}&amount=${form.prizePool}&playerId=${encodeURIComponent(creatorId || '')}&playerName=${encodeURIComponent(playerName)}`
             );
             return;
           } else {
+            console.log('🎯 [goNext] API returned error:', data.error);
             setFundingError(data.error || 'Failed to create tournament');
           }
         } catch (err) {
+          console.log('🎯 [goNext] Caught exception:', err);
           setFundingError(err instanceof Error ? err.message : 'Network error');
         } finally {
           setCreating(false);
@@ -192,6 +223,7 @@ function CreateGameWizard() {
         return;
       }
 
+      console.log('🎯 [goNext] Moving to step:', nextStep);
       setStep(nextStep);
     }
   };
