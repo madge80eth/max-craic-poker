@@ -537,17 +537,22 @@ function CreateGameWizard() {
 
             <button
               onClick={() => selectGameType('fun')}
-              className={`w-full text-left p-5 rounded-2xl border transition-all ${
+              className={`w-full text-left p-5 rounded-2xl border-2 transition-all relative ${
                 gameType === 'fun'
-                  ? 'bg-emerald-500/10 border-emerald-500/30'
+                  ? 'bg-emerald-500/20 border-emerald-500 ring-2 ring-emerald-500/30'
                   : 'bg-gray-800/30 border-gray-700/30 hover:border-gray-600/50'
               }`}
             >
+              {gameType === 'fun' && (
+                <div className="absolute top-3 right-3 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
+                  <Check className="w-3 h-3 text-white" />
+                </div>
+              )}
               <div className="flex items-center gap-3 mb-2">
-                <Gamepad2 className="w-5 h-5 text-emerald-400" />
-                <h3 className="text-lg font-semibold">Play for Fun</h3>
+                <Gamepad2 className={`w-5 h-5 ${gameType === 'fun' ? 'text-emerald-300' : 'text-emerald-400'}`} />
+                <h3 className={`text-lg font-semibold ${gameType === 'fun' ? 'text-emerald-100' : ''}`}>Play for Fun</h3>
               </div>
-              <p className="text-sm text-gray-400 leading-relaxed">
+              <p className={`text-sm leading-relaxed ${gameType === 'fun' ? 'text-emerald-200/70' : 'text-gray-400'}`}>
                 No prize pool, no money on the line. Just a straight-up poker tournament
                 for your community. Great for practice or community nights.
               </p>
@@ -555,17 +560,22 @@ function CreateGameWizard() {
 
             <button
               onClick={() => selectGameType('sponsored')}
-              className={`w-full text-left p-5 rounded-2xl border transition-all ${
+              className={`w-full text-left p-5 rounded-2xl border-2 transition-all relative ${
                 gameType === 'sponsored'
-                  ? 'bg-yellow-500/10 border-yellow-500/30'
+                  ? 'bg-yellow-500/20 border-yellow-500 ring-2 ring-yellow-500/30'
                   : 'bg-gray-800/30 border-gray-700/30 hover:border-gray-600/50'
               }`}
             >
+              {gameType === 'sponsored' && (
+                <div className="absolute top-3 right-3 w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center">
+                  <Check className="w-3 h-3 text-gray-900" />
+                </div>
+              )}
               <div className="flex items-center gap-3 mb-2">
-                <Trophy className="w-5 h-5 text-yellow-400" />
-                <h3 className="text-lg font-semibold">Sponsored</h3>
+                <Trophy className={`w-5 h-5 ${gameType === 'sponsored' ? 'text-yellow-300' : 'text-yellow-400'}`} />
+                <h3 className={`text-lg font-semibold ${gameType === 'sponsored' ? 'text-yellow-100' : ''}`}>Sponsored</h3>
               </div>
-              <p className="text-sm text-gray-400 leading-relaxed">
+              <p className={`text-sm leading-relaxed ${gameType === 'sponsored' ? 'text-yellow-200/70' : 'text-gray-400'}`}>
                 Fund a USDC prize pool for the tournament. Smart contract handles
                 trustless payouts to winners. Zero rake, 100% goes to players.
               </p>
@@ -866,30 +876,47 @@ function CreateGameWizard() {
             {/* Blind Speed */}
             <div className="space-y-2">
               <label className="text-sm font-medium text-gray-300">Blind Structure</label>
-              <div className="grid grid-cols-3 gap-3">
-                {(['turbo', 'standard', 'deep'] as BlindSpeed[]).map((speed) => (
-                  <button
-                    key={speed}
-                    onClick={() => setForm({ ...form, blindSpeed: speed })}
-                    className={`p-4 rounded-xl border transition-all ${
-                      form.blindSpeed === speed
-                        ? 'bg-emerald-500/20 border-emerald-500/50'
-                        : 'bg-gray-800/50 border-gray-700/50 hover:border-gray-600'
-                    }`}
-                  >
-                    <div className="flex items-center justify-center mb-2">
-                      <Zap className={`w-5 h-5 ${
-                        speed === 'turbo' ? 'text-orange-400' :
-                        speed === 'standard' ? 'text-emerald-400' :
-                        'text-blue-400'
-                      }`} />
-                    </div>
-                    <div className="text-sm font-semibold capitalize">{speed}</div>
-                    <div className="text-xs text-gray-500">
-                      {speed === 'turbo' ? '5 min' : speed === 'standard' ? '10 min' : '15 min'} levels
-                    </div>
-                  </button>
-                ))}
+              <div className="grid grid-cols-3 gap-2">
+                {(['turbo', 'standard', 'deep'] as BlindSpeed[]).map((speed) => {
+                  const isSelected = form.blindSpeed === speed;
+                  const colorClass = speed === 'turbo' ? 'orange' : speed === 'standard' ? 'emerald' : 'blue';
+                  return (
+                    <button
+                      key={speed}
+                      onClick={() => setForm({ ...form, blindSpeed: speed })}
+                      className={`p-3 rounded-xl border-2 transition-all relative ${
+                        isSelected
+                          ? `bg-${colorClass}-500/20 border-${colorClass}-500 ring-2 ring-${colorClass}-500/30`
+                          : 'bg-gray-800/50 border-gray-700/50 hover:border-gray-600'
+                      }`}
+                      style={isSelected ? {
+                        backgroundColor: speed === 'turbo' ? 'rgba(249, 115, 22, 0.2)' : speed === 'standard' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(59, 130, 246, 0.2)',
+                        borderColor: speed === 'turbo' ? 'rgb(249, 115, 22)' : speed === 'standard' ? 'rgb(16, 185, 129)' : 'rgb(59, 130, 246)',
+                        boxShadow: speed === 'turbo' ? '0 0 0 3px rgba(249, 115, 22, 0.3)' : speed === 'standard' ? '0 0 0 3px rgba(16, 185, 129, 0.3)' : '0 0 0 3px rgba(59, 130, 246, 0.3)',
+                      } : {}}
+                    >
+                      {isSelected && (
+                        <div
+                          className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center"
+                          style={{ backgroundColor: speed === 'turbo' ? 'rgb(249, 115, 22)' : speed === 'standard' ? 'rgb(16, 185, 129)' : 'rgb(59, 130, 246)' }}
+                        >
+                          <Check className="w-2.5 h-2.5 text-white" />
+                        </div>
+                      )}
+                      <div className="flex items-center justify-center mb-1.5">
+                        <Zap className={`w-5 h-5 ${
+                          speed === 'turbo' ? 'text-orange-400' :
+                          speed === 'standard' ? 'text-emerald-400' :
+                          'text-blue-400'
+                        }`} />
+                      </div>
+                      <div className={`text-sm font-semibold capitalize ${isSelected ? 'text-white' : ''}`}>{speed}</div>
+                      <div className={`text-xs ${isSelected ? 'text-gray-300' : 'text-gray-500'}`}>
+                        {speed === 'turbo' ? '5 min' : speed === 'standard' ? '10 min' : '15 min'} levels
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
