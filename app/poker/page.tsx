@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAccount, useConnect } from 'wagmi';
 import { useRouter } from 'next/navigation';
+import { sdk } from '@farcaster/frame-sdk';
 import { TableInfo, SybilResistanceConfig } from '@/lib/poker/types';
 import { TournamentInfo } from '@/lib/poker/tournament-types';
 import {
@@ -71,6 +72,14 @@ export default function PokerLobby() {
   }, []);
 
   const playerId = isConnected && address ? address : guestId;
+
+  // Dismiss Farcaster splash screen if in mini app context
+  useEffect(() => {
+    const isMiniApp = typeof window !== 'undefined' && ((window as any).farcaster || (window as any).base);
+    if (isMiniApp) {
+      sdk.actions.ready().catch(console.error);
+    }
+  }, []);
 
   // Auto-connect Farcaster wallet if in Farcaster context
   useEffect(() => {
