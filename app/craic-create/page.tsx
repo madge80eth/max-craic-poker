@@ -617,6 +617,31 @@ function CreateGameWizard() {
                 </div>
               </div>
             </div>
+
+            {/* Wallet not connected warning */}
+            {!isConnected && !urlPlayerId && (
+              <div className="p-4 bg-orange-500/10 rounded-xl border border-orange-500/20">
+                <div className="flex items-start gap-3">
+                  <Wallet className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-orange-400 font-medium text-sm">Wallet Required</p>
+                    <p className="text-gray-400 text-xs mt-1">
+                      Connect a wallet to create a sponsored game.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Error display */}
+            {fundingError && (
+              <div className="p-3 bg-red-500/10 rounded-xl border border-red-500/20">
+                <div className="flex items-center gap-2 text-red-400 text-sm">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                  <span>{fundingError}</span>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -1129,11 +1154,20 @@ function CreateGameWizard() {
           ) : step !== 'confirm' ? (
             <button
               onClick={goNext}
-              disabled={step === 'prize' && form.prizePool < 100}
+              disabled={creating || (step === 'prize' && (form.prizePool < 100 || (!isConnected && !urlPlayerId)))}
               className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-400 rounded-xl text-white font-semibold transition-colors flex items-center justify-center gap-2"
             >
-              Continue
-              <ArrowRight className="w-5 h-5" />
+              {creating ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Setting up...
+                </>
+              ) : (
+                <>
+                  Continue
+                  <ArrowRight className="w-5 h-5" />
+                </>
+              )}
             </button>
           ) : (
             <button
