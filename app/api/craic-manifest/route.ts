@@ -9,21 +9,20 @@ const craicManifest = {
     "splashImageUrl": "https://craicprotocol.com/splash.png",
     "splashBackgroundColor": "#0a0a0a",
     "webhookUrl": "https://craicprotocol.com/api/webhook",
-    "subtitle": "Trustless poker nights for web3",
-    "description": "Host trustless poker home games for your community. 0% platform fee. NFT gating, bonds, and Coinbase verification. Smart contract payouts.",
+    "subtitle": "Trustless poker for web3",
+    "description": "Host trustless poker home games for your community with zero fees and smart contract payouts",
     "primaryCategory": "games",
     "tags": [
       "poker",
       "gaming",
       "web3",
       "base",
-      "tournament",
-      "community"
+      "tournament"
     ],
     "heroImageUrl": "https://craicprotocol.com/image.png",
-    "tagline": "Trustless poker for web3 communities",
+    "tagline": "Trustless poker for web3",
     "ogTitle": "Craic Protocol Poker",
-    "ogDescription": "Host trustless poker home games for your community. 0% platform fee. Smart contract payouts.",
+    "ogDescription": "Host trustless poker home games for your community with zero fees and smart contract payouts",
     "ogImageUrl": "https://craicprotocol.com/image.png",
     "screenshotUrls": [],
     "castShareUrl": "https://craicprotocol.com/share"
