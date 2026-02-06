@@ -5,6 +5,10 @@ import { ClientGameState, PlayerAction } from '@/lib/poker/types';
 import PlayerSeat from './PlayerSeat';
 import Card from './Card';
 import ActionBar from './ActionBar';
+import MobileTable from './MobileTable';
+
+// Breakpoint for mobile vs desktop table layout
+const MOBILE_BREAKPOINT = 500;
 
 interface TableProps {
   gameState: ClientGameState;
@@ -22,6 +26,18 @@ export default function Table({
   onNextHand,
 }: TableProps) {
   const { players, communityCards, pot, phase, yourSeatIndex, validActions, winners, config, lastActionTime } = gameState;
+
+  // Mobile vs Desktop layout detection
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Keep onNextHand and phase in refs so the timer callback can access latest values
   const onNextHandRef = useRef(onNextHand);
@@ -101,10 +117,50 @@ export default function Table({
   const showActionBar = yourSeatIndex !== null && yourPlayer && !yourPlayer.folded && !yourPlayer.allIn &&
     phase !== 'waiting' && phase !== 'showdown' && phase !== 'finished';
 
+  // Responsive card size based on viewport
+  const [cardSize, setCardSize] = useState<'md' | 'lg' | 'xl'>('xl');
+
+  useEffect(() => {
+    const updateCardSize = () => {
+      if (window.innerWidth < 420) {
+        setCardSize('md'); // 76px height for mini app
+      } else if (window.innerWidth < 640) {
+        setCardSize('lg'); // 92px height for small screens
+      } else {
+        setCardSize('xl'); // 112px height for desktop
+      }
+    };
+    updateCardSize();
+    window.addEventListener('resize', updateCardSize);
+    return () => window.removeEventListener('resize', updateCardSize);
+  }, []);
+
+  // Card dimensions for placeholders
+  const cardDimensions = {
+    md: { width: 54, height: 76 },
+    lg: { width: 66, height: 92 },
+    xl: { width: 80, height: 112 },
+  };
+
+  // Render mobile layout for narrow viewports
+  if (isMobile) {
+    return (
+      <MobileTable
+        gameState={gameState}
+        onAction={onAction}
+        onSeatClick={onSeatClick}
+        onStartGame={onStartGame}
+        showWinnerBanner={showWinnerBanner}
+        animatingCards={animatingCards}
+      />
+    );
+  }
+
+  // Desktop layout
   return (
-    <div className="relative w-full h-full min-h-[520px]">
+    <div className="relative w-full h-full min-h-0">
       {/* Table felt */}
-      <div className="absolute inset-3 sm:inset-6">
+      <div className="absolute inset-2 sm:inset-6">
         <div className="relative w-full h-full rounded-[50%] bg-gradient-to-b from-emerald-700 via-emerald-800 to-emerald-900 shadow-[0_0_60px_rgba(16,185,129,0.15)] border-[10px] border-amber-900/70">
           <div className="absolute -inset-[1px] rounded-[50%] border-2 border-amber-700/30" />
           <div className="absolute inset-3 rounded-[50%] border-2 border-emerald-600/40" />
@@ -114,15 +170,15 @@ export default function Table({
 
       {/* Header - Blinds & Hand info */}
       <div className="absolute top-1 left-1/2 -translate-x-1/2 z-20">
-        <div className="flex items-center gap-3 px-4 py-2 bg-gray-900/90 backdrop-blur-sm rounded-full text-xs border border-gray-700/40">
-          <div className="flex items-center gap-1.5">
-            <span className="text-gray-500 uppercase tracking-wider text-[10px]">Blinds</span>
-            <span className="text-white font-bold">{blindLevel.smallBlind}/{blindLevel.bigBlind}</span>
+        <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-1.5 sm:py-2 bg-gray-900/90 backdrop-blur-sm rounded-full text-xs border border-gray-700/40">
+          <div className="flex items-center gap-1">
+            <span className="text-gray-500 uppercase tracking-wider text-[9px] sm:text-[10px]">Blinds</span>
+            <span className="text-white font-bold text-[11px] sm:text-xs">{blindLevel.smallBlind}/{blindLevel.bigBlind}</span>
           </div>
           <div className="w-px h-3 bg-gray-700" />
-          <div className="flex items-center gap-1.5">
-            <span className="text-gray-500 uppercase tracking-wider text-[10px]">Hand</span>
-            <span className="text-white font-bold">#{gameState.handNumber}</span>
+          <div className="flex items-center gap-1">
+            <span className="text-gray-500 uppercase tracking-wider text-[9px] sm:text-[10px]">Hand</span>
+            <span className="text-white font-bold text-[11px] sm:text-xs">#{gameState.handNumber}</span>
           </div>
         </div>
       </div>
@@ -151,12 +207,12 @@ export default function Table({
       {/* Center area - Community cards & pot */}
       <div className="absolute top-[42%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
         {/* Community Cards */}
-        <div className="flex gap-2 justify-center mb-3">
+        <div className="flex gap-1 sm:gap-2 justify-center mb-2 sm:mb-3">
           {communityCards.map((card, i) => (
             <Card
               key={`${gameState.handNumber}-${i}`}
               card={card}
-              size="xl"
+              size={cardSize}
               animate={animatingCards.has(i) ? 'deal' : 'none'}
               delay={animatingCards.has(i) ? (i - Math.min(...Array.from(animatingCards))) * 80 : 0}
             />
@@ -164,8 +220,8 @@ export default function Table({
           {phase !== 'waiting' && communityCards.length < 5 && Array.from({ length: 5 - communityCards.length }).map((_, i) => (
             <div
               key={`empty-${i}`}
-              className="rounded-xl border-2 border-dashed border-emerald-600/20"
-              style={{ width: 80, height: 112 }}
+              className="rounded-lg sm:rounded-xl border-2 border-dashed border-emerald-600/20"
+              style={cardDimensions[cardSize]}
             />
           ))}
         </div>
@@ -173,9 +229,9 @@ export default function Table({
         {/* Pot */}
         {pot > 0 && (
           <div className="text-center">
-            <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-900/85 backdrop-blur-sm rounded-full border border-gray-700/30">
-              <div className="w-4 h-4 rounded-full bg-gradient-to-br from-yellow-400 to-amber-600 shadow-sm shadow-yellow-500/30" />
-              <span className="text-yellow-400 font-bold text-lg">{pot.toLocaleString()}</span>
+            <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-1.5 sm:py-2.5 bg-gray-900/85 backdrop-blur-sm rounded-full border border-gray-700/30">
+              <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-gradient-to-br from-yellow-400 to-amber-600 shadow-sm shadow-yellow-500/30" />
+              <span className="text-yellow-400 font-bold text-sm sm:text-lg">{pot.toLocaleString()}</span>
             </div>
           </div>
         )}

@@ -318,13 +318,13 @@ export default function PokerTable({ params }: PageProps) {
     <div className="min-h-screen bg-[#0d1117] text-white">
       {/* Header */}
       <div className="fixed top-0 left-0 right-0 z-40 bg-gray-900/80 backdrop-blur-lg border-b border-gray-800/50">
-        <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3">
           <Link
             href="/poker"
-            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
+            className="flex items-center gap-1 sm:gap-2 text-gray-400 hover:text-white transition-colors"
           >
-            <ArrowLeft className="w-5 h-5" />
-            <span className="text-sm font-medium">Lobby</span>
+            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="text-xs sm:text-sm font-medium">Lobby</span>
           </Link>
 
           <div className="flex items-center gap-3">
@@ -364,16 +364,16 @@ export default function PokerTable({ params }: PageProps) {
 
       {/* Your Turn Indicator */}
       {isYourTurn && (
-        <div className="fixed top-16 left-1/2 -translate-x-1/2 z-50">
-          <div className="px-4 py-2 bg-yellow-500 text-gray-900 font-bold rounded-full text-sm animate-pulse shadow-lg shadow-yellow-500/30">
+        <div className="fixed top-12 sm:top-16 left-1/2 -translate-x-1/2 z-50">
+          <div className="px-3 sm:px-4 py-1.5 sm:py-2 bg-yellow-500 text-gray-900 font-bold rounded-full text-xs sm:text-sm animate-pulse shadow-lg shadow-yellow-500/30">
             Your Turn
           </div>
         </div>
       )}
 
       {/* Table Container */}
-      <div className="pt-16 pb-32 px-2 min-h-screen flex items-center justify-center">
-        <div className="w-full max-w-2xl aspect-[4/3]">
+      <div className="pt-12 sm:pt-16 pb-4 sm:pb-32 px-1 sm:px-2 min-h-screen flex items-start sm:items-center justify-center">
+        <div className="w-full h-[calc(100vh-48px-16px)] sm:h-auto sm:max-w-2xl sm:aspect-[4/3]">
           <Table
             gameState={gameState}
             onAction={handleAction}
