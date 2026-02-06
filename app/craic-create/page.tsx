@@ -123,9 +123,8 @@ function CreateGameWizard() {
     if (isConnected || isConnecting) return;
     const isMiniApp = typeof window !== 'undefined' && ((window as any).farcaster || (window as any).base);
     if (isMiniApp && connectors.length > 0) {
-      const miniAppConnector = connectors.find(c =>
-        c.id === 'farcasterMiniApp' || c.id === 'coinbaseWallet'
-      );
+      const miniAppConnector = connectors.find(c => c.id === 'farcasterMiniApp')
+        || connectors.find(c => c.id === 'coinbaseWallet');
       if (miniAppConnector) {
         setIsConnecting(true);
         connect({ connector: miniAppConnector }, {

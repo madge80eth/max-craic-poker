@@ -13,12 +13,12 @@ const BASE_RPC_URLS = [
 export const config = createConfig({
   chains: [base],
   connectors: [
+    farcasterMiniApp(), // First priority: Farcaster Mini App environment
     coinbaseWallet({
       appName: 'Craic Poker',
       // Use 'all' to allow both Smart Wallet and EOA connections
       preference: 'all',
     }),
-    farcasterMiniApp(), // For Farcaster Mini App environment
     injected() // Fallback for browser wallets (MetaMask, Rabby, etc.)
   ],
   transports: {
