@@ -119,18 +119,19 @@ function CreateGameWizard() {
   const STEPS = getSteps(gameType);
   const stepIndex = STEPS.findIndex(s => s.id === step);
 
+  // Auto-connect wallet - try farcasterMiniApp first, let it fail gracefully
   useEffect(() => {
     if (isConnected || isConnecting) return;
-    const isMiniApp = typeof window !== 'undefined' && ((window as any).farcaster || (window as any).base);
-    if (isMiniApp && connectors.length > 0) {
-      const miniAppConnector = connectors.find(c => c.id === 'farcasterMiniApp')
-        || connectors.find(c => c.id === 'coinbaseWallet');
-      if (miniAppConnector) {
-        setIsConnecting(true);
-        connect({ connector: miniAppConnector }, {
-          onSettled: () => setIsConnecting(false)
-        });
-      }
+    if (connectors.length === 0) return;
+
+    const miniAppConnector = connectors.find(c => c.id === 'farcasterMiniApp')
+      || connectors.find(c => c.id === 'coinbaseWallet');
+
+    if (miniAppConnector) {
+      setIsConnecting(true);
+      connect({ connector: miniAppConnector }, {
+        onSettled: () => setIsConnecting(false)
+      });
     }
   }, [isConnected, isConnecting, connectors, connect]);
 

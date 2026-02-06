@@ -73,26 +73,44 @@ export default function PokerLobby() {
 
   const playerId = isConnected && address ? address : guestId;
 
-  // Dismiss Farcaster splash screen if in mini app context
+  // Initialize Farcaster SDK and get user context
   useEffect(() => {
-    const isMiniApp = typeof window !== 'undefined' && ((window as any).farcaster || (window as any).base);
-    if (isMiniApp) {
-      sdk.actions.ready().catch(console.error);
-    }
+    const initSDK = async () => {
+      try {
+        // Always call ready() - it's a no-op outside mini app context
+        await sdk.actions.ready();
+
+        // Try to get user context for auto-populating name
+        const context = await sdk.context;
+        if (context?.user?.displayName) {
+          setPlayerName(context.user.displayName);
+          setNameConfirmed(true);
+        } else if (context?.user?.username) {
+          setPlayerName(context.user.username);
+          setNameConfirmed(true);
+        }
+      } catch (error) {
+        // Not in mini app context - silently ignore
+        console.debug('SDK init (expected to fail outside mini app):', error);
+      }
+    };
+    initSDK();
   }, []);
 
-  // Auto-connect Farcaster wallet if in Farcaster context
+  // Auto-connect wallet in mini app context
   useEffect(() => {
     if (isConnected || isConnecting) return;
-    const isFarcaster = typeof window !== 'undefined' && (window as any).farcaster;
-    if (isFarcaster && connectors.length > 0) {
-      const farcasterConnector = connectors.find(c => c.id === 'farcasterMiniApp' || c.name.toLowerCase().includes('farcaster'));
-      if (farcasterConnector) {
-        setIsConnecting(true);
-        connect({ connector: farcasterConnector }, {
-          onSettled: () => setIsConnecting(false)
-        });
-      }
+    if (connectors.length === 0) return;
+
+    // Try farcasterMiniApp first, then coinbaseWallet - let them fail gracefully
+    const miniAppConnector = connectors.find(c => c.id === 'farcasterMiniApp')
+      || connectors.find(c => c.id === 'coinbaseWallet');
+
+    if (miniAppConnector) {
+      setIsConnecting(true);
+      connect({ connector: miniAppConnector }, {
+        onSettled: () => setIsConnecting(false)
+      });
     }
   }, [isConnected, isConnecting, connectors, connect]);
 
