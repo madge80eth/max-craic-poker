@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Wallet,
@@ -17,7 +17,26 @@ import {
 // Escrow address for receiving USDC
 const ESCROW_ADDRESS = '0xCc7659fbE122AcdE826725cf3a4cd5dfD72763F0';
 
+function FundGameLoading() {
+  return (
+    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
+      <div className="flex items-center gap-3 text-gray-400">
+        <Loader2 className="w-6 h-6 animate-spin" />
+        <span>Loading...</span>
+      </div>
+    </div>
+  );
+}
+
 export default function FundGamePage() {
+  return (
+    <Suspense fallback={<FundGameLoading />}>
+      <FundGameContent />
+    </Suspense>
+  );
+}
+
+function FundGameContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
