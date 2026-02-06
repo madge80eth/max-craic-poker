@@ -153,7 +153,8 @@ function CreateGameWizard() {
       const nextStep = STEPS[nextIndex].id;
 
       // For sponsored games, skip Fund step entirely - create tournament and redirect to /fund-game
-      if (nextStep === 'fund' && gameType === 'sponsored' && !CONTRACT_DEPLOYED) {
+      // Always use off-chain flow regardless of contract deployment status
+      if (nextStep === 'fund' && gameType === 'sponsored') {
         setCreating(true);
         try {
           const creatorId = address || urlPlayerId;
