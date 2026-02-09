@@ -50,11 +50,11 @@ function getSteps(gameType: GameType | null): { id: WizardStep; title: string }[
   const steps: { id: WizardStep; title: string }[] = [
     { id: 'type', title: 'Game Type' },
   ];
+  steps.push({ id: 'settings', title: 'Settings' });
   if (gameType === 'sponsored') {
     steps.push({ id: 'prize', title: 'Prize Pool' });
     steps.push({ id: 'fund', title: 'Fund' });
   }
-  steps.push({ id: 'settings', title: 'Settings' });
   steps.push({ id: 'sybil', title: 'Protection' });
   steps.push({ id: 'confirm', title: 'Confirm' });
   return steps;
@@ -248,10 +248,8 @@ function CreateGameWizard() {
     setGameType(type);
     if (type === 'fun') {
       setForm({ ...form, prizePool: 0 });
-      setStep('settings');
-    } else {
-      setStep('prize');
     }
+    setStep('settings');
   };
 
   const handleApproveUsdc = () => {
