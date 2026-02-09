@@ -16,12 +16,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.rewrite(new URL('/api/craic-manifest', request.url));
   }
 
-  // craicprotocol.com root -> /poker (home game hub)
-  if (isCraicDomain && pathname === '/') {
-    const url = request.nextUrl.clone();
-    url.pathname = '/poker';
-    return NextResponse.rewrite(url);
-  }
+  // craicprotocol.com root -> serves app/page.tsx (landing page) with no rewrite
 
   // maxcraicpoker.com root -> /mini-app (the MCP app)
   const isMcpDomain = hostname.includes('maxcraicpoker.com');
