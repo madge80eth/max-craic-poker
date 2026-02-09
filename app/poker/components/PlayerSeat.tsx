@@ -26,16 +26,15 @@ const SEAT_POSITIONS_DESKTOP = [
   { top: '68%', left: '88%' },   // 5 - Bottom right
 ];
 
-// Mobile positions - designed for 360x540 container with 2:1 squashed oval
-// Oval at top:14%, 20px side margins, aspect-ratio 2:1
-// Hero below oval, opponents around the top arc and sides
+// Mobile positions - PIXEL values for 360x500 container
+// Oval: 320x200 at top:60. Seats placed around it with 20px edge clearance.
 const SEAT_POSITIONS_MOBILE = [
-  { top: '78%', left: '50%' },   // 0 - Hero (below oval, bottom center)
-  { top: '42%', left: '12%' },   // 1 - Left side (at oval's lower-left)
-  { top: '14%', left: '18%' },   // 2 - Top left (at oval's upper-left arc)
-  { top: '6%', left: '50%' },    // 3 - Top center (above oval)
-  { top: '14%', left: '82%' },   // 4 - Top right (at oval's upper-right arc)
-  { top: '42%', left: '88%' },   // 5 - Right side (at oval's lower-right)
+  { top: '430px', left: '180px' },  // 0 - Hero (bottom center)
+  { top: '325px', left: '50px' },   // 1 - Bottom left (y≈65%)
+  { top: '200px', left: '50px' },   // 2 - Upper left (y≈40%, oval side)
+  { top: '20px', left: '180px' },   // 3 - Top center
+  { top: '200px', left: '310px' },  // 4 - Upper right (y≈40%, oval side)
+  { top: '325px', left: '310px' },  // 5 - Bottom right (y≈65%)
 ];
 
 export default function PlayerSeat({
@@ -184,7 +183,7 @@ export default function PlayerSeat({
         <div className={`absolute top-full left-1/2 -translate-x-1/2 ${isMobile ? 'mt-0.5 w-[52px]' : 'mt-1.5 w-24'}`}>
           <div className={`bg-gray-900/90 backdrop-blur-sm rounded-lg text-center border border-gray-700/30 ${isMobile ? 'px-1 py-0.5' : 'px-2 py-1.5'}`}>
             <div className={`font-semibold text-white truncate ${isMobile ? 'text-[9px]' : 'text-[11px]'}`}>
-              {player.name}
+              {isMobile ? player.name.slice(0, 6) : player.name}
               {isYou && <span className={`text-purple-400 ${isMobile ? 'text-[7px]' : 'text-[9px]'}`}> (You)</span>}
             </div>
             <div className={`text-emerald-400 font-bold font-mono ${isMobile ? 'text-[9px]' : 'text-xs'}`}>

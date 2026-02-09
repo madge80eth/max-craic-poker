@@ -129,14 +129,13 @@ export default function Table({
 
   return (
     <div className="relative w-full h-full min-h-0 overflow-visible">
-      {/* Table felt - mobile: squashed 2:1 oval in upper portion; desktop: fills container */}
+      {/* Table felt - mobile: fixed 320x200 oval; desktop: fills container */}
       <div
         className="absolute"
-        style={isMobile ? { left: 20, right: 20, top: '14%' } : { top: 24, left: 24, right: 24, bottom: 24 }}
+        style={isMobile ? { left: 20, top: 60, width: 320, height: 200 } : { top: 24, left: 24, right: 24, bottom: 24 }}
       >
         <div
-          className={`relative w-full rounded-[50%] bg-gradient-to-b from-emerald-700 via-emerald-800 to-emerald-900 shadow-[0_0_60px_rgba(16,185,129,0.15)] border-amber-900/70 ${isMobile ? 'border-[6px]' : 'border-[10px]'}`}
-          style={isMobile ? { aspectRatio: '2/1' } : { height: '100%' }}
+          className={`relative w-full h-full rounded-[50%] bg-gradient-to-b from-emerald-700 via-emerald-800 to-emerald-900 shadow-[0_0_60px_rgba(16,185,129,0.15)] border-amber-900/70 ${isMobile ? 'border-[6px]' : 'border-[10px]'}`}
         >
           <div className="absolute -inset-[1px] rounded-[50%] border-2 border-amber-700/30" />
           <div className="absolute inset-3 rounded-[50%] border-2 border-emerald-600/40" />
@@ -144,8 +143,11 @@ export default function Table({
         </div>
       </div>
 
-      {/* Header - Blinds & Hand info - sits at top of oval on mobile */}
-      <div className={`absolute ${isMobile ? 'top-[14%]' : 'top-1'} left-1/2 -translate-x-1/2 z-20`}>
+      {/* Header - Blinds & Hand info */}
+      <div
+        className={`absolute z-20 ${isMobile ? '' : 'top-1 left-1/2 -translate-x-1/2'}`}
+        style={isMobile ? { top: 68, left: 180, transform: 'translateX(-50%)' } : undefined}
+      >
         <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-1.5 sm:py-2 bg-gray-900/90 backdrop-blur-sm rounded-full text-xs border border-gray-700/40">
           <div className="flex items-center gap-1">
             <span className="text-gray-500 uppercase tracking-wider text-[9px] sm:text-[10px]">Blinds</span>
@@ -181,7 +183,10 @@ export default function Table({
       })}
 
       {/* Center area - Community cards & pot - centered in oval */}
-      <div className={`absolute ${isMobile ? 'top-[29%]' : 'top-[42%]'} left-1/2 -translate-x-1/2 -translate-y-1/2 z-10`}>
+      <div
+        className={`absolute z-10 ${isMobile ? '' : 'top-[42%] left-1/2 -translate-x-1/2 -translate-y-1/2'}`}
+        style={isMobile ? { top: 145, left: 180, transform: 'translate(-50%, -50%)' } : undefined}
+      >
         {/* Community Cards */}
         <div className="flex gap-1 sm:gap-2 justify-center mb-2 sm:mb-3">
           {communityCards.map((card, i) => (
@@ -215,7 +220,10 @@ export default function Table({
 
       {/* Waiting for players overlay */}
       {phase === 'waiting' && (
-        <div className={`absolute ${isMobile ? 'top-[29%]' : 'top-1/2'} left-1/2 -translate-x-1/2 -translate-y-1/2 z-30`}>
+        <div
+          className={`absolute z-30 ${isMobile ? '' : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'}`}
+          style={isMobile ? { top: 160, left: 180, transform: 'translate(-50%, -50%)' } : undefined}
+        >
           <div className="bg-gray-900/95 backdrop-blur-lg px-4 sm:px-8 py-4 sm:py-6 rounded-xl sm:rounded-2xl text-center shadow-xl border border-gray-700/50 min-w-[180px] sm:min-w-[240px]">
             <div className="text-white font-bold text-base sm:text-lg mb-1">{players.length}/6 Players</div>
             <div className="text-gray-400 text-xs sm:text-sm mb-3 sm:mb-5">Waiting for players...</div>
@@ -236,7 +244,10 @@ export default function Table({
 
       {/* Winner banner - brief 3s flash during showdown */}
       {phase === 'showdown' && showWinnerBanner && winners && winners.length > 0 && (
-        <div className={`absolute ${isMobile ? 'top-[29%]' : 'top-1/2'} left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none`}>
+        <div
+          className={`absolute z-30 pointer-events-none ${isMobile ? '' : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'}`}
+          style={isMobile ? { top: 160, left: 180, transform: 'translate(-50%, -50%)' } : undefined}
+        >
           <div className="bg-gray-900/90 backdrop-blur-lg px-4 sm:px-8 py-3 sm:py-5 rounded-xl sm:rounded-2xl text-center shadow-2xl border border-yellow-500/40 min-w-[160px] sm:min-w-[260px]">
             {winners.map((winner, i) => {
               const winnerPlayer = players.find(p => p.odentity === winner.odentity);
@@ -256,7 +267,10 @@ export default function Table({
 
       {/* Game Over overlay */}
       {phase === 'finished' && (
-        <div className={`absolute ${isMobile ? 'top-[29%]' : 'top-1/2'} left-1/2 -translate-x-1/2 -translate-y-1/2 z-30`}>
+        <div
+          className={`absolute z-30 ${isMobile ? '' : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'}`}
+          style={isMobile ? { top: 160, left: 180, transform: 'translate(-50%, -50%)' } : undefined}
+        >
           <div className="bg-gray-900/95 backdrop-blur-lg px-4 sm:px-8 py-4 sm:py-6 rounded-xl sm:rounded-2xl text-center shadow-xl border border-yellow-500/30 min-w-[160px] sm:min-w-[260px]">
             <div className="text-yellow-400 font-bold text-base sm:text-xl mb-2 sm:mb-3">Game Over</div>
             {winners && winners.map((winner, i) => {
