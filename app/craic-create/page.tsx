@@ -668,13 +668,31 @@ function CreateGameWizard() {
                 </div>
                 <button
                   onClick={() => setScheduledStart(!scheduledStart)}
-                  className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${
-                    scheduledStart ? 'bg-yellow-500' : 'bg-gray-700'
-                  }`}
+                  style={{
+                    width: 48,
+                    height: 28,
+                    borderRadius: 14,
+                    backgroundColor: scheduledStart ? '#eab308' : '#374151',
+                    position: 'relative',
+                    transition: 'background-color 200ms ease-in-out',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
                 >
-                  <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ease-in-out ${
-                    scheduledStart ? 'translate-x-5' : 'translate-x-0'
-                  }`} />
+                  <span
+                    style={{
+                      display: 'block',
+                      width: 22,
+                      height: 22,
+                      borderRadius: '50%',
+                      backgroundColor: 'white',
+                      position: 'absolute',
+                      top: 3,
+                      left: scheduledStart ? 23 : 3,
+                      transition: 'left 200ms ease-in-out',
+                    }}
+                  />
                 </button>
               </div>
               {scheduledStart && (
@@ -1029,13 +1047,31 @@ function CreateGameWizard() {
                 </div>
                 <button
                   onClick={() => setScheduledStart(!scheduledStart)}
-                  className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${
-                    scheduledStart ? 'bg-yellow-500' : 'bg-gray-700'
-                  }`}
+                  style={{
+                    width: 48,
+                    height: 28,
+                    borderRadius: 14,
+                    backgroundColor: scheduledStart ? '#eab308' : '#374151',
+                    position: 'relative',
+                    transition: 'background-color 200ms ease-in-out',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
                 >
-                  <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ease-in-out ${
-                    scheduledStart ? 'translate-x-5' : 'translate-x-0'
-                  }`} />
+                  <span
+                    style={{
+                      display: 'block',
+                      width: 22,
+                      height: 22,
+                      borderRadius: '50%',
+                      backgroundColor: 'white',
+                      position: 'absolute',
+                      top: 3,
+                      left: scheduledStart ? 23 : 3,
+                      transition: 'left 200ms ease-in-out',
+                    }}
+                  />
                 </button>
               </div>
               {scheduledStart && (
@@ -1099,13 +1135,31 @@ function CreateGameWizard() {
                       tokenGating: { ...form.sybilOptions.tokenGating, enabled: !form.sybilOptions.tokenGating.enabled }
                     }
                   })}
-                  className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${
-                    form.sybilOptions.tokenGating.enabled ? 'bg-green-500' : 'bg-gray-700'
-                  }`}
+                  style={{
+                    width: 48,
+                    height: 28,
+                    borderRadius: 14,
+                    backgroundColor: form.sybilOptions.tokenGating.enabled ? '#22c55e' : '#374151',
+                    position: 'relative',
+                    transition: 'background-color 200ms ease-in-out',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
                 >
-                  <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ease-in-out ${
-                    form.sybilOptions.tokenGating.enabled ? 'translate-x-5' : 'translate-x-0'
-                  }`} />
+                  <span
+                    style={{
+                      display: 'block',
+                      width: 22,
+                      height: 22,
+                      borderRadius: '50%',
+                      backgroundColor: 'white',
+                      position: 'absolute',
+                      top: 3,
+                      left: form.sybilOptions.tokenGating.enabled ? 23 : 3,
+                      transition: 'left 200ms ease-in-out',
+                    }}
+                  />
                 </button>
               </div>
               {form.sybilOptions.tokenGating.enabled && (
@@ -1162,13 +1216,31 @@ function CreateGameWizard() {
                       nftGating: { ...form.sybilOptions.nftGating, enabled: !form.sybilOptions.nftGating.enabled }
                     }
                   })}
-                  className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${
-                    form.sybilOptions.nftGating.enabled ? 'bg-purple-500' : 'bg-gray-700'
-                  }`}
+                  style={{
+                    width: 48,
+                    height: 28,
+                    borderRadius: 14,
+                    backgroundColor: form.sybilOptions.nftGating.enabled ? '#a855f7' : '#374151',
+                    position: 'relative',
+                    transition: 'background-color 200ms ease-in-out',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
                 >
-                  <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ease-in-out ${
-                    form.sybilOptions.nftGating.enabled ? 'translate-x-5' : 'translate-x-0'
-                  }`} />
+                  <span
+                    style={{
+                      display: 'block',
+                      width: 22,
+                      height: 22,
+                      borderRadius: '50%',
+                      backgroundColor: 'white',
+                      position: 'absolute',
+                      top: 3,
+                      left: form.sybilOptions.nftGating.enabled ? 23 : 3,
+                      transition: 'left 200ms ease-in-out',
+                    }}
+                  />
                 </button>
               </div>
               {form.sybilOptions.nftGating.enabled && (
@@ -1212,13 +1284,31 @@ function CreateGameWizard() {
                       whitelistAddress: { ...form.sybilOptions.whitelistAddress, enabled: !form.sybilOptions.whitelistAddress.enabled }
                     }
                   })}
-                  className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${
-                    form.sybilOptions.whitelistAddress.enabled ? 'bg-amber-500' : 'bg-gray-700'
-                  }`}
+                  style={{
+                    width: 48,
+                    height: 28,
+                    borderRadius: 14,
+                    backgroundColor: form.sybilOptions.whitelistAddress.enabled ? '#f59e0b' : '#374151',
+                    position: 'relative',
+                    transition: 'background-color 200ms ease-in-out',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
                 >
-                  <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ease-in-out ${
-                    form.sybilOptions.whitelistAddress.enabled ? 'translate-x-5' : 'translate-x-0'
-                  }`} />
+                  <span
+                    style={{
+                      display: 'block',
+                      width: 22,
+                      height: 22,
+                      borderRadius: '50%',
+                      backgroundColor: 'white',
+                      position: 'absolute',
+                      top: 3,
+                      left: form.sybilOptions.whitelistAddress.enabled ? 23 : 3,
+                      transition: 'left 200ms ease-in-out',
+                    }}
+                  />
                 </button>
               </div>
               {form.sybilOptions.whitelistAddress.enabled && (
@@ -1298,13 +1388,31 @@ function CreateGameWizard() {
                       coinbaseVerification: { enabled: !form.sybilOptions.coinbaseVerification.enabled }
                     }
                   })}
-                  className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${
-                    form.sybilOptions.coinbaseVerification.enabled ? 'bg-blue-500' : 'bg-gray-700'
-                  }`}
+                  style={{
+                    width: 48,
+                    height: 28,
+                    borderRadius: 14,
+                    backgroundColor: form.sybilOptions.coinbaseVerification.enabled ? '#3b82f6' : '#374151',
+                    position: 'relative',
+                    transition: 'background-color 200ms ease-in-out',
+                    border: 'none',
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
                 >
-                  <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ease-in-out ${
-                    form.sybilOptions.coinbaseVerification.enabled ? 'translate-x-5' : 'translate-x-0'
-                  }`} />
+                  <span
+                    style={{
+                      display: 'block',
+                      width: 22,
+                      height: 22,
+                      borderRadius: '50%',
+                      backgroundColor: 'white',
+                      position: 'absolute',
+                      top: 3,
+                      left: form.sybilOptions.coinbaseVerification.enabled ? 23 : 3,
+                      transition: 'left 200ms ease-in-out',
+                    }}
+                  />
                 </button>
               </div>
             </div>
