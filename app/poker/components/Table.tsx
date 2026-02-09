@@ -115,31 +115,13 @@ export default function Table({
     return () => window.removeEventListener('resize', update);
   }, []);
 
-  // Card dimensions for placeholders (responsive)
+  // Card dimensions for desktop placeholders
   const cardDimensions = {
     sm: { width: 43, height: 60 },
     md: { width: 54, height: 76 },
     lg: { width: 66, height: 92 },
     xl: { width: 80, height: 112 },
   };
-
-  // Mobile scaling wrapper - fixed 360x500 canvas that scales to fit parent
-  const DESIGN_W = 360;
-  const DESIGN_H = 500;
-  const canvasRef = useRef<HTMLDivElement>(null);
-  const [mobileScale, setMobileScale] = useState(1);
-
-  useEffect(() => {
-    if (!isMobile) return;
-    const updateScale = () => {
-      if (!canvasRef.current?.parentElement) return;
-      const p = canvasRef.current.parentElement;
-      setMobileScale(Math.min(p.clientWidth / DESIGN_W, p.clientHeight / DESIGN_H));
-    };
-    updateScale();
-    window.addEventListener('resize', updateScale);
-    return () => window.removeEventListener('resize', updateScale);
-  }, [isMobile]);
 
   // Shared: seats rendering
   const seatsJSX = [0, 1, 2, 3, 4, 5].map((seatIndex) => {
@@ -164,79 +146,119 @@ export default function Table({
 
   return (
     <div className="relative w-full h-full min-h-0 overflow-visible">
-      {/* ===== Scaled canvas (mobile) / full container (desktop) ===== */}
-      <div
-        ref={isMobile ? canvasRef : undefined}
-        style={isMobile ? {
-          width: DESIGN_W,
-          height: DESIGN_H,
-          position: 'relative',
-          transform: `scale(${mobileScale})`,
-          transformOrigin: 'top center',
-          margin: '0 auto',
-        } : {
-          position: 'relative',
-          width: '100%',
-          height: '100%',
-        }}
-      >
-        {/* Table felt */}
+      {/* Container: on mobile it IS the 360x500 canvas; on desktop it fills parent */}
+      <div style={isMobile ? {
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+      } : {
+        position: 'relative',
+        width: '100%',
+        height: '100%',
+      }}>
+
+        {/* Table felt — ref: left:20, top:80, 320x190 */}
         <div
           className="absolute"
           style={isMobile
-            ? { left: 30, top: 80, width: 300, height: 180 }
+            ? { left: 20, top: 80, width: 320, height: 190 }
             : { top: 24, left: 24, right: 24, bottom: 24 }
           }
         >
           <div
-            className={`relative w-full h-full rounded-[50%] bg-gradient-to-b from-emerald-700 via-emerald-800 to-emerald-900 shadow-[0_0_60px_rgba(16,185,129,0.15)] border-amber-900/70 ${isMobile ? 'border-[6px]' : 'border-[10px]'}`}
+            className="relative w-full h-full rounded-[50%] shadow-[0_0_60px_rgba(16,185,129,0.15)]"
+            style={isMobile ? {
+              background: 'radial-gradient(ellipse at 50% 40%, #1a6b3c, #0d4f2b 60%, #0a3d22)',
+              border: '6px solid #8B6914',
+              borderRadius: '50%',
+              boxShadow: '0 0 0 3px #5a4510, 0 8px 32px rgba(0,0,0,0.5), inset 0 2px 20px rgba(0,0,0,0.3)',
+            } : undefined}
           >
-            <div className="absolute -inset-[1px] rounded-[50%] border-2 border-amber-700/30" />
-            <div className="absolute inset-3 rounded-[50%] border-2 border-emerald-600/40" />
-            <div className="absolute inset-0 rounded-[50%] opacity-[0.07] bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.1)_0%,transparent_60%)]" />
+            {!isMobile && (
+              <>
+                <div className="absolute inset-0 rounded-[50%] bg-gradient-to-b from-emerald-700 via-emerald-800 to-emerald-900 border-[10px] border-amber-900/70" />
+                <div className="absolute -inset-[1px] rounded-[50%] border-2 border-amber-700/30" />
+                <div className="absolute inset-3 rounded-[50%] border-2 border-emerald-600/40" />
+                <div className="absolute inset-0 rounded-[50%] opacity-[0.07] bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.1)_0%,transparent_60%)]" />
+              </>
+            )}
           </div>
         </div>
 
-        {/* Blinds & Hand info */}
+        {/* Blinds & Hand info — ref: top:95, centered */}
         <div
           className={`absolute z-20 ${isMobile ? '' : 'top-1 left-1/2 -translate-x-1/2'}`}
-          style={isMobile ? { top: 88, left: 180, transform: 'translateX(-50%)' } : undefined}
+          style={isMobile ? { top: 95, left: '50%', transform: 'translateX(-50%)' } : undefined}
         >
-          <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-1.5 sm:py-2 bg-gray-900/90 backdrop-blur-sm rounded-full text-xs border border-gray-700/40">
-            <div className="flex items-center gap-1">
-              <span className="text-gray-500 uppercase tracking-wider text-[9px] sm:text-[10px]">Blinds</span>
-              <span className="text-white font-bold text-[11px] sm:text-xs">{blindLevel.smallBlind}/{blindLevel.bigBlind}</span>
-            </div>
-            <div className="w-px h-3 bg-gray-700" />
-            <div className="flex items-center gap-1">
-              <span className="text-gray-500 uppercase tracking-wider text-[9px] sm:text-[10px]">Hand</span>
-              <span className="text-white font-bold text-[11px] sm:text-xs">#{gameState.handNumber}</span>
-            </div>
+          <div style={isMobile ? {
+            background: 'rgba(0,0,0,0.6)',
+            padding: '3px 12px',
+            borderRadius: 10,
+            fontSize: 11,
+            color: '#d1d5db',
+            whiteSpace: 'nowrap',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+          } : undefined}
+            className={isMobile ? '' : 'flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-1.5 sm:py-2 bg-gray-900/90 backdrop-blur-sm rounded-full text-xs border border-gray-700/40'}
+          >
+            {isMobile ? (
+              <>
+                <span style={{ color: '#d1d5db' }}>BLINDS</span>
+                <span style={{ color: '#fff', fontWeight: 700 }}>{blindLevel.smallBlind}/{blindLevel.bigBlind}</span>
+                <span style={{ color: '#6b7280' }}>|</span>
+                <span style={{ color: '#d1d5db' }}>HAND</span>
+                <span style={{ color: '#fff', fontWeight: 700 }}>#{gameState.handNumber}</span>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-1">
+                  <span className="text-gray-500 uppercase tracking-wider text-[9px] sm:text-[10px]">Blinds</span>
+                  <span className="text-white font-bold text-[11px] sm:text-xs">{blindLevel.smallBlind}/{blindLevel.bigBlind}</span>
+                </div>
+                <div className="w-px h-3 bg-gray-700" />
+                <div className="flex items-center gap-1">
+                  <span className="text-gray-500 uppercase tracking-wider text-[9px] sm:text-[10px]">Hand</span>
+                  <span className="text-white font-bold text-[11px] sm:text-xs">#{gameState.handNumber}</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
         {/* Player Seats */}
         {seatsJSX}
 
-        {/* ===== Mobile: Pot (above cards, inside oval) ===== */}
+        {/* ===== Mobile: Pot — ref: top:138, chip 14px + white amount ===== */}
         {isMobile && pot > 0 && (
-          <div style={{ position: 'absolute', top: 145, left: 180, transform: 'translateX(-50%)', zIndex: 10 }}>
+          <div style={{
+            position: 'absolute', top: 138, left: '50%',
+            transform: 'translateX(-50%)', zIndex: 5,
+          }}>
             <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 6,
-              padding: '4px 12px', background: 'rgba(17,24,39,0.85)',
-              backdropFilter: 'blur(4px)', borderRadius: 20,
-              border: '1px solid rgba(55,65,81,0.3)',
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              background: 'rgba(0,0,0,0.7)',
+              padding: '3px 10px', borderRadius: 12,
             }}>
-              <div style={{ width: 12, height: 12, borderRadius: '50%', background: 'linear-gradient(135deg, #facc15, #d97706)', boxShadow: '0 1px 3px rgba(234,179,8,0.3)' }} />
-              <span style={{ color: '#facc15', fontWeight: 700, fontSize: 14 }}>{pot.toLocaleString()}</span>
+              <div style={{
+                width: 14, height: 14, borderRadius: '50%',
+                background: '#f59e0b', border: '2px solid #d97706',
+              }} />
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#fff' }}>
+                {pot.toLocaleString()}
+              </span>
             </div>
           </div>
         )}
 
-        {/* ===== Mobile: Community Cards (inside oval) ===== */}
+        {/* ===== Mobile: Community Cards — ref: top:165, gap:5 ===== */}
         {isMobile && (
-          <div style={{ position: 'absolute', top: 170, left: 180, transform: 'translateX(-50%)', zIndex: 10 }}>
-            <div style={{ display: 'flex', gap: 3, justifyContent: 'center' }}>
+          <div style={{
+            position: 'absolute', top: 165, left: '50%',
+            transform: 'translateX(-50%)', zIndex: 5,
+          }}>
+            <div style={{ display: 'flex', gap: 5, justifyContent: 'center' }}>
               {communityCards.map((card, i) => (
                 <Card
                   key={`${gameState.handNumber}-${i}`}
@@ -249,14 +271,17 @@ export default function Table({
               {phase !== 'waiting' && communityCards.length < 5 && Array.from({ length: 5 - communityCards.length }).map((_, i) => (
                 <div
                   key={`empty-${i}`}
-                  style={{ width: 43, height: 60, borderRadius: 6, border: '2px dashed rgba(16,185,129,0.2)' }}
+                  style={{
+                    width: 42, height: 58, borderRadius: 4,
+                    background: '#1e293b', border: '1.5px solid #475569',
+                  }}
                 />
               ))}
             </div>
           </div>
         )}
 
-        {/* ===== Desktop: Community Cards + Pot (combined) ===== */}
+        {/* ===== Desktop: Community Cards + Pot (unchanged) ===== */}
         {!isMobile && (
           <div className="absolute top-[42%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
             <div className="flex gap-2 justify-center mb-3">
@@ -288,11 +313,11 @@ export default function Table({
           </div>
         )}
 
-        {/* Waiting for players overlay */}
+        {/* Waiting for players overlay — ref: centered in oval area */}
         {phase === 'waiting' && (
           <div
             className={`absolute z-30 ${isMobile ? '' : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'}`}
-            style={isMobile ? { top: 170, left: 180, transform: 'translate(-50%, -50%)' } : undefined}
+            style={isMobile ? { top: 175, left: 180, transform: 'translate(-50%, -50%)' } : undefined}
           >
             <div className="bg-gray-900/95 backdrop-blur-lg px-4 sm:px-8 py-4 sm:py-6 rounded-xl sm:rounded-2xl text-center shadow-xl border border-gray-700/50 min-w-[180px] sm:min-w-[240px]">
               <div className="text-white font-bold text-base sm:text-lg mb-1">{players.length}/6 Players</div>
@@ -316,7 +341,7 @@ export default function Table({
         {phase === 'showdown' && showWinnerBanner && winners && winners.length > 0 && (
           <div
             className={`absolute z-30 pointer-events-none ${isMobile ? '' : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'}`}
-            style={isMobile ? { top: 170, left: 180, transform: 'translate(-50%, -50%)' } : undefined}
+            style={isMobile ? { top: 175, left: 180, transform: 'translate(-50%, -50%)' } : undefined}
           >
             <div className="bg-gray-900/90 backdrop-blur-lg px-4 sm:px-8 py-3 sm:py-5 rounded-xl sm:rounded-2xl text-center shadow-2xl border border-yellow-500/40 min-w-[160px] sm:min-w-[260px]">
               {winners.map((winner, i) => {
@@ -339,7 +364,7 @@ export default function Table({
         {phase === 'finished' && (
           <div
             className={`absolute z-30 ${isMobile ? '' : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'}`}
-            style={isMobile ? { top: 170, left: 180, transform: 'translate(-50%, -50%)' } : undefined}
+            style={isMobile ? { top: 175, left: 180, transform: 'translate(-50%, -50%)' } : undefined}
           >
             <div className="bg-gray-900/95 backdrop-blur-lg px-4 sm:px-8 py-4 sm:py-6 rounded-xl sm:rounded-2xl text-center shadow-xl border border-yellow-500/30 min-w-[160px] sm:min-w-[260px]">
               <div className="text-yellow-400 font-bold text-base sm:text-xl mb-2 sm:mb-3">Game Over</div>
@@ -363,7 +388,7 @@ export default function Table({
         )}
       </div>
 
-      {/* Action Bar - OUTSIDE scaling wrapper (uses fixed positioning) */}
+      {/* Action Bar — OUTSIDE table container (uses fixed positioning) */}
       {showActionBar && (
         <ActionBar
           validActions={validActions}

@@ -25,15 +25,15 @@ const SEAT_POSITIONS_DESKTOP = [
   { top: '68%', left: '88%' },   // 5 - Bottom right
 ];
 
-// Mobile positions - PIXEL values for 360x500 scaled canvas
-// Designed so that seat center + all children (max 80px wide) stay 20px from edges
+// Mobile positions — pixel values for 360x500 canvas
+// Matches reference HTML exactly. All seats use transform: translate(-50%, -50%)
 const SEAT_POSITIONS_MOBILE = [
-  { top: 430, left: 180 },  // 0 - Hero (bottom center)
-  { top: 310, left: 50 },   // 1 - Bottom left
-  { top: 130, left: 50 },   // 2 - Top left
-  { top: 60, left: 180 },   // 3 - Top center
-  { top: 130, left: 310 },  // 4 - Top right
-  { top: 310, left: 310 },  // 5 - Bottom right
+  { top: 440, left: 180 },  // 0 - Hero (bottom center) — ref seat-3
+  { top: 270, left: 45 },   // 1 - Bottom left          — ref seat-4
+  { top: 105, left: 45 },   // 2 - Top left              — ref seat-5
+  { top: 45, left: 180 },   // 3 - Top center            — ref seat-0
+  { top: 105, left: 315 },  // 4 - Top right             — ref seat-1
+  { top: 270, left: 315 },  // 5 - Bottom right          — ref seat-2
 ];
 
 export default function PlayerSeat({
@@ -94,12 +94,10 @@ export default function PlayerSeat({
   const isCritical = timeLeft <= 5;
 
   // ========== MOBILE RENDER ==========
-  // Compact column layout: badge → avatar → name → chips → cards
-  // Max ~80px wide, all inline styles, no Tailwind responsive classes
   if (isMobile) {
     const mPos = SEAT_POSITIONS_MOBILE[position];
 
-    // Empty seat (mobile)
+    // Empty seat (mobile) — ref: dashed border, transparent bg, + sign
     if (!player) {
       return (
         <div style={{
@@ -111,10 +109,10 @@ export default function PlayerSeat({
               onClick={onSeatClick}
               style={{
                 width: 36, height: 36, borderRadius: '50%',
-                background: 'rgba(31,41,55,0.3)',
-                border: '2px dashed rgba(75,85,99,0.4)',
+                background: 'transparent',
+                border: '2px dashed #4b5563',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', padding: 0, color: '#6b7280', fontSize: 14,
+                cursor: 'pointer', padding: 0, color: '#6b7280', fontSize: 18,
               }}
             >
               +
@@ -122,15 +120,15 @@ export default function PlayerSeat({
           ) : (
             <div style={{
               width: 36, height: 36, borderRadius: '50%',
-              background: 'rgba(31,41,55,0.2)',
-              border: '2px dashed rgba(55,65,81,0.2)',
+              background: 'transparent',
+              border: '2px dashed #4b5563',
             }} />
           )}
         </div>
       );
     }
 
-    // Occupied seat (mobile)
+    // Occupied seat (mobile) — column: badge → avatar → name → chips → cards → bet
     return (
       <div style={{
         position: 'absolute', left: mPos.left, top: mPos.top,
@@ -149,29 +147,60 @@ export default function PlayerSeat({
             }} />
           )}
 
-          {/* Badges ABOVE avatar */}
-          <div style={{ display: 'flex', gap: 2, marginBottom: 1, minHeight: 14, alignItems: 'center' }}>
+          {/* Hero cards — positioned ABOVE avatar (ref: top:-54px absolute) */}
+          {isYou && !player.folded && (
+            <div style={{
+              position: 'absolute',
+              top: -54,
+              left: '50%',
+              transform: 'translateX(-50%)',
+              display: 'flex',
+              gap: 5,
+              zIndex: 20,
+            }}>
+              {player.holeCards ? (
+                <>
+                  <Card
+                    key={`${handNumber}-0`}
+                    card={player.holeCards[0]}
+                    size="sm"
+                    animate={animateCards ? 'deal' : 'none'}
+                    delay={animateCards ? position * 50 : 0}
+                  />
+                  <Card
+                    key={`${handNumber}-1`}
+                    card={player.holeCards[1]}
+                    size="sm"
+                    animate={animateCards ? 'deal' : 'none'}
+                    delay={animateCards ? position * 50 + 25 : 0}
+                  />
+                </>
+              ) : null}
+            </div>
+          )}
+
+          {/* Badge — ref: 9px, padding 1px 5px, border-radius 3px, margin-bottom 2px */}
+          <div style={{ display: 'flex', gap: 2, marginBottom: 2, minHeight: 14, alignItems: 'center' }}>
             {player.isDealer && (
               <span style={{
                 width: 16, height: 16, borderRadius: '50%',
-                background: 'white', color: '#111827', fontSize: 8,
-                fontWeight: 900, display: 'flex', alignItems: 'center',
+                background: 'white', color: '#000', fontSize: 9,
+                fontWeight: 700, display: 'flex', alignItems: 'center',
                 justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
               }}>D</span>
             )}
             {(player.isSmallBlind || player.isBigBlind) && (
               <span style={{
-                padding: '1px 4px', borderRadius: 3, fontSize: 8,
-                fontWeight: 700, color: 'white',
+                padding: '1px 5px', borderRadius: 3, fontSize: 9,
+                fontWeight: 700, color: '#fff',
                 background: player.isBigBlind ? '#ef4444' : '#3b82f6',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.3)',
               }}>
                 {player.isBigBlind ? 'BB' : 'SB'}
               </span>
             )}
           </div>
 
-          {/* Timer ring + Avatar */}
+          {/* Timer ring + Avatar (ref: 36x36) */}
           <div style={{ position: 'relative', width: 36, height: 36 }}>
             {isActive && (
               <svg style={{ position: 'absolute', inset: -4, width: 44, height: 44 }} viewBox="0 0 100 100">
@@ -187,82 +216,75 @@ export default function PlayerSeat({
             <div style={{
               width: 36, height: 36, borderRadius: '50%',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 700, fontSize: 13, color: 'white',
-              background: isYou
-                ? 'linear-gradient(135deg, #a855f7, #ec4899)'
-                : 'linear-gradient(135deg, #4b5563, #1f2937)',
+              fontWeight: 700, fontSize: 16,
+              background: isYou ? '#7c3aed' : '#374151',
+              color: isYou ? '#fff' : '#9ca3af',
+              border: isYou
+                ? '2px solid #8b5cf6'
+                : isActive ? '2px solid #22c55e'
+                : player.allIn ? '2px solid #ef4444'
+                : '2px solid #22c55e',
               boxShadow: isActive
                 ? '0 0 12px rgba(52,211,153,0.4)'
-                : player.allIn ? '0 0 12px rgba(239,68,68,0.5)' : '0 2px 8px rgba(0,0,0,0.3)',
-              outline: isYou
-                ? '2px solid rgba(168,85,247,0.7)'
-                : isActive ? '2px solid #34d399'
-                : player.allIn ? '2px solid #ef4444' : 'none',
+                : player.allIn ? '0 0 12px rgba(239,68,68,0.5)' : 'none',
             }}>
               {player.name.charAt(0).toUpperCase()}
             </div>
           </div>
 
-          {/* Name + Chips */}
-          <div style={{ marginTop: 1, textAlign: 'center', maxWidth: 70 }}>
-            <div style={{
-              fontSize: 9, fontWeight: 600, color: 'white',
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            }}>
-              {player.name.slice(0, 6)}
-              {isYou && <span style={{ color: '#a78bfa', fontSize: 7 }}> (You)</span>}
-            </div>
-            <div style={{ fontSize: 9, fontWeight: 700, color: '#34d399', fontFamily: 'monospace' }}>
-              {player.chips.toLocaleString()}
-            </div>
-          </div>
+          {/* Name — ref: 10px, max-width 60px, color #d1d5db */}
+          <span style={{
+            fontSize: 10, color: '#d1d5db', marginTop: 2,
+            maxWidth: 60, overflow: 'hidden', textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap', textAlign: 'center', display: 'block',
+          }}>
+            {player.name}
+          </span>
 
-          {/* Bet amount */}
-          {player.bet > 0 && (
-            <div style={{
-              marginTop: 1, padding: '1px 6px',
-              background: '#eab308', color: '#111827',
-              fontWeight: 700, borderRadius: 10, fontSize: 9,
-              boxShadow: '0 1px 4px rgba(234,179,8,0.3)',
-            }}>
-              {player.bet.toLocaleString()}
+          {/* Chips — ref: 10px, color #4ade80, font-weight 600 */}
+          <span style={{ fontSize: 10, color: '#4ade80', fontWeight: 600 }}>
+            {player.chips.toLocaleString()}
+          </span>
+
+          {/* Opponent hole cards — ref: gap 2px, below chips */}
+          {!isYou && !player.folded && (
+            <div style={{ display: 'flex', gap: 2, marginTop: 2 }}>
+              {player.holeCards ? (
+                <>
+                  <Card
+                    key={`${handNumber}-0`}
+                    card={player.holeCards[0]}
+                    size="xs"
+                    animate={animateCards ? 'deal' : 'none'}
+                    delay={animateCards ? position * 50 : 0}
+                  />
+                  <Card
+                    key={`${handNumber}-1`}
+                    card={player.holeCards[1]}
+                    size="xs"
+                    animate={animateCards ? 'deal' : 'none'}
+                    delay={animateCards ? position * 50 + 25 : 0}
+                  />
+                </>
+              ) : (
+                <>
+                  <Card card={null} faceDown size="xs" />
+                  <Card card={null} faceDown size="xs" />
+                </>
+              )}
             </div>
           )}
 
-          {/* Hole cards - overlapping to save width */}
-          {!player.folded && (
-            <div style={{ marginTop: 3, display: 'flex', justifyContent: 'center' }}>
-              {player.holeCards ? (
-                <div style={{ display: 'flex' }}>
-                  <div style={{ position: 'relative', zIndex: 1 }}>
-                    <Card
-                      key={`${handNumber}-0`}
-                      card={player.holeCards[0]}
-                      size={isYou ? 'sm' : 'xs'}
-                      animate={animateCards ? 'deal' : 'none'}
-                      delay={animateCards ? position * 50 : 0}
-                    />
-                  </div>
-                  <div style={{ marginLeft: -10, position: 'relative', zIndex: 2 }}>
-                    <Card
-                      key={`${handNumber}-1`}
-                      card={player.holeCards[1]}
-                      size={isYou ? 'sm' : 'xs'}
-                      animate={animateCards ? 'deal' : 'none'}
-                      delay={animateCards ? position * 50 + 25 : 0}
-                    />
-                  </div>
-                </div>
-              ) : (
-                <div style={{ display: 'flex' }}>
-                  <div style={{ position: 'relative', zIndex: 1 }}>
-                    <Card card={null} faceDown size="xs" />
-                  </div>
-                  <div style={{ marginLeft: -10, position: 'relative', zIndex: 2 }}>
-                    <Card card={null} faceDown size="xs" />
-                  </div>
-                </div>
-              )}
+          {/* Bet — ref: chip icon 12px + amount text */}
+          {player.bet > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginTop: 2 }}>
+              <div style={{
+                width: 12, height: 12, borderRadius: '50%',
+                background: '#f59e0b', border: '1.5px solid #d97706',
+              }} />
+              <span style={{ fontSize: 10, fontWeight: 600, color: '#fbbf24' }}>
+                {player.bet.toLocaleString()}
+              </span>
             </div>
           )}
 
@@ -309,7 +331,7 @@ export default function PlayerSeat({
     );
   }
 
-  // ========== DESKTOP RENDER ==========
+  // ========== DESKTOP RENDER (unchanged) ==========
   const pos = SEAT_POSITIONS_DESKTOP[position];
 
   // Empty seat
