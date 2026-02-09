@@ -315,7 +315,7 @@ export default function PokerTable({ params }: PageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-white">
+    <div className="min-h-screen bg-[#0d1117] text-white overflow-x-hidden">
       {/* Header */}
       <div className="fixed top-0 left-0 right-0 z-40 bg-gray-900/80 backdrop-blur-lg border-b border-gray-800/50">
         <div className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3">
@@ -372,8 +372,8 @@ export default function PokerTable({ params }: PageProps) {
       )}
 
       {/* Table Container */}
-      <div className="pt-12 sm:pt-16 pb-4 sm:pb-32 px-1 sm:px-2 min-h-screen flex items-start sm:items-center justify-center">
-        <div className="w-full h-[calc(100vh-48px-16px)] sm:h-auto sm:max-w-2xl sm:aspect-[4/3]">
+      <div className="pt-12 sm:pt-16 pb-4 sm:pb-32 px-2 sm:px-4 min-h-screen flex items-start sm:items-center justify-center">
+        <div className="w-full max-w-[400px] sm:max-w-2xl h-[calc(100vh-48px-16px)] sm:h-auto sm:aspect-[4/3]">
           <Table
             gameState={gameState}
             onAction={handleAction}
@@ -385,9 +385,9 @@ export default function PokerTable({ params }: PageProps) {
       </div>
 
       {/* Status Footer */}
-      <div className="fixed bottom-20 left-4 text-[10px] text-gray-600 z-30">
-        <div>Phase: {gameState.phase}</div>
-        <div>Players: {gameState.players.length}/6</div>
+      <div className="fixed bottom-20 left-2 sm:left-4 text-[10px] text-gray-600 z-30 max-w-[120px]">
+        <div className="truncate">Phase: {gameState.phase}</div>
+        <div className="truncate">Players: {gameState.players.length}/6</div>
       </div>
 
       {/* Sybil Error Modal */}

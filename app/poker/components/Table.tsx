@@ -130,10 +130,10 @@ export default function Table({
   };
 
   return (
-    <div className="relative w-full h-full min-h-0">
+    <div className="relative w-full h-full min-h-0 overflow-hidden">
       {/* Table felt */}
-      <div className="absolute inset-2 sm:inset-6">
-        <div className="relative w-full h-full rounded-[50%] bg-gradient-to-b from-emerald-700 via-emerald-800 to-emerald-900 shadow-[0_0_60px_rgba(16,185,129,0.15)] border-[10px] border-amber-900/70">
+      <div className="absolute inset-3 sm:inset-6">
+        <div className="relative w-full h-full rounded-[50%] bg-gradient-to-b from-emerald-700 via-emerald-800 to-emerald-900 shadow-[0_0_60px_rgba(16,185,129,0.15)] border-[6px] sm:border-[10px] border-amber-900/70">
           <div className="absolute -inset-[1px] rounded-[50%] border-2 border-amber-700/30" />
           <div className="absolute inset-3 rounded-[50%] border-2 border-emerald-600/40" />
           <div className="absolute inset-0 rounded-[50%] opacity-[0.07] bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.1)_0%,transparent_60%)]" />

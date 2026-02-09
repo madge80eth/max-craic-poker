@@ -26,14 +26,14 @@ const SEAT_POSITIONS_DESKTOP = [
   { top: '68%', left: '88%' },   // 5 - Bottom right
 ];
 
-// Mobile positions - tighter to prevent overflow on 400px viewport
+// Mobile positions - pulled inward to fit 400px viewport with 8px padding each side
 const SEAT_POSITIONS_MOBILE = [
   { top: '80%', left: '50%' },   // 0 - Bottom center (hero)
-  { top: '65%', left: '8%' },    // 1 - Bottom left
-  { top: '25%', left: '8%' },    // 2 - Top left
+  { top: '65%', left: '16%' },   // 1 - Bottom left
+  { top: '25%', left: '16%' },   // 2 - Top left
   { top: '10%', left: '50%' },   // 3 - Top center
-  { top: '25%', left: '92%' },   // 4 - Top right
-  { top: '65%', left: '92%' },   // 5 - Bottom right
+  { top: '25%', left: '84%' },   // 4 - Top right
+  { top: '65%', left: '84%' },   // 5 - Bottom right
 ];
 
 export default function PlayerSeat({
