@@ -372,7 +372,7 @@ export default function PokerTable({ params }: PageProps) {
       )}
 
       {/* Table Container */}
-      <div className="pt-12 sm:pt-16 pb-4 sm:pb-32 px-2 sm:px-4 min-h-screen flex items-start sm:items-center justify-center">
+      <div className="pt-12 sm:pt-16 pb-4 sm:pb-32 px-4 min-h-screen flex items-start sm:items-center justify-center">
         <div className="w-full max-w-[400px] sm:max-w-2xl h-[calc(100vh-48px-16px)] sm:h-auto sm:aspect-[4/3]">
           <Table
             gameState={gameState}
