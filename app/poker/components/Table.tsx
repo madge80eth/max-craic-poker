@@ -101,24 +101,22 @@ export default function Table({
   const showActionBar = yourSeatIndex !== null && yourPlayer && !yourPlayer.folded && !yourPlayer.allIn &&
     phase !== 'waiting' && phase !== 'showdown' && phase !== 'finished';
 
-  // Responsive card size based on viewport
+  // Responsive: detect mobile viewport
+  const [isMobile, setIsMobile] = useState(false);
   const [cardSize, setCardSize] = useState<'sm' | 'md' | 'lg' | 'xl'>('xl');
 
   useEffect(() => {
-    const updateCardSize = () => {
-      if (window.innerWidth < 420) {
-        setCardSize('sm'); // 60px height for mini app (5 cards = 215px + gaps)
-      } else if (window.innerWidth < 540) {
-        setCardSize('md'); // 76px height for small screens
-      } else if (window.innerWidth < 768) {
-        setCardSize('lg'); // 92px height for tablets
-      } else {
-        setCardSize('xl'); // 112px height for desktop
-      }
+    const update = () => {
+      const w = window.innerWidth;
+      setIsMobile(w < 500);
+      if (w < 420) setCardSize('sm');
+      else if (w < 540) setCardSize('md');
+      else if (w < 768) setCardSize('lg');
+      else setCardSize('xl');
     };
-    updateCardSize();
-    window.addEventListener('resize', updateCardSize);
-    return () => window.removeEventListener('resize', updateCardSize);
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
   }, []);
 
   // Card dimensions for placeholders (responsive)
@@ -131,17 +129,23 @@ export default function Table({
 
   return (
     <div className="relative w-full h-full min-h-0 overflow-visible">
-      {/* Table felt */}
-      <div className="absolute inset-3 sm:inset-6">
-        <div className="relative w-full h-full rounded-[50%] bg-gradient-to-b from-emerald-700 via-emerald-800 to-emerald-900 shadow-[0_0_60px_rgba(16,185,129,0.15)] border-[6px] sm:border-[10px] border-amber-900/70">
+      {/* Table felt - mobile: squashed 2:1 oval in upper portion; desktop: fills container */}
+      <div
+        className="absolute"
+        style={isMobile ? { left: 20, right: 20, top: '14%' } : { top: 24, left: 24, right: 24, bottom: 24 }}
+      >
+        <div
+          className={`relative w-full rounded-[50%] bg-gradient-to-b from-emerald-700 via-emerald-800 to-emerald-900 shadow-[0_0_60px_rgba(16,185,129,0.15)] border-amber-900/70 ${isMobile ? 'border-[6px]' : 'border-[10px]'}`}
+          style={isMobile ? { aspectRatio: '2/1' } : { height: '100%' }}
+        >
           <div className="absolute -inset-[1px] rounded-[50%] border-2 border-amber-700/30" />
           <div className="absolute inset-3 rounded-[50%] border-2 border-emerald-600/40" />
           <div className="absolute inset-0 rounded-[50%] opacity-[0.07] bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.1)_0%,transparent_60%)]" />
         </div>
       </div>
 
-      {/* Header - Blinds & Hand info */}
-      <div className="absolute top-1 left-1/2 -translate-x-1/2 z-20">
+      {/* Header - Blinds & Hand info - sits at top of oval on mobile */}
+      <div className={`absolute ${isMobile ? 'top-[14%]' : 'top-1'} left-1/2 -translate-x-1/2 z-20`}>
         <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-1.5 sm:py-2 bg-gray-900/90 backdrop-blur-sm rounded-full text-xs border border-gray-700/40">
           <div className="flex items-center gap-1">
             <span className="text-gray-500 uppercase tracking-wider text-[9px] sm:text-[10px]">Blinds</span>
@@ -176,8 +180,8 @@ export default function Table({
         );
       })}
 
-      {/* Center area - Community cards & pot */}
-      <div className="absolute top-[42%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+      {/* Center area - Community cards & pot - centered in oval */}
+      <div className={`absolute ${isMobile ? 'top-[29%]' : 'top-[42%]'} left-1/2 -translate-x-1/2 -translate-y-1/2 z-10`}>
         {/* Community Cards */}
         <div className="flex gap-1 sm:gap-2 justify-center mb-2 sm:mb-3">
           {communityCards.map((card, i) => (
@@ -211,7 +215,7 @@ export default function Table({
 
       {/* Waiting for players overlay */}
       {phase === 'waiting' && (
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
+        <div className={`absolute ${isMobile ? 'top-[29%]' : 'top-1/2'} left-1/2 -translate-x-1/2 -translate-y-1/2 z-30`}>
           <div className="bg-gray-900/95 backdrop-blur-lg px-4 sm:px-8 py-4 sm:py-6 rounded-xl sm:rounded-2xl text-center shadow-xl border border-gray-700/50 min-w-[180px] sm:min-w-[240px]">
             <div className="text-white font-bold text-base sm:text-lg mb-1">{players.length}/6 Players</div>
             <div className="text-gray-400 text-xs sm:text-sm mb-3 sm:mb-5">Waiting for players...</div>
@@ -232,7 +236,7 @@ export default function Table({
 
       {/* Winner banner - brief 3s flash during showdown */}
       {phase === 'showdown' && showWinnerBanner && winners && winners.length > 0 && (
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none">
+        <div className={`absolute ${isMobile ? 'top-[29%]' : 'top-1/2'} left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 pointer-events-none`}>
           <div className="bg-gray-900/90 backdrop-blur-lg px-4 sm:px-8 py-3 sm:py-5 rounded-xl sm:rounded-2xl text-center shadow-2xl border border-yellow-500/40 min-w-[160px] sm:min-w-[260px]">
             {winners.map((winner, i) => {
               const winnerPlayer = players.find(p => p.odentity === winner.odentity);
@@ -252,7 +256,7 @@ export default function Table({
 
       {/* Game Over overlay */}
       {phase === 'finished' && (
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
+        <div className={`absolute ${isMobile ? 'top-[29%]' : 'top-1/2'} left-1/2 -translate-x-1/2 -translate-y-1/2 z-30`}>
           <div className="bg-gray-900/95 backdrop-blur-lg px-4 sm:px-8 py-4 sm:py-6 rounded-xl sm:rounded-2xl text-center shadow-xl border border-yellow-500/30 min-w-[160px] sm:min-w-[260px]">
             <div className="text-yellow-400 font-bold text-base sm:text-xl mb-2 sm:mb-3">Game Over</div>
             {winners && winners.map((winner, i) => {

@@ -26,14 +26,16 @@ const SEAT_POSITIONS_DESKTOP = [
   { top: '68%', left: '88%' },   // 5 - Bottom right
 ];
 
-// Mobile positions - pulled well inward to fit 400px viewport with 16px padding each side
+// Mobile positions - designed for 360x540 container with 2:1 squashed oval
+// Oval at top:14%, 20px side margins, aspect-ratio 2:1
+// Hero below oval, opponents around the top arc and sides
 const SEAT_POSITIONS_MOBILE = [
-  { top: '80%', left: '50%' },   // 0 - Bottom center (hero)
-  { top: '65%', left: '22%' },   // 1 - Bottom left
-  { top: '25%', left: '22%' },   // 2 - Top left
-  { top: '10%', left: '50%' },   // 3 - Top center
-  { top: '25%', left: '78%' },   // 4 - Top right
-  { top: '65%', left: '78%' },   // 5 - Bottom right
+  { top: '78%', left: '50%' },   // 0 - Hero (below oval, bottom center)
+  { top: '42%', left: '12%' },   // 1 - Left side (at oval's lower-left)
+  { top: '14%', left: '18%' },   // 2 - Top left (at oval's upper-left arc)
+  { top: '6%', left: '50%' },    // 3 - Top center (above oval)
+  { top: '14%', left: '82%' },   // 4 - Top right (at oval's upper-right arc)
+  { top: '42%', left: '88%' },   // 5 - Right side (at oval's lower-right)
 ];
 
 export default function PlayerSeat({
@@ -178,8 +180,8 @@ export default function PlayerSeat({
           </div>
         )}
 
-        {/* Player info card */}
-        <div className={`absolute top-full left-1/2 -translate-x-1/2 ${isMobile ? 'mt-1 w-16' : 'mt-1.5 w-24'}`}>
+        {/* Player info card - compact on mobile to avoid edge clipping */}
+        <div className={`absolute top-full left-1/2 -translate-x-1/2 ${isMobile ? 'mt-0.5 w-[52px]' : 'mt-1.5 w-24'}`}>
           <div className={`bg-gray-900/90 backdrop-blur-sm rounded-lg text-center border border-gray-700/30 ${isMobile ? 'px-1 py-0.5' : 'px-2 py-1.5'}`}>
             <div className={`font-semibold text-white truncate ${isMobile ? 'text-[9px]' : 'text-[11px]'}`}>
               {player.name}
