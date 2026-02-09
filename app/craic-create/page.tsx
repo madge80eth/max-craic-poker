@@ -201,6 +201,9 @@ function CreateGameWizard() {
               maxPlayers: 6,
               startingStack: form.startingStack,
               blindSpeed: form.blindSpeed,
+              ...(scheduledStart && scheduledDate && scheduledTime ? {
+                scheduledStartTime: new Date(`${scheduledDate}T${scheduledTime}:00Z`).getTime()
+              } : {}),
             }),
           });
           console.log('🎯 [goNext] Response status:', res.status);
@@ -650,6 +653,53 @@ function CreateGameWizard() {
                 </div>
               </div>
             )}
+
+            {/* Scheduled Start */}
+            <div className={`p-4 rounded-xl border transition-all ${
+              scheduledStart ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-gray-800/30 border-gray-700/30'
+            }`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Calendar className={`w-5 h-5 ${scheduledStart ? 'text-yellow-400' : 'text-gray-400'}`} />
+                  <div>
+                    <div className="font-medium text-sm">Schedule Start</div>
+                    <div className="text-xs text-gray-500">Set a specific start time</div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setScheduledStart(!scheduledStart)}
+                  className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${
+                    scheduledStart ? 'bg-yellow-500' : 'bg-gray-700'
+                  }`}
+                >
+                  <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ease-in-out ${
+                    scheduledStart ? 'translate-x-5' : 'translate-x-0'
+                  }`} />
+                </button>
+              </div>
+              {scheduledStart && (
+                <div className="grid grid-cols-2 gap-3 mt-4">
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Date (UTC)</label>
+                    <input
+                      type="date"
+                      value={scheduledDate}
+                      onChange={(e) => setScheduledDate(e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-900/50 border border-gray-700/50 rounded-lg text-sm focus:outline-none focus:border-yellow-500/50"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Time (UTC)</label>
+                    <input
+                      type="time"
+                      value={scheduledTime}
+                      onChange={(e) => setScheduledTime(e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-900/50 border border-gray-700/50 rounded-lg text-sm focus:outline-none focus:border-yellow-500/50"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
 
             {/* Info */}
             <div className="p-4 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
