@@ -52,11 +52,20 @@ export const BLIND_PRESETS: Record<BlindSpeed, BlindLevelConfig[]> = {
 
 // Sybil protection options
 export interface SybilOptions {
+  tokenGating: {
+    enabled: boolean;
+    contractAddress?: string;
+    minAmount?: string; // Minimum token amount (human-readable, e.g. "100")
+  };
   nftGating: {
     enabled: boolean;
     contractAddress?: string;
     tokenId?: string; // For ERC-1155, optional for ERC-721
     isERC1155?: boolean;
+  };
+  whitelistAddress: {
+    enabled: boolean;
+    addresses?: string[]; // Array of allowed wallet addresses
   };
   bondMechanic: {
     enabled: boolean;
@@ -118,7 +127,9 @@ export const DEFAULT_CREATE_FORM: CreateGameFormState = {
   startingStack: 1500,
   blindSpeed: 'standard',
   sybilOptions: {
+    tokenGating: { enabled: false },
     nftGating: { enabled: false },
+    whitelistAddress: { enabled: false },
     bondMechanic: { enabled: false },
     coinbaseVerification: { enabled: false },
   },

@@ -25,6 +25,10 @@ import {
   X,
   Copy,
   ExternalLink,
+  Coins,
+  FileUp,
+  Lock,
+  ListChecks,
 } from 'lucide-react';
 import {
   CreateGameFormState,
@@ -1012,8 +1016,8 @@ function CreateGameWizard() {
 
         {/* Step: Sybil Protection */}
         {step === 'sybil' && (
-          <div className="space-y-6">
-            <div className="flex items-center gap-3 mb-6">
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
                 <Shield className="w-6 h-6 text-purple-400" />
               </div>
@@ -1023,16 +1027,82 @@ function CreateGameWizard() {
               </div>
             </div>
 
-            {/* NFT Gating */}
+            {/* 1. Token Gating */}
+            <div className={`p-4 rounded-xl border transition-all ${
+              form.sybilOptions.tokenGating.enabled
+                ? 'bg-green-500/10 border-green-500/30'
+                : 'bg-gray-800/30 border-gray-700/30'
+            }`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Coins className="w-5 h-5 text-green-400" />
+                  <div>
+                    <span className="font-semibold text-sm">Token Gating</span>
+                    <p className="text-xs text-gray-500">Require minimum token balance</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setForm({
+                    ...form,
+                    sybilOptions: {
+                      ...form.sybilOptions,
+                      tokenGating: { ...form.sybilOptions.tokenGating, enabled: !form.sybilOptions.tokenGating.enabled }
+                    }
+                  })}
+                  className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${
+                    form.sybilOptions.tokenGating.enabled ? 'bg-green-500' : 'bg-gray-700'
+                  }`}
+                >
+                  <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ease-in-out ${
+                    form.sybilOptions.tokenGating.enabled ? 'translate-x-5' : 'translate-x-0'
+                  }`} />
+                </button>
+              </div>
+              {form.sybilOptions.tokenGating.enabled && (
+                <div className="space-y-2 mt-3">
+                  <input
+                    type="text"
+                    placeholder="Minimum $ amount (e.g. 100)"
+                    value={form.sybilOptions.tokenGating.minAmount || ''}
+                    onChange={(e) => setForm({
+                      ...form,
+                      sybilOptions: {
+                        ...form.sybilOptions,
+                        tokenGating: { ...form.sybilOptions.tokenGating, minAmount: e.target.value }
+                      }
+                    })}
+                    className="w-full px-3 py-2 bg-gray-900/50 border border-gray-700/50 rounded-lg text-sm focus:outline-none focus:border-green-500/50"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Token Contract Address (0x...)"
+                    value={form.sybilOptions.tokenGating.contractAddress || ''}
+                    onChange={(e) => setForm({
+                      ...form,
+                      sybilOptions: {
+                        ...form.sybilOptions,
+                        tokenGating: { ...form.sybilOptions.tokenGating, contractAddress: e.target.value }
+                      }
+                    })}
+                    className="w-full px-3 py-2 bg-gray-900/50 border border-gray-700/50 rounded-lg text-sm font-mono focus:outline-none focus:border-green-500/50"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* 2. NFT Gating */}
             <div className={`p-4 rounded-xl border transition-all ${
               form.sybilOptions.nftGating.enabled
                 ? 'bg-purple-500/10 border-purple-500/30'
                 : 'bg-gray-800/30 border-gray-700/30'
             }`}>
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Image className="w-5 h-5 text-purple-400" />
-                  <span className="font-semibold">NFT Gating</span>
+                  <div>
+                    <span className="font-semibold text-sm">NFT Gating</span>
+                    <p className="text-xs text-gray-500">Require specific NFT ownership</p>
+                  </div>
                 </div>
                 <button
                   onClick={() => setForm({
@@ -1051,12 +1121,11 @@ function CreateGameWizard() {
                   }`} />
                 </button>
               </div>
-              <p className="text-xs text-gray-400 mb-3">Require players to hold a specific NFT</p>
               {form.sybilOptions.nftGating.enabled && (
-                <div className="space-y-2">
+                <div className="space-y-2 mt-3">
                   <input
                     type="text"
-                    placeholder="NFT Contract Address (0x...)"
+                    placeholder="NFT Contract Address(es) (0x...)"
                     value={form.sybilOptions.nftGating.contractAddress || ''}
                     onChange={(e) => setForm({
                       ...form,
@@ -1067,33 +1136,109 @@ function CreateGameWizard() {
                     })}
                     className="w-full px-3 py-2 bg-gray-900/50 border border-gray-700/50 rounded-lg text-sm font-mono focus:outline-none focus:border-purple-500/50"
                   />
-                  <input
-                    type="text"
-                    placeholder="Token ID (optional, for ERC-1155)"
-                    value={form.sybilOptions.nftGating.tokenId || ''}
-                    onChange={(e) => setForm({
-                      ...form,
-                      sybilOptions: {
-                        ...form.sybilOptions,
-                        nftGating: { ...form.sybilOptions.nftGating, tokenId: e.target.value }
-                      }
-                    })}
-                    className="w-full px-3 py-2 bg-gray-900/50 border border-gray-700/50 rounded-lg text-sm font-mono focus:outline-none focus:border-purple-500/50"
-                  />
                 </div>
               )}
             </div>
 
-            {/* Coinbase Verification */}
+            {/* 3. Whitelist Address */}
+            <div className={`p-4 rounded-xl border transition-all ${
+              form.sybilOptions.whitelistAddress.enabled
+                ? 'bg-amber-500/10 border-amber-500/30'
+                : 'bg-gray-800/30 border-gray-700/30'
+            }`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <ListChecks className="w-5 h-5 text-amber-400" />
+                  <div>
+                    <span className="font-semibold text-sm">Whitelist Address</span>
+                    <p className="text-xs text-gray-500">Upload allowed wallet addresses</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setForm({
+                    ...form,
+                    sybilOptions: {
+                      ...form.sybilOptions,
+                      whitelistAddress: { ...form.sybilOptions.whitelistAddress, enabled: !form.sybilOptions.whitelistAddress.enabled }
+                    }
+                  })}
+                  className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${
+                    form.sybilOptions.whitelistAddress.enabled ? 'bg-amber-500' : 'bg-gray-700'
+                  }`}
+                >
+                  <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ease-in-out ${
+                    form.sybilOptions.whitelistAddress.enabled ? 'translate-x-5' : 'translate-x-0'
+                  }`} />
+                </button>
+              </div>
+              {form.sybilOptions.whitelistAddress.enabled && (
+                <div className="mt-3">
+                  <label className="flex items-center justify-center gap-2 w-full py-3 bg-gray-900/50 border border-dashed border-gray-600/50 rounded-lg text-sm text-gray-400 hover:border-amber-500/50 hover:text-amber-400 transition-colors cursor-pointer">
+                    <FileUp className="w-4 h-4" />
+                    <span>{form.sybilOptions.whitelistAddress.addresses?.length
+                      ? `${form.sybilOptions.whitelistAddress.addresses.length} addresses loaded`
+                      : 'Upload CSV or Excel file'
+                    }</span>
+                    <input
+                      type="file"
+                      accept=".csv,.xlsx,.xls,.txt"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (ev) => {
+                          const text = ev.target?.result as string;
+                          const addresses = text
+                            .split(/[\n,;\r]+/)
+                            .map(a => a.trim())
+                            .filter(a => /^0x[a-fA-F0-9]{40}$/.test(a));
+                          setForm({
+                            ...form,
+                            sybilOptions: {
+                              ...form.sybilOptions,
+                              whitelistAddress: { ...form.sybilOptions.whitelistAddress, addresses }
+                            }
+                          });
+                        };
+                        reader.readAsText(file);
+                      }}
+                    />
+                  </label>
+                  {form.sybilOptions.whitelistAddress.addresses && form.sybilOptions.whitelistAddress.addresses.length > 0 && (
+                    <p className="text-xs text-amber-400 mt-2">{form.sybilOptions.whitelistAddress.addresses.length} valid Ethereum addresses found</p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* 4. Bonding - Coming Soon */}
+            <div className="p-4 rounded-xl border bg-gray-800/20 border-gray-700/20 opacity-50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Lock className="w-5 h-5 text-gray-500" />
+                  <div>
+                    <span className="font-semibold text-sm text-gray-400">Bonding</span>
+                    <p className="text-xs text-gray-600">Require refundable USDC deposit</p>
+                  </div>
+                </div>
+                <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-gray-700 text-gray-400 uppercase tracking-wider">Coming Soon</span>
+              </div>
+            </div>
+
+            {/* 5. Coinbase Verification */}
             <div className={`p-4 rounded-xl border transition-all ${
               form.sybilOptions.coinbaseVerification.enabled
                 ? 'bg-blue-500/10 border-blue-500/30'
                 : 'bg-gray-800/30 border-gray-700/30'
             }`}>
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <BadgeCheck className="w-5 h-5 text-blue-400" />
-                  <span className="font-semibold">Coinbase Verification</span>
+                  <div>
+                    <span className="font-semibold text-sm">Coinbase Verification</span>
+                    <p className="text-xs text-gray-500">Require Coinbase Verified Account (EAS)</p>
+                  </div>
                 </div>
                 <button
                   onClick={() => setForm({
@@ -1112,11 +1257,10 @@ function CreateGameWizard() {
                   }`} />
                 </button>
               </div>
-              <p className="text-xs text-gray-400">Require Coinbase Verified Account attestation (EAS on Base)</p>
             </div>
 
             {/* No protection selected */}
-            {!form.sybilOptions.nftGating.enabled && !form.sybilOptions.coinbaseVerification.enabled && (
+            {!form.sybilOptions.tokenGating.enabled && !form.sybilOptions.nftGating.enabled && !form.sybilOptions.whitelistAddress.enabled && !form.sybilOptions.coinbaseVerification.enabled && (
               <div className="p-4 bg-gray-800/20 rounded-xl border border-dashed border-gray-700/50 text-center">
                 <p className="text-gray-500 text-sm">No sybil protection selected</p>
                 <p className="text-gray-600 text-xs mt-1">Anyone with a wallet can join</p>
@@ -1175,13 +1319,19 @@ function CreateGameWizard() {
               <div className="p-4 border-b border-gray-700/30">
                 <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">Sybil Protection</div>
                 <div className="flex flex-wrap gap-2">
+                  {form.sybilOptions.tokenGating.enabled && (
+                    <span className="px-3 py-1 text-sm font-medium rounded-lg bg-green-500/20 text-green-400">Token Gate</span>
+                  )}
                   {form.sybilOptions.nftGating.enabled && (
-                    <span className="px-3 py-1 text-sm font-medium rounded-lg bg-purple-500/20 text-purple-400">NFT Required</span>
+                    <span className="px-3 py-1 text-sm font-medium rounded-lg bg-purple-500/20 text-purple-400">NFT Gate</span>
+                  )}
+                  {form.sybilOptions.whitelistAddress.enabled && (
+                    <span className="px-3 py-1 text-sm font-medium rounded-lg bg-amber-500/20 text-amber-400">Whitelist</span>
                   )}
                   {form.sybilOptions.coinbaseVerification.enabled && (
                     <span className="px-3 py-1 text-sm font-medium rounded-lg bg-blue-500/20 text-blue-400">Coinbase Verified</span>
                   )}
-                  {!form.sybilOptions.nftGating.enabled && !form.sybilOptions.coinbaseVerification.enabled && (
+                  {!form.sybilOptions.tokenGating.enabled && !form.sybilOptions.nftGating.enabled && !form.sybilOptions.whitelistAddress.enabled && !form.sybilOptions.coinbaseVerification.enabled && (
                     <span className="px-3 py-1 text-sm font-medium rounded-lg bg-gray-500/20 text-gray-400">None</span>
                   )}
                 </div>
