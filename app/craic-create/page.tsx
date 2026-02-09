@@ -975,12 +975,12 @@ function CreateGameWizard() {
                 </div>
                 <button
                   onClick={() => setScheduledStart(!scheduledStart)}
-                  className={`w-12 h-6 rounded-full transition-colors ${
+                  className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${
                     scheduledStart ? 'bg-yellow-500' : 'bg-gray-700'
                   }`}
                 >
-                  <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                    scheduledStart ? 'translate-x-6' : 'translate-x-0.5'
+                  <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ease-in-out ${
+                    scheduledStart ? 'translate-x-5' : 'translate-x-0'
                   }`} />
                 </button>
               </div>
@@ -1042,12 +1042,12 @@ function CreateGameWizard() {
                       nftGating: { ...form.sybilOptions.nftGating, enabled: !form.sybilOptions.nftGating.enabled }
                     }
                   })}
-                  className={`w-12 h-6 rounded-full transition-colors ${
+                  className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${
                     form.sybilOptions.nftGating.enabled ? 'bg-purple-500' : 'bg-gray-700'
                   }`}
                 >
-                  <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                    form.sybilOptions.nftGating.enabled ? 'translate-x-6' : 'translate-x-0.5'
+                  <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ease-in-out ${
+                    form.sybilOptions.nftGating.enabled ? 'translate-x-5' : 'translate-x-0'
                   }`} />
                 </button>
               </div>
@@ -1103,12 +1103,12 @@ function CreateGameWizard() {
                       coinbaseVerification: { enabled: !form.sybilOptions.coinbaseVerification.enabled }
                     }
                   })}
-                  className={`w-12 h-6 rounded-full transition-colors ${
+                  className={`relative w-11 h-6 rounded-full transition-colors duration-200 ${
                     form.sybilOptions.coinbaseVerification.enabled ? 'bg-blue-500' : 'bg-gray-700'
                   }`}
                 >
-                  <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform ${
-                    form.sybilOptions.coinbaseVerification.enabled ? 'translate-x-6' : 'translate-x-0.5'
+                  <div className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform duration-200 ease-in-out ${
+                    form.sybilOptions.coinbaseVerification.enabled ? 'translate-x-5' : 'translate-x-0'
                   }`} />
                 </button>
               </div>
