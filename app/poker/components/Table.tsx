@@ -71,8 +71,6 @@ export default function Table({
 
       const timeout = setTimeout(() => {
         setShowWinnerBanner(false);
-        // Only advance if we're still in showdown — avoids race condition
-        // where the hand already advanced via polling before this timer fires
         if (phaseRef.current === 'showdown') {
           onNextHandRef.current?.();
         }
@@ -80,8 +78,6 @@ export default function Table({
 
       return () => clearTimeout(timeout);
     }
-    // Do NOT include 'winners' - it gets a new reference every poll cycle,
-    // which would clear the timeout and stall the game
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, gameState.handNumber]);
 
@@ -127,172 +123,247 @@ export default function Table({
     xl: { width: 80, height: 112 },
   };
 
+  // Mobile scaling wrapper - fixed 360x500 canvas that scales to fit parent
+  const DESIGN_W = 360;
+  const DESIGN_H = 500;
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const [mobileScale, setMobileScale] = useState(1);
+
+  useEffect(() => {
+    if (!isMobile) return;
+    const updateScale = () => {
+      if (!canvasRef.current?.parentElement) return;
+      const p = canvasRef.current.parentElement;
+      setMobileScale(Math.min(p.clientWidth / DESIGN_W, p.clientHeight / DESIGN_H));
+    };
+    updateScale();
+    window.addEventListener('resize', updateScale);
+    return () => window.removeEventListener('resize', updateScale);
+  }, [isMobile]);
+
+  // Shared: seats rendering
+  const seatsJSX = [0, 1, 2, 3, 4, 5].map((seatIndex) => {
+    const player = getPlayerBySeat(seatIndex);
+    const isActive = player && gameState.activePlayerIndex !== -1 &&
+      players[gameState.activePlayerIndex]?.seatIndex === seatIndex;
+
+    return (
+      <PlayerSeat
+        key={seatIndex}
+        player={player}
+        isActive={isActive || false}
+        isYou={seatIndex === yourSeatIndex}
+        position={getVisualPosition(seatIndex)}
+        onSeatClick={phase === 'waiting' ? () => onSeatClick?.(seatIndex) : undefined}
+        lastActionTime={lastActionTime}
+        actionTimeout={config.actionTimeout}
+        handNumber={gameState.handNumber}
+      />
+    );
+  });
+
   return (
     <div className="relative w-full h-full min-h-0 overflow-visible">
-      {/* Table felt - mobile: fixed 320x200 oval; desktop: fills container */}
+      {/* ===== Scaled canvas (mobile) / full container (desktop) ===== */}
       <div
-        className="absolute"
-        style={isMobile ? { left: 20, top: 60, width: 320, height: 200 } : { top: 24, left: 24, right: 24, bottom: 24 }}
+        ref={isMobile ? canvasRef : undefined}
+        style={isMobile ? {
+          width: DESIGN_W,
+          height: DESIGN_H,
+          position: 'relative',
+          transform: `scale(${mobileScale})`,
+          transformOrigin: 'top center',
+          margin: '0 auto',
+        } : {
+          position: 'relative',
+          width: '100%',
+          height: '100%',
+        }}
       >
+        {/* Table felt */}
         <div
-          className={`relative w-full h-full rounded-[50%] bg-gradient-to-b from-emerald-700 via-emerald-800 to-emerald-900 shadow-[0_0_60px_rgba(16,185,129,0.15)] border-amber-900/70 ${isMobile ? 'border-[6px]' : 'border-[10px]'}`}
+          className="absolute"
+          style={isMobile
+            ? { left: 30, top: 80, width: 300, height: 180 }
+            : { top: 24, left: 24, right: 24, bottom: 24 }
+          }
         >
-          <div className="absolute -inset-[1px] rounded-[50%] border-2 border-amber-700/30" />
-          <div className="absolute inset-3 rounded-[50%] border-2 border-emerald-600/40" />
-          <div className="absolute inset-0 rounded-[50%] opacity-[0.07] bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.1)_0%,transparent_60%)]" />
-        </div>
-      </div>
-
-      {/* Header - Blinds & Hand info */}
-      <div
-        className={`absolute z-20 ${isMobile ? '' : 'top-1 left-1/2 -translate-x-1/2'}`}
-        style={isMobile ? { top: 68, left: 180, transform: 'translateX(-50%)' } : undefined}
-      >
-        <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-1.5 sm:py-2 bg-gray-900/90 backdrop-blur-sm rounded-full text-xs border border-gray-700/40">
-          <div className="flex items-center gap-1">
-            <span className="text-gray-500 uppercase tracking-wider text-[9px] sm:text-[10px]">Blinds</span>
-            <span className="text-white font-bold text-[11px] sm:text-xs">{blindLevel.smallBlind}/{blindLevel.bigBlind}</span>
-          </div>
-          <div className="w-px h-3 bg-gray-700" />
-          <div className="flex items-center gap-1">
-            <span className="text-gray-500 uppercase tracking-wider text-[9px] sm:text-[10px]">Hand</span>
-            <span className="text-white font-bold text-[11px] sm:text-xs">#{gameState.handNumber}</span>
+          <div
+            className={`relative w-full h-full rounded-[50%] bg-gradient-to-b from-emerald-700 via-emerald-800 to-emerald-900 shadow-[0_0_60px_rgba(16,185,129,0.15)] border-amber-900/70 ${isMobile ? 'border-[6px]' : 'border-[10px]'}`}
+          >
+            <div className="absolute -inset-[1px] rounded-[50%] border-2 border-amber-700/30" />
+            <div className="absolute inset-3 rounded-[50%] border-2 border-emerald-600/40" />
+            <div className="absolute inset-0 rounded-[50%] opacity-[0.07] bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.1)_0%,transparent_60%)]" />
           </div>
         </div>
-      </div>
 
-      {/* Player Seats */}
-      {[0, 1, 2, 3, 4, 5].map((seatIndex) => {
-        const player = getPlayerBySeat(seatIndex);
-        const isActive = player && gameState.activePlayerIndex !== -1 &&
-          players[gameState.activePlayerIndex]?.seatIndex === seatIndex;
-
-        return (
-          <PlayerSeat
-            key={seatIndex}
-            player={player}
-            isActive={isActive || false}
-            isYou={seatIndex === yourSeatIndex}
-            position={getVisualPosition(seatIndex)}
-            onSeatClick={phase === 'waiting' ? () => onSeatClick?.(seatIndex) : undefined}
-            lastActionTime={lastActionTime}
-            actionTimeout={config.actionTimeout}
-            handNumber={gameState.handNumber}
-          />
-        );
-      })}
-
-      {/* Center area - Community cards & pot - centered in oval */}
-      <div
-        className={`absolute z-10 ${isMobile ? '' : 'top-[42%] left-1/2 -translate-x-1/2 -translate-y-1/2'}`}
-        style={isMobile ? { top: 145, left: 180, transform: 'translate(-50%, -50%)' } : undefined}
-      >
-        {/* Community Cards */}
-        <div className="flex gap-1 sm:gap-2 justify-center mb-2 sm:mb-3">
-          {communityCards.map((card, i) => (
-            <Card
-              key={`${gameState.handNumber}-${i}`}
-              card={card}
-              size={cardSize}
-              animate={animatingCards.has(i) ? 'deal' : 'none'}
-              delay={animatingCards.has(i) ? (i - Math.min(...Array.from(animatingCards))) * 80 : 0}
-            />
-          ))}
-          {phase !== 'waiting' && communityCards.length < 5 && Array.from({ length: 5 - communityCards.length }).map((_, i) => (
-            <div
-              key={`empty-${i}`}
-              className="rounded-lg sm:rounded-xl border-2 border-dashed border-emerald-600/20"
-              style={cardDimensions[cardSize]}
-            />
-          ))}
+        {/* Blinds & Hand info */}
+        <div
+          className={`absolute z-20 ${isMobile ? '' : 'top-1 left-1/2 -translate-x-1/2'}`}
+          style={isMobile ? { top: 88, left: 180, transform: 'translateX(-50%)' } : undefined}
+        >
+          <div className="flex items-center gap-2 sm:gap-3 px-2 sm:px-4 py-1.5 sm:py-2 bg-gray-900/90 backdrop-blur-sm rounded-full text-xs border border-gray-700/40">
+            <div className="flex items-center gap-1">
+              <span className="text-gray-500 uppercase tracking-wider text-[9px] sm:text-[10px]">Blinds</span>
+              <span className="text-white font-bold text-[11px] sm:text-xs">{blindLevel.smallBlind}/{blindLevel.bigBlind}</span>
+            </div>
+            <div className="w-px h-3 bg-gray-700" />
+            <div className="flex items-center gap-1">
+              <span className="text-gray-500 uppercase tracking-wider text-[9px] sm:text-[10px]">Hand</span>
+              <span className="text-white font-bold text-[11px] sm:text-xs">#{gameState.handNumber}</span>
+            </div>
+          </div>
         </div>
 
-        {/* Pot */}
-        {pot > 0 && (
-          <div className="text-center">
-            <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-1.5 sm:py-2.5 bg-gray-900/85 backdrop-blur-sm rounded-full border border-gray-700/30">
-              <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-gradient-to-br from-yellow-400 to-amber-600 shadow-sm shadow-yellow-500/30" />
-              <span className="text-yellow-400 font-bold text-sm sm:text-lg">{pot.toLocaleString()}</span>
+        {/* Player Seats */}
+        {seatsJSX}
+
+        {/* ===== Mobile: Pot (above cards, inside oval) ===== */}
+        {isMobile && pot > 0 && (
+          <div style={{ position: 'absolute', top: 145, left: 180, transform: 'translateX(-50%)', zIndex: 10 }}>
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '4px 12px', background: 'rgba(17,24,39,0.85)',
+              backdropFilter: 'blur(4px)', borderRadius: 20,
+              border: '1px solid rgba(55,65,81,0.3)',
+            }}>
+              <div style={{ width: 12, height: 12, borderRadius: '50%', background: 'linear-gradient(135deg, #facc15, #d97706)', boxShadow: '0 1px 3px rgba(234,179,8,0.3)' }} />
+              <span style={{ color: '#facc15', fontWeight: 700, fontSize: 14 }}>{pot.toLocaleString()}</span>
+            </div>
+          </div>
+        )}
+
+        {/* ===== Mobile: Community Cards (inside oval) ===== */}
+        {isMobile && (
+          <div style={{ position: 'absolute', top: 170, left: 180, transform: 'translateX(-50%)', zIndex: 10 }}>
+            <div style={{ display: 'flex', gap: 3, justifyContent: 'center' }}>
+              {communityCards.map((card, i) => (
+                <Card
+                  key={`${gameState.handNumber}-${i}`}
+                  card={card}
+                  size="sm"
+                  animate={animatingCards.has(i) ? 'deal' : 'none'}
+                  delay={animatingCards.has(i) ? (i - Math.min(...Array.from(animatingCards))) * 80 : 0}
+                />
+              ))}
+              {phase !== 'waiting' && communityCards.length < 5 && Array.from({ length: 5 - communityCards.length }).map((_, i) => (
+                <div
+                  key={`empty-${i}`}
+                  style={{ width: 43, height: 60, borderRadius: 6, border: '2px dashed rgba(16,185,129,0.2)' }}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ===== Desktop: Community Cards + Pot (combined) ===== */}
+        {!isMobile && (
+          <div className="absolute top-[42%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
+            <div className="flex gap-2 justify-center mb-3">
+              {communityCards.map((card, i) => (
+                <Card
+                  key={`${gameState.handNumber}-${i}`}
+                  card={card}
+                  size={cardSize}
+                  animate={animatingCards.has(i) ? 'deal' : 'none'}
+                  delay={animatingCards.has(i) ? (i - Math.min(...Array.from(animatingCards))) * 80 : 0}
+                />
+              ))}
+              {phase !== 'waiting' && communityCards.length < 5 && Array.from({ length: 5 - communityCards.length }).map((_, i) => (
+                <div
+                  key={`empty-${i}`}
+                  className="rounded-xl border-2 border-dashed border-emerald-600/20"
+                  style={cardDimensions[cardSize]}
+                />
+              ))}
+            </div>
+            {pot > 0 && (
+              <div className="text-center">
+                <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-gray-900/85 backdrop-blur-sm rounded-full border border-gray-700/30">
+                  <div className="w-4 h-4 rounded-full bg-gradient-to-br from-yellow-400 to-amber-600 shadow-sm shadow-yellow-500/30" />
+                  <span className="text-yellow-400 font-bold text-lg">{pot.toLocaleString()}</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Waiting for players overlay */}
+        {phase === 'waiting' && (
+          <div
+            className={`absolute z-30 ${isMobile ? '' : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'}`}
+            style={isMobile ? { top: 170, left: 180, transform: 'translate(-50%, -50%)' } : undefined}
+          >
+            <div className="bg-gray-900/95 backdrop-blur-lg px-4 sm:px-8 py-4 sm:py-6 rounded-xl sm:rounded-2xl text-center shadow-xl border border-gray-700/50 min-w-[180px] sm:min-w-[240px]">
+              <div className="text-white font-bold text-base sm:text-lg mb-1">{players.length}/6 Players</div>
+              <div className="text-gray-400 text-xs sm:text-sm mb-3 sm:mb-5">Waiting for players...</div>
+              {players.length >= 2 && onStartGame && (
+                <button
+                  onClick={onStartGame}
+                  className="w-full px-4 sm:px-6 py-2.5 sm:py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg sm:rounded-xl transition-colors text-sm sm:text-base"
+                >
+                  Start Game
+                </button>
+              )}
+              {players.length < 2 && (
+                <div className="text-gray-500 text-xs sm:text-sm">Need 2+ players</div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Winner banner */}
+        {phase === 'showdown' && showWinnerBanner && winners && winners.length > 0 && (
+          <div
+            className={`absolute z-30 pointer-events-none ${isMobile ? '' : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'}`}
+            style={isMobile ? { top: 170, left: 180, transform: 'translate(-50%, -50%)' } : undefined}
+          >
+            <div className="bg-gray-900/90 backdrop-blur-lg px-4 sm:px-8 py-3 sm:py-5 rounded-xl sm:rounded-2xl text-center shadow-2xl border border-yellow-500/40 min-w-[160px] sm:min-w-[260px]">
+              {winners.map((winner, i) => {
+                const winnerPlayer = players.find(p => p.odentity === winner.odentity);
+                return (
+                  <div key={i} className="mb-1">
+                    <div className="text-yellow-400 font-bold text-base sm:text-xl">{winnerPlayer?.name || 'Unknown'} wins!</div>
+                    <div className="text-emerald-400 font-bold text-lg sm:text-2xl">+{winner.amount.toLocaleString()}</div>
+                    {winner.handName && winner.handName !== 'Uncontested' && (
+                      <div className="text-gray-300 text-xs sm:text-sm mt-1">{winner.handName}</div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Game Over overlay */}
+        {phase === 'finished' && (
+          <div
+            className={`absolute z-30 ${isMobile ? '' : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'}`}
+            style={isMobile ? { top: 170, left: 180, transform: 'translate(-50%, -50%)' } : undefined}
+          >
+            <div className="bg-gray-900/95 backdrop-blur-lg px-4 sm:px-8 py-4 sm:py-6 rounded-xl sm:rounded-2xl text-center shadow-xl border border-yellow-500/30 min-w-[160px] sm:min-w-[260px]">
+              <div className="text-yellow-400 font-bold text-base sm:text-xl mb-2 sm:mb-3">Game Over</div>
+              {winners && winners.map((winner, i) => {
+                const winnerPlayer = players.find(p => p.odentity === winner.odentity);
+                return (
+                  <div key={i} className="mb-2">
+                    <div className="text-white font-semibold text-sm sm:text-lg">{winnerPlayer?.name || 'Unknown'}</div>
+                    <div className="text-emerald-400 font-bold text-base sm:text-xl">+{winner.amount.toLocaleString()}</div>
+                  </div>
+                );
+              })}
+              <a
+                href="/poker"
+                className="mt-3 sm:mt-4 inline-block w-full px-4 sm:px-6 py-2.5 sm:py-3.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg sm:rounded-xl transition-colors text-center text-sm sm:text-base"
+              >
+                Back to Lobby
+              </a>
             </div>
           </div>
         )}
       </div>
 
-      {/* Waiting for players overlay */}
-      {phase === 'waiting' && (
-        <div
-          className={`absolute z-30 ${isMobile ? '' : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'}`}
-          style={isMobile ? { top: 160, left: 180, transform: 'translate(-50%, -50%)' } : undefined}
-        >
-          <div className="bg-gray-900/95 backdrop-blur-lg px-4 sm:px-8 py-4 sm:py-6 rounded-xl sm:rounded-2xl text-center shadow-xl border border-gray-700/50 min-w-[180px] sm:min-w-[240px]">
-            <div className="text-white font-bold text-base sm:text-lg mb-1">{players.length}/6 Players</div>
-            <div className="text-gray-400 text-xs sm:text-sm mb-3 sm:mb-5">Waiting for players...</div>
-            {players.length >= 2 && onStartGame && (
-              <button
-                onClick={onStartGame}
-                className="w-full px-4 sm:px-6 py-2.5 sm:py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg sm:rounded-xl transition-colors text-sm sm:text-base"
-              >
-                Start Game
-              </button>
-            )}
-            {players.length < 2 && (
-              <div className="text-gray-500 text-xs sm:text-sm">Need 2+ players</div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Winner banner - brief 3s flash during showdown */}
-      {phase === 'showdown' && showWinnerBanner && winners && winners.length > 0 && (
-        <div
-          className={`absolute z-30 pointer-events-none ${isMobile ? '' : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'}`}
-          style={isMobile ? { top: 160, left: 180, transform: 'translate(-50%, -50%)' } : undefined}
-        >
-          <div className="bg-gray-900/90 backdrop-blur-lg px-4 sm:px-8 py-3 sm:py-5 rounded-xl sm:rounded-2xl text-center shadow-2xl border border-yellow-500/40 min-w-[160px] sm:min-w-[260px]">
-            {winners.map((winner, i) => {
-              const winnerPlayer = players.find(p => p.odentity === winner.odentity);
-              return (
-                <div key={i} className="mb-1">
-                  <div className="text-yellow-400 font-bold text-base sm:text-xl">{winnerPlayer?.name || 'Unknown'} wins!</div>
-                  <div className="text-emerald-400 font-bold text-lg sm:text-2xl">+{winner.amount.toLocaleString()}</div>
-                  {winner.handName && winner.handName !== 'Uncontested' && (
-                    <div className="text-gray-300 text-xs sm:text-sm mt-1">{winner.handName}</div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Game Over overlay */}
-      {phase === 'finished' && (
-        <div
-          className={`absolute z-30 ${isMobile ? '' : 'top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2'}`}
-          style={isMobile ? { top: 160, left: 180, transform: 'translate(-50%, -50%)' } : undefined}
-        >
-          <div className="bg-gray-900/95 backdrop-blur-lg px-4 sm:px-8 py-4 sm:py-6 rounded-xl sm:rounded-2xl text-center shadow-xl border border-yellow-500/30 min-w-[160px] sm:min-w-[260px]">
-            <div className="text-yellow-400 font-bold text-base sm:text-xl mb-2 sm:mb-3">Game Over</div>
-            {winners && winners.map((winner, i) => {
-              const winnerPlayer = players.find(p => p.odentity === winner.odentity);
-              return (
-                <div key={i} className="mb-2">
-                  <div className="text-white font-semibold text-sm sm:text-lg">{winnerPlayer?.name || 'Unknown'}</div>
-                  <div className="text-emerald-400 font-bold text-base sm:text-xl">+{winner.amount.toLocaleString()}</div>
-                </div>
-              );
-            })}
-            <a
-              href="/poker"
-              className="mt-3 sm:mt-4 inline-block w-full px-4 sm:px-6 py-2.5 sm:py-3.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg sm:rounded-xl transition-colors text-center text-sm sm:text-base"
-            >
-              Back to Lobby
-            </a>
-          </div>
-        </div>
-      )}
-
-      {/* Action Bar */}
+      {/* Action Bar - OUTSIDE scaling wrapper (uses fixed positioning) */}
       {showActionBar && (
         <ActionBar
           validActions={validActions}
