@@ -887,7 +887,7 @@ function CreateGameWizard() {
                   }`}
                 >
                   {form.blindSpeed === 'turbo' && (
-                    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center bg-orange-500">
+                    <div className="absolute top-2 right-2 w-4 h-4 rounded-full flex items-center justify-center bg-orange-500">
                       <Check className="w-2.5 h-2.5 text-white" />
                     </div>
                   )}
@@ -908,7 +908,7 @@ function CreateGameWizard() {
                   }`}
                 >
                   {form.blindSpeed === 'standard' && (
-                    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center bg-emerald-500">
+                    <div className="absolute top-2 right-2 w-4 h-4 rounded-full flex items-center justify-center bg-emerald-500">
                       <Check className="w-2.5 h-2.5 text-white" />
                     </div>
                   )}
@@ -929,7 +929,7 @@ function CreateGameWizard() {
                   }`}
                 >
                   {form.blindSpeed === 'deep' && (
-                    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center bg-blue-500">
+                    <div className="absolute top-2 right-2 w-4 h-4 rounded-full flex items-center justify-center bg-blue-500">
                       <Check className="w-2.5 h-2.5 text-white" />
                     </div>
                   )}
