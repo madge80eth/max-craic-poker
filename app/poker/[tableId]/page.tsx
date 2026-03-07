@@ -7,7 +7,7 @@ import { ClientGameState, PlayerAction } from '@/lib/poker/types';
 import Table from '../components/Table';
 import Link from 'next/link';
 import { usePokerSounds } from '../hooks/usePokerSounds';
-import { ArrowLeft, Volume2, VolumeX, ShieldAlert, X } from 'lucide-react';
+import { ArrowLeft, Volume2, VolumeX, ShieldAlert } from 'lucide-react';
 
 function getGuestId(): string {
   if (typeof window === 'undefined') return '';
@@ -293,7 +293,6 @@ export default function PokerTable({ params }: PageProps) {
   }
 
   const isSeated = gameState.yourSeatIndex !== null;
-  const isYourTurn = isSeated && gameState.validActions.length > 0;
   const yourPlayer = isSeated ? gameState.players.find(p => p.seatIndex === gameState.yourSeatIndex) : null;
   const isSittingOut = yourPlayer?.sitOut || false;
 
@@ -315,65 +314,46 @@ export default function PokerTable({ params }: PageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[#0d1117] text-white overflow-x-hidden">
+    <div className="h-screen bg-[#0a0c10] text-white overflow-hidden flex flex-col">
       {/* Header */}
-      <div className="fixed top-0 left-0 right-0 z-40 bg-gray-900/80 backdrop-blur-lg border-b border-gray-800/50">
-        <div className="flex items-center justify-between px-2 sm:px-4 py-2 sm:py-3">
-          <Link
-            href="/poker"
-            className="flex items-center gap-1 sm:gap-2 text-gray-400 hover:text-white transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-            <span className="text-xs sm:text-sm font-medium">Lobby</span>
-          </Link>
+      <div className="flex-shrink-0 z-40 flex items-center justify-between px-2 py-1.5" style={{ background: '#0d0f14', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+        <Link
+          href="/poker"
+          className="flex items-center gap-1 text-gray-500 hover:text-white transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+        </Link>
 
-          <div className="flex items-center gap-3">
-            {isSeated && (
-              <div className="text-xs">
-                <span className="text-gray-500">Playing as </span>
-                <span className="text-purple-400 font-medium">{playerName}</span>
-              </div>
-            )}
-
-            {isSeated && gameState.phase !== 'waiting' && (
-              <button
-                onClick={() => handleSitOut(!isSittingOut)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
-                  isSittingOut
-                    ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                    : 'bg-orange-600/20 hover:bg-orange-600/30 text-orange-400 border border-orange-500/30'
-                }`}
-              >
-                {isSittingOut ? "I'm Back" : 'Sit Out'}
-              </button>
-            )}
-
+        <div className="flex items-center gap-2">
+          {isSeated && gameState.phase !== 'waiting' && (
             <button
-              onClick={() => {
-                const newState = !soundEnabled;
-                setSoundEnabled(newState);
-                toggleSounds(newState);
-              }}
-              className="p-2 text-gray-400 hover:text-white transition-colors"
+              onClick={() => handleSitOut(!isSittingOut)}
+              className={`px-2 py-1 text-[10px] font-medium rounded transition-colors ${
+                isSittingOut
+                  ? 'bg-green-700 hover:bg-green-600 text-white'
+                  : 'bg-gray-800 hover:bg-gray-700 text-gray-400'
+              }`}
             >
-              {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+              {isSittingOut ? "I'm Back" : 'Sit Out'}
             </button>
-          </div>
+          )}
+
+          <button
+            onClick={() => {
+              const newState = !soundEnabled;
+              setSoundEnabled(newState);
+              toggleSounds(newState);
+            }}
+            className="p-1 text-gray-500 hover:text-white transition-colors"
+          >
+            {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+          </button>
         </div>
       </div>
 
-      {/* Your Turn Indicator */}
-      {isYourTurn && (
-        <div className="fixed top-12 sm:top-16 left-1/2 -translate-x-1/2 z-50">
-          <div className="px-3 sm:px-4 py-1.5 sm:py-2 bg-yellow-500 text-gray-900 font-bold rounded-full text-xs sm:text-sm animate-pulse shadow-lg shadow-yellow-500/30">
-            Your Turn
-          </div>
-        </div>
-      )}
-
-      {/* Table Container */}
-      <div className="pt-12 sm:pt-16 pb-4 sm:pb-32 px-5 sm:px-4 min-h-screen flex items-center justify-center">
-        <div className="w-full max-w-[360px] h-[500px] sm:max-w-2xl sm:h-auto sm:aspect-[4/3]">
+      {/* Table Container - fills remaining space */}
+      <div className="flex-1 min-h-0 relative">
+        <div className="absolute inset-0">
           <Table
             gameState={gameState}
             onAction={handleAction}
@@ -382,12 +362,6 @@ export default function PokerTable({ params }: PageProps) {
             onNextHand={isSeated ? handleNextHand : undefined}
           />
         </div>
-      </div>
-
-      {/* Status Footer */}
-      <div className="fixed bottom-20 left-2 sm:left-4 text-[10px] text-gray-600 z-30 max-w-[120px]">
-        <div className="truncate">Phase: {gameState.phase}</div>
-        <div className="truncate">Players: {gameState.players.length}/6</div>
       </div>
 
       {/* Sybil Error Modal */}

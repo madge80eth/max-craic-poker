@@ -15,25 +15,15 @@ interface PlayerSeatProps {
   handNumber?: number;
 }
 
-// Desktop positions - spread out for larger screens (percentages)
-const SEAT_POSITIONS_DESKTOP = [
-  { top: '78%', left: '50%' },   // 0 - Bottom center (hero)
-  { top: '68%', left: '12%' },   // 1 - Bottom left
-  { top: '22%', left: '12%' },   // 2 - Top left
-  { top: '12%', left: '50%' },   // 3 - Top center
-  { top: '22%', left: '88%' },   // 4 - Top right
-  { top: '68%', left: '88%' },   // 5 - Bottom right
-];
-
-// Mobile positions — pixel values for 360x500 canvas
-// Matches reference HTML exactly. All seats use transform: translate(-50%, -50%)
-const SEAT_POSITIONS_MOBILE = [
-  { top: 440, left: 180 },  // 0 - Hero (bottom center) — ref seat-3
-  { top: 270, left: 45 },   // 1 - Bottom left          — ref seat-4
-  { top: 105, left: 45 },   // 2 - Top left              — ref seat-5
-  { top: 45, left: 180 },   // 3 - Top center            — ref seat-0
-  { top: 105, left: 315 },  // 4 - Top right             — ref seat-1
-  { top: 270, left: 315 },  // 5 - Bottom right          — ref seat-2
+// Seat positions (percentage based, works at any size)
+// Position 0 = bottom center (hero), clockwise from bottom-left
+const SEAT_POSITIONS: { top: string; left: string }[] = [
+  { top: '82%', left: '50%' },   // 0 - Bottom center (hero)
+  { top: '62%', left: '6%' },    // 1 - Left bottom
+  { top: '18%', left: '6%' },    // 2 - Left top
+  { top: '5%', left: '50%' },    // 3 - Top center
+  { top: '18%', left: '94%' },   // 4 - Right top
+  { top: '62%', left: '94%' },   // 5 - Right bottom
 ];
 
 export default function PlayerSeat({
@@ -46,16 +36,6 @@ export default function PlayerSeat({
   actionTimeout = 30,
   handNumber = 0,
 }: PlayerSeatProps) {
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 500);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  const isTopHalf = position >= 2 && position <= 4;
   const prevHandNumberRef = useRef(handNumber);
   const [animateCards, setAnimateCards] = useState(false);
   const [timeLeft, setTimeLeft] = useState(actionTimeout);
@@ -66,12 +46,10 @@ export default function PlayerSeat({
       setTimeLeft(actionTimeout);
       return;
     }
-
     const updateTimer = () => {
       const elapsed = Math.floor((Date.now() - lastActionTime) / 1000);
       setTimeLeft(Math.max(0, actionTimeout - elapsed));
     };
-
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
@@ -82,425 +60,219 @@ export default function PlayerSeat({
     if (handNumber !== prevHandNumberRef.current && player?.holeCards) {
       setAnimateCards(true);
       prevHandNumberRef.current = handNumber;
-      const timeout = setTimeout(() => setAnimateCards(false), 600);
+      const timeout = setTimeout(() => setAnimateCards(false), 500);
       return () => clearTimeout(timeout);
     }
     prevHandNumberRef.current = handNumber;
   }, [handNumber, player?.holeCards]);
 
-  // Timer computations (shared by both renders)
+  const pos = SEAT_POSITIONS[position];
   const timerPercent = (timeLeft / actionTimeout) * 100;
-  const isLowTime = timeLeft <= 10;
   const isCritical = timeLeft <= 5;
+  const isLowTime = timeLeft <= 10;
+  const timerColor = isCritical ? '#ef4444' : isLowTime ? '#eab308' : '#22c55e';
 
-  // ========== MOBILE RENDER ==========
-  if (isMobile) {
-    const mPos = SEAT_POSITIONS_MOBILE[position];
-
-    // Empty seat (mobile) — ref: dashed border, transparent bg, + sign
-    if (!player) {
-      return (
-        <div style={{
-          position: 'absolute', left: mPos.left, top: mPos.top,
-          transform: 'translate(-50%, -50%)', zIndex: 10,
-        }}>
-          {onSeatClick ? (
-            <button
-              onClick={onSeatClick}
-              style={{
-                width: 36, height: 36, borderRadius: '50%',
-                background: 'transparent',
-                border: '2px dashed #4b5563',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', padding: 0, color: '#6b7280', fontSize: 18,
-              }}
-            >
-              +
-            </button>
-          ) : (
-            <div style={{
-              width: 36, height: 36, borderRadius: '50%',
-              background: 'transparent',
-              border: '2px dashed #4b5563',
-            }} />
-          )}
-        </div>
-      );
+  // Determine action badge
+  const getActionBadge = (): { text: string; bg: string; color: string } | null => {
+    if (player?.sitOut && !player.folded) return { text: 'Sit Out', bg: '#6b7280', color: '#fff' };
+    if (player?.allIn) return { text: 'All In', bg: '#dc2626', color: '#fff' };
+    if (player?.folded) return { text: 'Fold', bg: '#374151', color: '#9ca3af' };
+    if (!player?.sitOut && player && player.consecutiveTimeouts >= 2 && !player.folded)
+      return { text: `AFK ${player.consecutiveTimeouts}/3`, bg: '#dc2626', color: '#fff' };
+    if (player?.lastAction && !isActive) {
+      const labels: Record<string, string> = {
+        check: 'Check', call: 'Call', raise: 'Raise', fold: 'Fold', allin: 'All In'
+      };
+      return { text: labels[player.lastAction] || player.lastAction, bg: '#22c55e', color: '#fff' };
     }
-
-    // Occupied seat (mobile) — column: badge → avatar → name → chips → cards → bet
-    return (
-      <div style={{
-        position: 'absolute', left: mPos.left, top: mPos.top,
-        transform: 'translate(-50%, -50%)', zIndex: 10,
-      }}>
-        <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center',
-          position: 'relative',
-          opacity: player.folded ? 0.35 : player.sitOut ? 0.5 : 1,
-        }}>
-          {/* All-in glow */}
-          {player.allIn && !player.folded && (
-            <div className="animate-pulse" style={{
-              position: 'absolute', inset: -10, borderRadius: '50%',
-              background: 'rgba(239,68,68,0.3)', filter: 'blur(8px)',
-            }} />
-          )}
-
-          {/* Hero cards — positioned ABOVE avatar (ref: top:-54px absolute) */}
-          {isYou && !player.folded && (
-            <div style={{
-              position: 'absolute',
-              top: -54,
-              left: '50%',
-              transform: 'translateX(-50%)',
-              display: 'flex',
-              gap: 5,
-              zIndex: 20,
-            }}>
-              {player.holeCards ? (
-                <>
-                  <Card
-                    key={`${handNumber}-0`}
-                    card={player.holeCards[0]}
-                    size="sm"
-                    animate={animateCards ? 'deal' : 'none'}
-                    delay={animateCards ? position * 50 : 0}
-                  />
-                  <Card
-                    key={`${handNumber}-1`}
-                    card={player.holeCards[1]}
-                    size="sm"
-                    animate={animateCards ? 'deal' : 'none'}
-                    delay={animateCards ? position * 50 + 25 : 0}
-                  />
-                </>
-              ) : null}
-            </div>
-          )}
-
-          {/* Badge — ref: 9px, padding 1px 5px, border-radius 3px, margin-bottom 2px */}
-          <div style={{ display: 'flex', gap: 2, marginBottom: 2, minHeight: 14, alignItems: 'center' }}>
-            {player.isDealer && (
-              <span style={{
-                width: 16, height: 16, borderRadius: '50%',
-                background: 'white', color: '#000', fontSize: 9,
-                fontWeight: 700, display: 'flex', alignItems: 'center',
-                justifyContent: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-              }}>D</span>
-            )}
-            {(player.isSmallBlind || player.isBigBlind) && (
-              <span style={{
-                padding: '1px 5px', borderRadius: 3, fontSize: 9,
-                fontWeight: 700, color: '#fff',
-                background: player.isBigBlind ? '#ef4444' : '#3b82f6',
-              }}>
-                {player.isBigBlind ? 'BB' : 'SB'}
-              </span>
-            )}
-          </div>
-
-          {/* Timer ring + Avatar (ref: 36x36) */}
-          <div style={{ position: 'relative', width: 36, height: 36 }}>
-            {isActive && (
-              <svg style={{ position: 'absolute', inset: -4, width: 44, height: 44 }} viewBox="0 0 100 100">
-                <circle cx="50" cy="50" r="47" fill="none"
-                  stroke={isCritical ? '#ef4444' : isLowTime ? '#eab308' : '#22c55e'}
-                  strokeWidth="5" strokeLinecap="round"
-                  strokeDasharray={`${timerPercent * 2.95} 295`}
-                  transform="rotate(-90 50 50)"
-                  className={isCritical ? 'animate-pulse' : ''}
-                />
-              </svg>
-            )}
-            <div style={{
-              width: 36, height: 36, borderRadius: '50%',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 700, fontSize: 16,
-              background: isYou ? '#7c3aed' : '#374151',
-              color: isYou ? '#fff' : '#9ca3af',
-              border: isYou
-                ? '2px solid #8b5cf6'
-                : isActive ? '2px solid #22c55e'
-                : player.allIn ? '2px solid #ef4444'
-                : '2px solid #22c55e',
-              boxShadow: isActive
-                ? '0 0 12px rgba(52,211,153,0.4)'
-                : player.allIn ? '0 0 12px rgba(239,68,68,0.5)' : 'none',
-            }}>
-              {player.name.charAt(0).toUpperCase()}
-            </div>
-          </div>
-
-          {/* Name — ref: 10px, max-width 60px, color #d1d5db */}
-          <span style={{
-            fontSize: 10, color: '#d1d5db', marginTop: 2,
-            maxWidth: 60, overflow: 'hidden', textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap', textAlign: 'center', display: 'block',
-          }}>
-            {player.name}
-          </span>
-
-          {/* Chips — ref: 10px, color #4ade80, font-weight 600 */}
-          <span style={{ fontSize: 10, color: '#4ade80', fontWeight: 600 }}>
-            {player.chips.toLocaleString()}
-          </span>
-
-          {/* Opponent hole cards — ref: gap 2px, below chips */}
-          {!isYou && !player.folded && (
-            <div style={{ display: 'flex', gap: 2, marginTop: 2 }}>
-              {player.holeCards ? (
-                <>
-                  <Card
-                    key={`${handNumber}-0`}
-                    card={player.holeCards[0]}
-                    size="xs"
-                    animate={animateCards ? 'deal' : 'none'}
-                    delay={animateCards ? position * 50 : 0}
-                  />
-                  <Card
-                    key={`${handNumber}-1`}
-                    card={player.holeCards[1]}
-                    size="xs"
-                    animate={animateCards ? 'deal' : 'none'}
-                    delay={animateCards ? position * 50 + 25 : 0}
-                  />
-                </>
-              ) : (
-                <>
-                  <Card card={null} faceDown size="xs" />
-                  <Card card={null} faceDown size="xs" />
-                </>
-              )}
-            </div>
-          )}
-
-          {/* Bet — ref: chip icon 12px + amount text */}
-          {player.bet > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 3, marginTop: 2 }}>
-              <div style={{
-                width: 12, height: 12, borderRadius: '50%',
-                background: '#f59e0b', border: '1.5px solid #d97706',
-              }} />
-              <span style={{ fontSize: 10, fontWeight: 600, color: '#fbbf24' }}>
-                {player.bet.toLocaleString()}
-              </span>
-            </div>
-          )}
-
-          {/* Status badges */}
-          {player.allIn && (
-            <div className="animate-pulse" style={{
-              marginTop: 2, padding: '1px 6px',
-              background: '#dc2626', color: 'white',
-              fontWeight: 900, borderRadius: 10, fontSize: 7,
-              letterSpacing: '0.05em', border: '1px solid rgba(248,113,113,0.5)',
-            }}>ALL IN</div>
-          )}
-          {player.folded && (
-            <div style={{
-              marginTop: 2, padding: '1px 6px',
-              background: '#374151', color: '#9ca3af',
-              fontWeight: 700, borderRadius: 10, fontSize: 7,
-            }}>FOLD</div>
-          )}
-          {player.sitOut && !player.folded && (
-            <div style={{
-              marginTop: 2, padding: '1px 4px',
-              background: '#ea580c', color: 'white',
-              fontWeight: 700, borderRadius: 10, fontSize: 7,
-            }}>SIT OUT</div>
-          )}
-          {!player.sitOut && player.consecutiveTimeouts >= 2 && !player.folded && (
-            <div style={{
-              marginTop: 2, padding: '1px 4px',
-              background: 'rgba(220,38,38,0.8)', color: 'white',
-              fontWeight: 700, borderRadius: 10, fontSize: 7,
-            }}>AFK ({player.consecutiveTimeouts}/3)</div>
-          )}
-          {player.lastAction && !isActive && !player.folded && !player.allIn && !player.sitOut && player.consecutiveTimeouts < 2 && (
-            <div style={{
-              marginTop: 2, padding: '1px 6px',
-              background: 'rgba(31,41,55,0.9)', color: '#9ca3af',
-              borderRadius: 10, fontSize: 7, textTransform: 'uppercase' as const,
-              border: '1px solid rgba(55,65,81,0.3)',
-            }}>{player.lastAction}</div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // ========== DESKTOP RENDER (unchanged) ==========
-  const pos = SEAT_POSITIONS_DESKTOP[position];
+    return null;
+  };
 
   // Empty seat
   if (!player) {
     return (
       <div
-        className="absolute -translate-x-1/2 -translate-y-1/2 z-10"
-        style={{ top: pos.top, left: pos.left }}
+        className="absolute z-10"
+        style={{ top: pos.top, left: pos.left, transform: 'translate(-50%, -50%)' }}
       >
         {onSeatClick ? (
           <button
             onClick={onSeatClick}
-            className="w-14 h-14 rounded-full bg-gray-800/30 border-2 border-dashed border-gray-600/40 flex items-center justify-center hover:border-emerald-500/50 hover:bg-gray-700/30 transition-all"
+            className="w-10 h-10 rounded-full border-2 border-dashed border-gray-600/50 flex items-center justify-center hover:border-gray-400/60 transition-colors"
+            style={{ background: 'rgba(255,255,255,0.03)' }}
           >
-            <span className="text-gray-500 text-lg">+</span>
+            <span className="text-gray-500 text-sm">+</span>
           </button>
         ) : (
-          <div className="w-14 h-14 rounded-full bg-gray-800/20 border-2 border-dashed border-gray-700/20" />
+          <div
+            className="w-10 h-10 rounded-full border-2 border-dashed border-gray-700/30"
+            style={{ background: 'rgba(255,255,255,0.02)' }}
+          />
         )}
       </div>
     );
   }
 
+  const badge = getActionBadge();
+
   return (
     <div
-      className="absolute -translate-x-1/2 -translate-y-1/2 z-10"
-      style={{ top: pos.top, left: pos.left }}
+      className="absolute z-10"
+      style={{ top: pos.top, left: pos.left, transform: 'translate(-50%, -50%)' }}
     >
-      <div className={`relative ${player.folded ? 'opacity-35' : player.sitOut ? 'opacity-50' : ''}`}>
-        {/* All-in red glow effect */}
-        {player.allIn && !player.folded && (
-          <div className="absolute -inset-3 rounded-full bg-red-500/30 animate-pulse blur-md" />
-        )}
-
-        {/* Timer ring for active player */}
-        {isActive && (
-          <svg className="absolute -inset-1.5 w-[calc(100%+12px)] h-[calc(100%+12px)]" viewBox="0 0 100 100">
-            <circle
-              cx="50"
-              cy="50"
-              r="47"
-              fill="none"
-              stroke={isCritical ? '#ef4444' : isLowTime ? '#eab308' : '#22c55e'}
-              strokeWidth="4"
-              strokeLinecap="round"
-              strokeDasharray={`${timerPercent * 2.95} 295`}
-              transform="rotate(-90 50 50)"
-              className={isCritical ? 'animate-pulse' : ''}
-            />
-          </svg>
-        )}
-
-        {/* Player avatar */}
-        <div
-          className={`
-            w-14 h-14 text-xl rounded-full flex items-center justify-center font-bold shadow-lg relative
-            ${isYou
-              ? 'bg-gradient-to-br from-purple-500 to-pink-500 ring-2 ring-purple-400/70'
-              : 'bg-gradient-to-br from-gray-600 to-gray-800'
-            }
-            ${isActive ? 'ring-2 ring-emerald-400 shadow-emerald-400/30' : ''}
-            ${player.allIn ? 'ring-2 ring-red-500 shadow-lg shadow-red-500/50' : ''}
-          `}
-        >
-          {player.name.charAt(0).toUpperCase()}
-        </div>
-
-        {/* Dealer button - positioned toward table center */}
-        {player.isDealer && (
-          <div className={`absolute ${isTopHalf ? '-bottom-2 -right-2' : '-top-2 -right-2'}`}>
-            <span className="w-5 h-5 rounded-full bg-white text-gray-900 text-[10px] font-black flex items-center justify-center shadow-md">D</span>
+      <div
+        className="flex flex-col items-center"
+        style={{ opacity: player.folded ? 0.4 : player.sitOut ? 0.5 : 1 }}
+      >
+        {/* Action badge - above avatar */}
+        {badge && (
+          <div
+            className="mb-1 px-2 py-0.5 rounded text-[9px] font-bold whitespace-nowrap"
+            style={{ background: badge.bg, color: badge.color }}
+          >
+            {badge.text}
           </div>
         )}
 
-        {/* Blind badges - positioned toward table center */}
-        {(player.isSmallBlind || player.isBigBlind) && (
-          <div className={`absolute ${isTopHalf ? '-bottom-2 -left-2' : '-top-2 -left-2'}`}>
-            <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold shadow ${player.isBigBlind ? 'bg-red-500' : 'bg-blue-500'} text-white`}>
-              {player.isBigBlind ? 'BB' : 'SB'}
+        {/* Avatar container with timer ring */}
+        <div className="relative">
+          {/* Timer ring */}
+          {isActive && (
+            <svg
+              className="absolute"
+              style={{ top: -4, left: -4, width: 'calc(100% + 8px)', height: 'calc(100% + 8px)' }}
+              viewBox="0 0 100 100"
+            >
+              <circle
+                cx="50" cy="50" r="46"
+                fill="none"
+                stroke="rgba(255,255,255,0.1)"
+                strokeWidth="4"
+              />
+              <circle
+                cx="50" cy="50" r="46"
+                fill="none"
+                stroke={timerColor}
+                strokeWidth="4"
+                strokeLinecap="round"
+                strokeDasharray={`${timerPercent * 2.89} 289`}
+                transform="rotate(-90 50 50)"
+                className={isCritical ? 'animate-pulse' : ''}
+              />
+            </svg>
+          )}
+
+          {/* Avatar circle */}
+          <div
+            className="w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold relative overflow-hidden"
+            style={{
+              background: isYou
+                ? 'linear-gradient(135deg, #7c3aed, #a855f7)'
+                : 'linear-gradient(135deg, #374151, #4b5563)',
+              border: isActive ? `2px solid ${timerColor}` : '2px solid rgba(255,255,255,0.15)',
+              boxShadow: isActive ? `0 0 10px ${timerColor}40` : 'none',
+              color: '#fff',
+            }}
+          >
+            {player.name.charAt(0).toUpperCase()}
+          </div>
+
+          {/* Timer seconds badge (top right of avatar) */}
+          {isActive && (
+            <div
+              className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold"
+              style={{
+                background: timerColor,
+                color: '#fff',
+                boxShadow: `0 0 6px ${timerColor}60`,
+              }}
+            >
+              {timeLeft}
+            </div>
+          )}
+
+          {/* Dealer button */}
+          {player.isDealer && (
+            <div
+              className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-black"
+              style={{
+                background: '#fff',
+                color: '#000',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.4)',
+              }}
+            >
+              D
+            </div>
+          )}
+        </div>
+
+        {/* Name plate (dark card below avatar) */}
+        <div
+          className="mt-1 px-2 py-0.5 rounded text-center min-w-[54px]"
+          style={{ background: 'rgba(0,0,0,0.7)' }}
+        >
+          <div className="text-[10px] text-gray-200 font-medium truncate max-w-[60px]">
+            {player.name}
+          </div>
+          <div className="text-[10px] text-green-400 font-bold">
+            {player.chips.toLocaleString()}
+          </div>
+        </div>
+
+        {/* Bet chip + amount (shown near player when they have a bet) */}
+        {player.bet > 0 && (
+          <div className="flex items-center gap-1 mt-1">
+            <div
+              className="w-3 h-3 rounded-full"
+              style={{
+                background: 'radial-gradient(circle at 30% 30%, #f59e0b, #d97706)',
+                border: '1px solid #b45309',
+              }}
+            />
+            <span className="text-[10px] font-bold text-white">
+              {player.bet.toLocaleString()}
             </span>
           </div>
         )}
 
-        {/* Player info card */}
-        <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1.5 w-24">
-          <div className="bg-gray-900/90 backdrop-blur-sm rounded-lg text-center border border-gray-700/30 px-2 py-1.5">
-            <div className="font-semibold text-white truncate text-[11px]">
-              {player.name}
-              {isYou && <span className="text-purple-400 text-[9px]"> (You)</span>}
-            </div>
-            <div className="text-emerald-400 font-bold font-mono text-xs">
-              {player.chips.toLocaleString()}
-            </div>
-          </div>
-
-          {/* Bet amount */}
-          {player.bet > 0 && (
-            <div className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap -top-8">
-              <span className="bg-yellow-500 text-gray-900 font-bold rounded-full shadow-lg shadow-yellow-500/20 px-3 py-1 text-sm">
-                {player.bet.toLocaleString()}
-              </span>
-            </div>
-          )}
-
-          {/* All-in banner */}
-          {player.allIn && (
-            <div className="absolute left-1/2 -translate-x-1/2 -bottom-6">
-              <span className="font-black rounded-full bg-red-600 text-white shadow-lg shadow-red-600/40 animate-pulse tracking-wider border border-red-400/50 px-4 py-1 text-[11px]">
-                ALL IN
-              </span>
-            </div>
-          )}
-
-          {/* Fold badge */}
-          {player.folded && (
-            <div className="absolute left-1/2 -translate-x-1/2 -bottom-5">
-              <span className="font-bold rounded-full bg-gray-700 text-gray-400 px-2.5 py-0.5 text-[9px]">
-                FOLD
-              </span>
-            </div>
-          )}
-
-          {/* Sitting out badge */}
-          {player.sitOut && !player.folded && (
-            <div className="absolute left-1/2 -translate-x-1/2 -bottom-5">
-              <span className="font-bold rounded-full bg-orange-600 text-white px-2.5 py-0.5 text-[9px]">
-                SITTING OUT
-              </span>
-            </div>
-          )}
-
-          {/* AFK warning badge */}
-          {!player.sitOut && player.consecutiveTimeouts >= 2 && !player.folded && (
-            <div className="absolute left-1/2 -translate-x-1/2 -bottom-5">
-              <span className="font-bold rounded-full bg-red-600/80 text-white px-2.5 py-0.5 text-[9px]">
-                AFK ({player.consecutiveTimeouts}/3)
-              </span>
-            </div>
-          )}
-
-          {/* Last action */}
-          {player.lastAction && !isActive && !player.folded && !player.allIn && !player.sitOut && player.consecutiveTimeouts < 2 && (
-            <div className="absolute left-1/2 -translate-x-1/2 -bottom-5">
-              <span className="text-gray-400 uppercase bg-gray-800/90 rounded-full border border-gray-700/30 px-2 py-0.5 text-[9px]">
-                {player.lastAction}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Hole cards */}
-        {!player.folded && (
-          <div className="absolute left-1/2 -translate-x-1/2 flex gap-0.5 -bottom-14">
+        {/* Hole cards for non-hero players */}
+        {!isYou && !player.folded && (
+          <div className="flex gap-0.5 mt-1">
             {player.holeCards ? (
-              player.holeCards.map((card, i) => (
+              <>
                 <Card
-                  key={`${handNumber}-${i}`}
-                  card={card}
-                  size={isYou ? 'xl' : 'lg'}
+                  key={`${handNumber}-0`}
+                  card={player.holeCards[0]}
+                  size="xs"
                   animate={animateCards ? 'deal' : 'none'}
-                  delay={animateCards ? (position * 50) + (i * 25) : 0}
+                  delay={animateCards ? position * 40 : 0}
                 />
-              ))
+                <Card
+                  key={`${handNumber}-1`}
+                  card={player.holeCards[1]}
+                  size="xs"
+                  animate={animateCards ? 'deal' : 'none'}
+                  delay={animateCards ? position * 40 + 20 : 0}
+                />
+              </>
             ) : (
               <>
-                <Card card={null} faceDown size="md" />
-                <Card card={null} faceDown size="md" />
+                <Card card={null} faceDown size="xs" />
+                <Card card={null} faceDown size="xs" />
               </>
             )}
+          </div>
+        )}
+
+        {/* Blind badges */}
+        {(player.isSmallBlind || player.isBigBlind) && !player.isDealer && (
+          <div className="mt-0.5">
+            <span
+              className="px-1.5 py-0 rounded text-[8px] font-bold text-white"
+              style={{ background: player.isBigBlind ? '#ef4444' : '#3b82f6' }}
+            >
+              {player.isBigBlind ? 'BB' : 'SB'}
+            </span>
           </div>
         )}
       </div>

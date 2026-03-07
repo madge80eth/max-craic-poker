@@ -33,20 +33,16 @@ export default function ActionBar({
   const callAmount = currentBet - playerBet;
   const minRaise = raiseAction?.minAmount || 0;
   const maxRaise = raiseAction?.maxAmount || 0;
-  const pot = currentBet; // Simplified - actual pot tracking would need game state
 
-  // Always reset raise amount to minimum when action context changes
   useEffect(() => {
     if (raiseAction) {
       setRaiseAmount(minRaise);
       setShowRaisePanel(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [minRaise]);
 
-  if (validActions.length === 0) {
-    return null;
-  }
+  if (validActions.length === 0) return null;
 
   const handleRaise = () => {
     onAction('raise', raiseAmount);
@@ -55,155 +51,134 @@ export default function ActionBar({
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50">
-      {/* Raise Panel */}
+      {/* Raise slider panel */}
       {showRaisePanel && canRaise && (
-        <div className="bg-gray-900/95 backdrop-blur-lg border-t border-gray-700/50 px-4 py-3">
+        <div style={{ background: 'rgba(10, 12, 18, 0.97)' }} className="border-t border-gray-800 px-4 py-3">
           <div className="max-w-md mx-auto">
-            {/* Amount display */}
+            {/* Amount */}
             <div className="text-center mb-3">
-              <span className="text-2xl font-bold text-white">{raiseAmount.toLocaleString()}</span>
+              <span className="text-xl font-bold text-white">{raiseAmount.toLocaleString()}</span>
             </div>
 
             {/* Slider */}
-            <div className="relative mb-3">
+            <div className="mb-3">
               <input
                 type="range"
                 min={minRaise}
                 max={maxRaise}
                 value={raiseAmount}
                 onChange={(e) => setRaiseAmount(parseInt(e.target.value))}
-                className="w-full h-2 bg-gray-700 rounded-full appearance-none cursor-pointer
+                className="w-full h-1.5 bg-gray-700 rounded-full appearance-none cursor-pointer
                   [&::-webkit-slider-thumb]:appearance-none
-                  [&::-webkit-slider-thumb]:w-6
-                  [&::-webkit-slider-thumb]:h-6
-                  [&::-webkit-slider-thumb]:bg-emerald-500
+                  [&::-webkit-slider-thumb]:w-5
+                  [&::-webkit-slider-thumb]:h-5
+                  [&::-webkit-slider-thumb]:bg-red-500
                   [&::-webkit-slider-thumb]:rounded-full
-                  [&::-webkit-slider-thumb]:shadow-lg
                   [&::-webkit-slider-thumb]:cursor-pointer"
               />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <div className="flex justify-between text-[10px] text-gray-500 mt-1">
                 <span>{minRaise.toLocaleString()}</span>
                 <span>{maxRaise.toLocaleString()}</span>
               </div>
             </div>
 
-            {/* Quick bet buttons */}
-            <div className="grid grid-cols-5 gap-2 mb-3">
-              <button
-                onClick={() => setRaiseAmount(minRaise)}
-                className="py-2 bg-gray-800 hover:bg-gray-700 text-white text-xs font-medium rounded-lg transition-colors"
-              >
-                Min
-              </button>
-              <button
-                onClick={() => setRaiseAmount(Math.min(Math.floor(currentBet * 2), maxRaise))}
-                className="py-2 bg-gray-800 hover:bg-gray-700 text-white text-xs font-medium rounded-lg transition-colors"
-              >
-                2x
-              </button>
-              <button
-                onClick={() => setRaiseAmount(Math.min(Math.floor(currentBet * 3), maxRaise))}
-                className="py-2 bg-gray-800 hover:bg-gray-700 text-white text-xs font-medium rounded-lg transition-colors"
-              >
-                3x
-              </button>
-              <button
-                onClick={() => setRaiseAmount(Math.floor((minRaise + maxRaise) / 2))}
-                className="py-2 bg-gray-800 hover:bg-gray-700 text-white text-xs font-medium rounded-lg transition-colors"
-              >
-                1/2
-              </button>
-              <button
-                onClick={() => setRaiseAmount(maxRaise)}
-                className="py-2 bg-gray-800 hover:bg-gray-700 text-white text-xs font-medium rounded-lg transition-colors"
-              >
-                Max
-              </button>
+            {/* Quick buttons */}
+            <div className="grid grid-cols-5 gap-1.5 mb-3">
+              {['Min', '2x', '3x', '1/2', 'Max'].map((label) => (
+                <button
+                  key={label}
+                  onClick={() => {
+                    if (label === 'Min') setRaiseAmount(minRaise);
+                    else if (label === '2x') setRaiseAmount(Math.min(Math.floor(currentBet * 2), maxRaise));
+                    else if (label === '3x') setRaiseAmount(Math.min(Math.floor(currentBet * 3), maxRaise));
+                    else if (label === '1/2') setRaiseAmount(Math.floor((minRaise + maxRaise) / 2));
+                    else setRaiseAmount(maxRaise);
+                  }}
+                  className="py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-medium rounded transition-colors"
+                >
+                  {label}
+                </button>
+              ))}
             </div>
 
-            {/* Confirm/Cancel */}
+            {/* Confirm / Cancel */}
             <div className="flex gap-2">
               <button
                 onClick={() => setShowRaisePanel(false)}
-                className="flex-1 py-3 bg-gray-700 hover:bg-gray-600 text-white font-medium rounded-xl transition-colors"
+                className="flex-1 py-3 bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium rounded-lg transition-colors text-sm"
               >
                 Cancel
               </button>
               <button
                 onClick={handleRaise}
                 disabled={disabled}
-                className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-600 text-white font-bold rounded-xl transition-colors"
+                className="flex-1 py-3 bg-red-600 hover:bg-red-500 disabled:bg-gray-700 text-white font-bold rounded-lg transition-colors text-sm"
               >
-                {canCheck ? 'Bet' : 'Raise to'} {raiseAmount.toLocaleString()}
+                {canCheck ? 'Bet' : 'Raise'} {raiseAmount.toLocaleString()}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Main Action Buttons */}
+      {/* Main action buttons */}
       {!showRaisePanel && (
-        <div className="bg-gray-900/95 backdrop-blur-lg border-t border-gray-700/50 px-4 py-3 safe-area-pb">
-          <div className="max-w-md mx-auto">
-            <div className="flex gap-2">
-              {/* Fold */}
-              {canFold && (
-                <button
-                  onClick={() => onAction('fold')}
-                  disabled={disabled}
-                  className="flex-1 py-4 bg-gray-800 hover:bg-gray-700 disabled:bg-gray-800/50 text-gray-300 font-semibold rounded-xl transition-colors"
-                >
-                  Fold
-                </button>
-              )}
+        <div style={{ background: 'rgba(10, 12, 18, 0.97)' }} className="border-t border-gray-800 px-3 py-3 safe-area-pb">
+          <div className="max-w-md mx-auto flex gap-2">
+            {/* Fold */}
+            {canFold && (
+              <button
+                onClick={() => onAction('fold')}
+                disabled={disabled}
+                className="flex-1 py-3.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-40 text-gray-300 font-semibold rounded-lg transition-colors text-sm"
+              >
+                Fold
+              </button>
+            )}
 
-              {/* Check */}
-              {canCheck && (
-                <button
-                  onClick={() => onAction('check')}
-                  disabled={disabled}
-                  className="flex-1 py-4 bg-blue-600 hover:bg-blue-500 disabled:bg-gray-600 text-white font-semibold rounded-xl transition-colors"
-                >
-                  Check
-                </button>
-              )}
+            {/* Check */}
+            {canCheck && (
+              <button
+                onClick={() => onAction('check')}
+                disabled={disabled}
+                className="flex-1 py-3.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-40 text-white font-semibold rounded-lg transition-colors text-sm"
+              >
+                Check
+              </button>
+            )}
 
-              {/* Call */}
-              {canCall && (
-                <button
-                  onClick={() => onAction('call')}
-                  disabled={disabled}
-                  className="flex-1 py-4 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-600 text-white font-semibold rounded-xl transition-colors"
-                >
-                  <div className="text-sm">Call</div>
-                  <div className="text-xs opacity-80">{callAmount.toLocaleString()}</div>
-                </button>
-              )}
+            {/* Call */}
+            {canCall && (
+              <button
+                onClick={() => onAction('call')}
+                disabled={disabled}
+                className="flex-1 py-3.5 bg-green-700 hover:bg-green-600 disabled:opacity-40 text-white font-semibold rounded-lg transition-colors text-sm"
+              >
+                Call {callAmount.toLocaleString()}
+              </button>
+            )}
 
-              {/* Raise */}
-              {canRaise && (
-                <button
-                  onClick={() => setShowRaisePanel(true)}
-                  disabled={disabled}
-                  className="flex-1 py-4 bg-yellow-600 hover:bg-yellow-500 disabled:bg-gray-600 text-white font-semibold rounded-xl transition-colors"
-                >
-                  <div className="text-sm">{canCheck ? 'Bet' : 'Raise'}</div>
-                  <div className="text-xs opacity-80">{minRaise.toLocaleString()}+</div>
-                </button>
-              )}
+            {/* Raise / Bet */}
+            {canRaise && (
+              <button
+                onClick={() => setShowRaisePanel(true)}
+                disabled={disabled}
+                className="flex-1 py-3.5 bg-red-700 hover:bg-red-600 disabled:opacity-40 text-white font-semibold rounded-lg transition-colors text-sm"
+              >
+                {canCheck ? 'Bet' : 'Raise'}
+              </button>
+            )}
 
-              {/* All In */}
-              {canAllIn && !canRaise && (
-                <button
-                  onClick={() => onAction('allin')}
-                  disabled={disabled}
-                  className="flex-1 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 disabled:from-gray-600 disabled:to-gray-600 text-white font-bold rounded-xl transition-colors"
-                >
-                  <div className="text-sm">All In</div>
-                  <div className="text-xs opacity-80">{(playerChips + playerBet).toLocaleString()}</div>
-                </button>
-              )}
-            </div>
+            {/* All In (only when can't raise) */}
+            {canAllIn && !canRaise && (
+              <button
+                onClick={() => onAction('allin')}
+                disabled={disabled}
+                className="flex-1 py-3.5 bg-red-700 hover:bg-red-600 disabled:opacity-40 text-white font-bold rounded-lg transition-colors text-sm"
+              >
+                All In {(playerChips + playerBet).toLocaleString()}
+              </button>
+            )}
           </div>
         </div>
       )}
