@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 import { createGame, toClientState } from '@/lib/poker/engine';
-import { CraicGameConfig, BLIND_PRESETS, CraicGameInfo } from '@/lib/craic/types';
+import { CraicGameConfig, BLIND_PRESETS, CraicGameInfo, getPayoutStructure } from '@/lib/craic/types';
 import { GameConfig } from '@/lib/poker/types';
 
 const redis = Redis.fromEnv();
@@ -11,79 +11,78 @@ export async function POST(request: Request) {
     const body = await request.json();
     const {
       host,
-      prizePool,
-      bondAmount = 0,
-      maxPlayers = 6,
+      gameName = '',
+      description = '',
+      buyInToken = '',
+      buyInAmount = '0',
+      protocolFeeBps = 100,
+      entryMode = 'open',
+      whitelist,
       startingStack = 1500,
       blindSpeed = 'standard',
-      sybilOptions = {
-        nftGating: { enabled: false },
-        bondMechanic: { enabled: false },
-        coinbaseVerification: { enabled: false },
-      },
+      gameHash,
     } = body;
 
     if (!host) {
       return NextResponse.json({ error: 'Missing host address' }, { status: 400 });
     }
 
-    if (!prizePool || prizePool < 0) {
-      return NextResponse.json({ error: 'Invalid prize pool' }, { status: 400 });
+    if (protocolFeeBps < 100 || protocolFeeBps > 500) {
+      return NextResponse.json({ error: 'protocolFeeBps must be between 100 and 500' }, { status: 400 });
     }
 
-    // Generate game ID
-    const gameId = `craic_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const gameId = body.gameId || `craic_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
 
-    // Get blind levels based on speed
     const blindLevels = BLIND_PRESETS[blindSpeed as keyof typeof BLIND_PRESETS] || BLIND_PRESETS.standard;
+    const payoutStructure = getPayoutStructure(6);
 
-    // Create poker game config
     const gameConfig: GameConfig = {
       maxPlayers: 6,
       startingChips: startingStack,
-      actionTimeout: 30, // 30 seconds per action
+      actionTimeout: 30,
       blindLevels,
-      payoutStructure: [65, 35], // Top 2 payout
+      payoutStructure,
     };
 
-    // Create game state using existing engine
     const gameState = createGame(gameId, gameConfig);
 
-    // Create Craic-specific config
     const craicConfig: CraicGameConfig = {
       gameId,
+      gameName: gameName || gameId,
+      ...(description ? { description } : {}),
       host,
-      prizePool,
-      bondAmount,
-      maxPlayers,
-      startingStack,
+      buyInToken,
+      buyInAmount,
+      protocolFeeBps,
+      entryMode,
+      ...(entryMode === 'leaderboard' && whitelist ? { whitelist } : {}),
       blindSpeed: blindSpeed as 'turbo' | 'standard' | 'deep',
-      sybilOptions,
+      startingStack,
+      maxPlayersPerTable: 6,
       createdAt: Date.now(),
+      status: 'waiting',
+      ...(gameHash ? { gameHash } : {}),
     };
 
-    // Store game state and config in Redis
     await redis.set(`craic:game:${gameId}:state`, JSON.stringify(gameState));
     await redis.set(`craic:game:${gameId}:config`, JSON.stringify(craicConfig));
 
-    // Add to Craic lobby
     const gameInfo: CraicGameInfo = {
       gameId,
+      gameName: gameName || gameId,
       host,
-      prizePool,
-      bondAmount,
+      buyInToken,
+      buyInAmount,
       playerCount: 0,
-      maxPlayers,
+      maxPlayersPerTable: 6,
       status: 'waiting',
       blindSpeed: blindSpeed as 'turbo' | 'standard' | 'deep',
       startingStack,
-      sybilOptions,
+      entryMode,
       createdAt: Date.now(),
     };
 
     await redis.zadd('craic:lobby', { score: Date.now(), member: JSON.stringify(gameInfo) });
-
-    // Track host's games
     await redis.sadd(`craic:player:${host}:games`, gameId);
 
     return NextResponse.json({

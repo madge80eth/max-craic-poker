@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 import { processAction, toClientState } from '@/lib/poker/engine';
 import { GameState, GameAction } from '@/lib/poker/types';
-import { CraicGameConfig } from '@/lib/craic/types';
+import { CraicGameConfig, getPayoutStructure } from '@/lib/craic/types';
 
 const redis = Redis.fromEnv();
 
@@ -86,53 +86,26 @@ async function prepareTournamentFinish(
       }))
       .sort((a, b) => b.chips - a.chips);
 
-    if (rankings.length < 2) return null;
+    if (rankings.length < 1) return null;
 
-    const winner = rankings[0].address;
-    const second = rankings[1].address;
-    const others = rankings.slice(2).map(p => p.address);
+    const structure = getPayoutStructure(rankings.length);
 
-    // Calculate payouts (65% / 35% split)
-    const winnerPrize = Math.floor((config.prizePool * 65) / 100);
-    const secondPrize = Math.floor((config.prizePool * 35) / 100);
+    const payouts = rankings.map((player, i) => ({
+      address: player.address,
+      name: player.name,
+      chips: player.chips,
+      rank: i + 1,
+      percent: i < structure.length ? structure[i] : 0,
+    }));
 
     return {
       gameId,
-      prizePool: config.prizePool,
-      bondAmount: config.bondAmount,
-      rankings: rankings.map((p, i) => ({
-        rank: i + 1,
-        address: p.address,
-        name: p.name,
-        chips: p.chips,
-      })),
-      payouts: {
-        winner: {
-          address: winner,
-          bondReturn: config.bondAmount,
-          prize: winnerPrize,
-          total: config.bondAmount + winnerPrize,
-        },
-        second: {
-          address: second,
-          bondReturn: config.bondAmount,
-          prize: secondPrize,
-          total: config.bondAmount + secondPrize,
-        },
-        others: others.map(addr => ({
-          address: addr,
-          bondReturn: config.bondAmount,
-          prize: 0,
-          total: config.bondAmount,
-        })),
-      },
-      // Contract call data
+      rankings: payouts,
+      payoutStructure: structure,
       contractCall: {
-        function: 'finishTournament',
-        gameId,
-        winner,
-        second,
-        otherPlayers: others,
+        function: 'completeGame',
+        gameHash: config.gameHash || '',
+        winners: payouts.filter(p => p.percent > 0).map(p => p.address),
       },
     };
   } catch (error) {

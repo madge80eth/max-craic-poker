@@ -46,12 +46,22 @@ export async function GET(request: Request) {
       chips: p.chips,
     }));
 
+    // Include finish data when game is done
+    let finishData = null;
+    if (gameState.phase === 'finished') {
+      const finishJson = await redis.get(`craic:game:${gameId}:finish`);
+      if (finishJson) {
+        finishData = typeof finishJson === 'string' ? JSON.parse(finishJson) : finishJson;
+      }
+    }
+
     return NextResponse.json({
       success: true,
       config,
       status,
       players,
       gameState: toClientState(gameState, playerId || null),
+      finishData,
     });
   } catch (error) {
     console.error('Error getting Craic game state:', error);

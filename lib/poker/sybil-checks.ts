@@ -3,8 +3,10 @@
 
 import { createPublicClient, http, Address, parseAbi } from 'viem';
 import { base } from 'viem/chains';
+import { getAttestations } from '@coinbase/onchainkit/identity';
 import { SybilResistanceConfig } from './types';
-import { verifyCoinbaseAttestation, verifyNFTOwnership } from '../craic/sybil';
+
+const COINBASE_VERIFIED_SCHEMA_ID = '0xf8b05c79f090979bf4a80270aba232dff11a10d9ca55c4f88de95317970f0de9';
 
 const publicClient = createPublicClient({
   chain: base,
@@ -14,6 +16,33 @@ const publicClient = createPublicClient({
 const ERC20_ABI = parseAbi([
   'function balanceOf(address account) view returns (uint256)',
 ]);
+
+const ERC721_ABI = parseAbi([
+  'function balanceOf(address owner) view returns (uint256)',
+]);
+
+async function verifyCoinbaseAttestation(walletAddress: string): Promise<{ verified: boolean }> {
+  const attestations = await getAttestations(
+    walletAddress as Address,
+    base,
+    { schemas: [COINBASE_VERIFIED_SCHEMA_ID] }
+  );
+  return { verified: attestations.length > 0 };
+}
+
+async function verifyNFTOwnership(
+  walletAddress: string,
+  contractAddress: string,
+  tokenId?: string
+): Promise<{ verified: boolean }> {
+  const balance = await publicClient.readContract({
+    address: contractAddress as Address,
+    abi: ERC721_ABI,
+    functionName: 'balanceOf',
+    args: [walletAddress as Address],
+  });
+  return { verified: balance > BigInt(0) };
+}
 
 interface CheckResult {
   passed: boolean;
