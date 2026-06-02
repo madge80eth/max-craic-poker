@@ -254,11 +254,6 @@ export default function PokerLobby() {
             >
               Play
             </button>
-            {!isConnected && (
-              <p className="text-gray-600 text-xs">
-                No wallet needed &bull; Play chips only
-              </p>
-            )}
           </div>
         ) : (
           <>

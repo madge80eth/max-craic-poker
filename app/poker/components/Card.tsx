@@ -6,8 +6,8 @@ import PlayingCard from '@heruka_urgyen/react-playing-cards/lib/TcN';
 interface CardProps {
   card: CardType | null;
   faceDown?: boolean;
-  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
-  animate?: 'deal' | 'flip' | 'none';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | 'xxl';
+  animate?: 'deal' | 'flip' | 'fade' | 'none';
   delay?: number;
 }
 
@@ -17,6 +17,7 @@ const SIZE_HEIGHTS: Record<string, number> = {
   md: 72,
   lg: 88,
   xl: 108,
+  xxl: 132,
 };
 
 function toCardString(card: CardType): string {
@@ -26,7 +27,7 @@ function toCardString(card: CardType): string {
 export default function Card({ card, faceDown, size = 'md', animate = 'none', delay = 0 }: CardProps) {
   const height = SIZE_HEIGHTS[size];
 
-  const animClass = animate === 'deal' ? 'animate-card-deal' : '';
+  const animClass = animate === 'deal' ? 'animate-card-deal' : animate === 'fade' ? 'animate-card-fade' : '';
   const animStyle = delay > 0 ? { animationDelay: `${delay}ms` } : {};
 
   return (
