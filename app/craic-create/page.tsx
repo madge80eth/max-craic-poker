@@ -1,479 +1,393 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useAccount, useConnect, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useAccount, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useWalletConnect } from '@/hooks/useWalletConnect';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { parseUnits, decodeEventLog, Address } from 'viem';
 import {
   ArrowLeft,
   ArrowRight,
   Check,
   Clock,
-  Shield,
-  DollarSign,
-  Image,
-  Wallet,
-  BadgeCheck,
   Loader2,
-  Sparkles,
   Zap,
-  Gamepad2,
-  Trophy,
-  CheckCircle2,
   AlertCircle,
-  Calendar,
-  Users,
   X,
-  Copy,
-  ExternalLink,
+  Wallet,
   Coins,
-  FileUp,
-  Lock,
-  ListChecks,
+  Copy,
+  Globe,
+  List,
+  Percent,
+  Shield,
+  Trophy,
+  Users,
 } from 'lucide-react';
 import {
   CreateGameFormState,
   DEFAULT_CREATE_FORM,
   BlindSpeed,
-  estimateGameTime,
+  USDC_ADDRESS,
 } from '@/lib/craic/types';
-import {
-  CONTRACTS,
-  SPONSORED_TOURNAMENT_ABI,
-  ERC20_ABI,
-  centsToUsdc,
-} from '@/lib/poker/sponsored-types';
+import { CRAIC_HOME_GAME_ABI, CRAIC_CONTRACT_ADDRESS } from '@/lib/craic/contract';
 
-type GameType = 'fun' | 'sponsored';
-type WizardStep = 'type' | 'prize' | 'fund' | 'settings' | 'sybil' | 'confirm';
+type WizardStep = 'basics' | 'access' | 'buyin' | 'blinds' | 'fee' | 'review';
 
-function getSteps(gameType: GameType | null): { id: WizardStep; title: string }[] {
-  const steps: { id: WizardStep; title: string }[] = [
-    { id: 'type', title: 'Game Type' },
-  ];
-  steps.push({ id: 'settings', title: 'Settings' });
-  if (gameType === 'sponsored') {
-    steps.push({ id: 'prize', title: 'Prize Pool' });
-    steps.push({ id: 'fund', title: 'Fund' });
-  }
-  steps.push({ id: 'sybil', title: 'Protection' });
-  steps.push({ id: 'confirm', title: 'Confirm' });
-  return steps;
+const STEPS: { id: WizardStep; label: string }[] = [
+  { id: 'basics', label: 'Basics' },
+  { id: 'access', label: 'Access' },
+  { id: 'buyin', label: 'Buy-In' },
+  { id: 'blinds', label: 'Blinds' },
+  { id: 'fee', label: 'Fee' },
+  { id: 'review', label: 'Launch' },
+];
+
+interface TokenInfo {
+  name: string;
+  symbol: string;
+  decimals: number;
 }
 
-const CONTRACT_DEPLOYED = CONTRACTS.SPONSORED_TOURNAMENT !== '0x0000000000000000000000000000000000000000';
+type BuyInType = 'free' | 'eth' | 'usdc' | 'custom';
 
-// Escrow address for off-chain funding
-const ESCROW_ADDRESS = '0xCc7659fbE122AcdE826725cf3a4cd5dfD72763F0';
+const ZERO_ADDR = '0x0000000000000000000000000000000000000000';
 
-type FundingPhase = 'idle' | 'approving' | 'approved' | 'depositing' | 'deposited' | 'error';
+function generateGameId() {
+  return `craic_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+}
 
-function CreateGameLoading() {
+function Loading() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-      <div className="flex items-center gap-3 text-gray-400">
-        <Loader2 className="w-6 h-6 animate-spin" />
-        <span>Loading...</span>
-      </div>
+      <Loader2 className="w-6 h-6 animate-spin text-amber-400" />
     </div>
   );
 }
 
 export default function CreateGamePage() {
   return (
-    <Suspense fallback={<CreateGameLoading />}>
+    <Suspense fallback={<Loading />}>
       <CreateGameWizard />
     </Suspense>
   );
 }
 
+/* ─────────────────────────────────────────────────────── */
+
 function CreateGameWizard() {
-  const { address, isConnected, connector } = useAccount();
-  const { connect, connectors } = useConnect();
+  const { address, isConnected } = useAccount();
+  const { hasInjected, isConnecting: walletConnecting, manualConnectors, connectWith } = useWalletConnect();
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const urlPlayerId = searchParams.get('playerId');
   const urlPlayerName = searchParams.get('playerName');
 
-  const [step, setStep] = useState<WizardStep>('type');
-  const [gameType, setGameType] = useState<GameType | null>(null);
+  // ── wizard state ──
+  const [step, setStep] = useState<WizardStep>('basics');
   const [form, setForm] = useState<CreateGameFormState>(DEFAULT_CREATE_FORM);
-  const [creating, setCreating] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [scheduledStart, setScheduledStart] = useState(false);
-  const [scheduledDate, setScheduledDate] = useState('');
-  const [scheduledTime, setScheduledTime] = useState('');
 
-  const [fundingPhase, setFundingPhase] = useState<FundingPhase>('idle');
-  const [fundingError, setFundingError] = useState<string | null>(null);
-  const [sponsoredTournamentId, setSponsoredTournamentId] = useState<string | null>(null);
-  const [sponsoredTableId, setSponsoredTableId] = useState<string | null>(null);
+  // ── buy-in UI ──
+  const [buyInType, setBuyInType] = useState<BuyInType>('free');
+  const [amountDisplay, setAmountDisplay] = useState('');
+  const [customToken, setCustomToken] = useState('');
+  const [tokenInfo, setTokenInfo] = useState<TokenInfo | null>(null);
+  const [tokenLoading, setTokenLoading] = useState(false);
 
-  // Off-chain funding state
-  const [copied, setCopied] = useState(false);
-  const [fundingConfirmed, setFundingConfirmed] = useState(false);
-  const [fundingTxHash, setFundingTxHash] = useState<string | null>(null);
-  const [checkingFunding, setCheckingFunding] = useState(false);
+  // ── token gate UI ──
+  const [tokenGateAddress, setTokenGateAddress] = useState('');
+  const [tokenGateMinBalance, setTokenGateMinBalance] = useState('1'); // min balance default: 1
 
-  const { writeContract: writeApprove, data: approveTxHash, isPending: isApproving } = useWriteContract();
-  const { writeContract: writeSponsor, data: sponsorTxHash, isPending: isSponsoring } = useWriteContract();
-  const { isSuccess: approveConfirmed } = useWaitForTransactionReceipt({ hash: approveTxHash });
-  const { isSuccess: sponsorConfirmed } = useWaitForTransactionReceipt({ hash: sponsorTxHash });
+  // ── "same token as gate" toggle (buy-in step) ──
+  const [sameAsGate, setSameAsGate] = useState(false);
 
-  const STEPS = getSteps(gameType);
-  const stepIndex = STEPS.findIndex(s => s.id === step);
+  // ── leaderboard UI ──
+  const [leaderboardAddress, setLeaderboardAddress] = useState('');
+  const [leaderboardLimit, setLeaderboardLimit] = useState(50);
 
-  // Auto-connect wallet - try farcasterMiniApp first, let it fail gracefully
+  // ── whitelist UI ──
+  const [wlManual, setWlManual] = useState('');
+
+  // ── create flow ──
+  const [pendingGameId, setPendingGameId] = useState<string | null>(null);
+  const [pendingForm, setPendingForm] = useState<CreateGameFormState | null>(null);
+  const [isPosting, setIsPosting] = useState(false);
+  const [createdGameId, setCreatedGameId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
+  const [baseAppLinkCopied, setBaseAppLinkCopied] = useState(false);
+
+  // ── wagmi hooks ──
+  const {
+    writeContract,
+    data: txHash,
+    isPending: isSigning,
+    error: writeError,
+    reset: resetWrite,
+  } = useWriteContract();
+  const { data: receipt, isLoading: isConfirming, isSuccess: isConfirmed } =
+    useWaitForTransactionReceipt({ hash: txHash });
+
+  // ── derived ──
+  const stepIndex = STEPS.findIndex((s) => s.id === step);
+  const isFree = buyInType === 'free';
+  const isPaid = !isFree && form.buyInToken !== '' && form.buyInAmount !== '0';
+  const creating = isSigning || isConfirming || isPosting;
+
+  // Auto-connect is handled by useWalletConnect hook.
+
+  // ── fetch token info on custom address change ──
   useEffect(() => {
-    console.log('🔌 [AUTO-CONNECT] isConnected:', isConnected, 'isConnecting:', isConnecting);
-    console.log('🔌 [AUTO-CONNECT] Available connectors:', connectors.map(c => c.id));
-    if (isConnected || isConnecting) {
-      console.log('🔌 [AUTO-CONNECT] Already connected or connecting, skipping');
+    if (buyInType !== 'custom' || !customToken || !/^0x[0-9a-fA-F]{40}$/.test(customToken)) {
+      if (buyInType === 'custom') setTokenInfo(null);
       return;
     }
-    if (connectors.length === 0) {
-      console.log('🔌 [AUTO-CONNECT] No connectors available');
-      return;
-    }
-
-    const miniAppConnector = connectors.find(c => c.id === 'farcasterMiniApp')
-      || connectors.find(c => c.id === 'coinbaseWallet');
-
-    console.log('🔌 [AUTO-CONNECT] Selected connector:', miniAppConnector?.id);
-    if (miniAppConnector) {
-      setIsConnecting(true);
-      connect({ connector: miniAppConnector }, {
-        onSettled: (data, error) => {
-          console.log('🔌 [AUTO-CONNECT] onSettled - data:', data, 'error:', error);
-          setIsConnecting(false);
-        }
-      });
-    }
-  }, [isConnected, isConnecting, connectors, connect]);
-
-  useEffect(() => {
-    if (approveConfirmed && fundingPhase === 'approving') {
-      setFundingPhase('approved');
-    }
-  }, [approveConfirmed, fundingPhase]);
-
-  useEffect(() => {
-    if (sponsorConfirmed && fundingPhase === 'depositing') {
-      setFundingPhase('deposited');
-    }
-  }, [sponsorConfirmed, fundingPhase]);
-
-  const goNext = async () => {
-    console.log('🎯 [goNext] Called');
-    console.log('🎯 [goNext] isConnected:', isConnected);
-    console.log('🎯 [goNext] connector?.id:', connector?.id);
-    console.log('🎯 [goNext] address:', address);
-    console.log('🎯 [goNext] urlPlayerId:', urlPlayerId);
-    console.log('🎯 [goNext] urlPlayerName:', urlPlayerName);
-    console.log('🎯 [goNext] step:', step, 'gameType:', gameType);
-    console.log('🎯 [goNext] form.prizePool:', form.prizePool);
-
-    const nextIndex = stepIndex + 1;
-    if (nextIndex < STEPS.length) {
-      const nextStep = STEPS[nextIndex].id;
-      console.log('🎯 [goNext] nextStep:', nextStep);
-
-      // For sponsored games, skip Fund step entirely - create tournament and redirect to /fund-game
-      // Always use off-chain flow regardless of contract deployment status
-      if (nextStep === 'fund' && gameType === 'sponsored') {
-        console.log('🎯 [goNext] Entering sponsored game flow');
-        setCreating(true);
-        try {
-          const creatorId = address || urlPlayerId;
-          const playerName = urlPlayerName || (address ? `Player_${address.slice(2, 6)}` : 'Player');
-          console.log('🎯 [goNext] creatorId:', creatorId);
-          console.log('🎯 [goNext] playerName:', playerName);
-
-          console.log('🎯 [goNext] Calling /api/poker/sponsored...');
-          const res = await fetch('/api/poker/sponsored', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              creatorId,
-              creatorName: playerName,
-              prizePool: form.prizePool,
-              bondAmount: 0,
-              maxPlayers: 6,
-              startingStack: form.startingStack,
-              blindSpeed: form.blindSpeed,
-              ...(scheduledStart && scheduledDate && scheduledTime ? {
-                scheduledStartTime: new Date(`${scheduledDate}T${scheduledTime}:00Z`).getTime()
-              } : {}),
-            }),
-          });
-          console.log('🎯 [goNext] Response status:', res.status);
-          const data = await res.json();
-          console.log('🎯 [goNext] Response data:', data);
-
-          if (data.success) {
-            console.log('🎯 [goNext] Success! Redirecting to /fund-game');
-            // Redirect to standalone fund page immediately
-            router.push(
-              `/fund-game?tournamentId=${encodeURIComponent(data.tournamentId)}&tableId=${encodeURIComponent(data.tableId)}&amount=${form.prizePool}&playerId=${encodeURIComponent(creatorId || '')}&playerName=${encodeURIComponent(playerName)}`
-            );
-            return;
-          } else {
-            console.log('🎯 [goNext] API returned error:', data.error);
-            setFundingError(data.error || 'Failed to create tournament');
-          }
-        } catch (err) {
-          console.log('🎯 [goNext] Caught exception:', err);
-          setFundingError(err instanceof Error ? err.message : 'Network error');
-        } finally {
-          setCreating(false);
-        }
-        return;
+    const id = setTimeout(async () => {
+      setTokenLoading(true);
+      try {
+        const res = await fetch(`/api/craic/token-info?address=${customToken}`);
+        if (res.ok) setTokenInfo(await res.json());
+        else setTokenInfo(null);
+      } catch {
+        setTokenInfo(null);
+      } finally {
+        setTokenLoading(false);
       }
+    }, 400);
+    return () => clearTimeout(id);
+  }, [customToken, buyInType]);
 
-      console.log('🎯 [goNext] Moving to step:', nextStep);
-      setStep(nextStep);
+  // ── auto-enable "same as gate" when switching to custom buy-in after token_gated access ──
+  useEffect(() => {
+    if (buyInType !== 'custom') { setSameAsGate(false); return; }
+    if (form.entryMode === 'token_gated' && tokenGateAddress) {
+      setSameAsGate(true);
+      setCustomToken(tokenGateAddress);
     }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [buyInType]);
 
-  const goBack = () => {
-    const prevIndex = stepIndex - 1;
-    if (prevIndex >= 0) {
-      setStep(STEPS[prevIndex].id);
-    } else {
-      router.push('/poker');
-    }
-  };
-
-  const selectGameType = (type: GameType) => {
-    setGameType(type);
-    if (type === 'fun') {
-      setForm({ ...form, prizePool: 0 });
-    }
-    setStep('settings');
-  };
-
-  const handleApproveUsdc = () => {
-    if (!address || form.prizePool <= 0) return;
-    setFundingError(null);
-    setFundingPhase('approving');
-    const usdcAmount = centsToUsdc(form.prizePool);
-    try {
-      writeApprove({
-        address: CONTRACTS.USDC,
-        abi: ERC20_ABI,
-        functionName: 'approve',
-        args: [CONTRACTS.SPONSORED_TOURNAMENT, usdcAmount],
-      });
-    } catch (err) {
-      setFundingPhase('error');
-      setFundingError(err instanceof Error ? err.message : 'Approval failed');
-    }
-  };
-
-  const handleDepositToContract = () => {
-    if (!sponsoredTournamentId || form.prizePool <= 0) return;
-    setFundingError(null);
-    setFundingPhase('depositing');
-    const usdcAmount = centsToUsdc(form.prizePool);
-    try {
-      writeSponsor({
-        address: CONTRACTS.SPONSORED_TOURNAMENT,
-        abi: SPONSORED_TOURNAMENT_ABI,
-        functionName: 'sponsorTournament',
-        args: [sponsoredTournamentId as `0x${string}`, usdcAmount],
-      });
-    } catch (err) {
-      setFundingPhase('error');
-      setFundingError(err instanceof Error ? err.message : 'Deposit failed');
-    }
-  };
-
-  const createSponsoredBackend = async () => {
-    // For sponsored games, we need a wallet address for USDC transactions
-    const creatorId = address || urlPlayerId;
-    if (!creatorId) {
-      setFundingError('Wallet not connected. Please connect your wallet for sponsored games.');
+  // ── sync buy-in UI → form ──
+  useEffect(() => {
+    if (isFree) {
+      setForm((f) => ({ ...f, buyInToken: '', buyInAmount: '0' }));
       return;
     }
-    if (sponsoredTournamentId) return; // Already created
-
+    const token =
+      buyInType === 'eth' ? ZERO_ADDR : buyInType === 'usdc' ? USDC_ADDRESS : customToken;
+    const decimals =
+      buyInType === 'eth' ? 18 : buyInType === 'usdc' ? 6 : tokenInfo?.decimals ?? 18;
+    let raw = '0';
     try {
-      const res = await fetch('/api/poker/sponsored', {
+      if (amountDisplay && parseFloat(amountDisplay) > 0)
+        raw = parseUnits(amountDisplay, decimals).toString();
+    } catch { /* invalid input */ }
+    setForm((f) => ({ ...f, buyInToken: token, buyInAmount: raw }));
+  }, [buyInType, amountDisplay, customToken, tokenInfo, isFree]);
+
+  // ── handle write error ──
+  useEffect(() => {
+    if (!writeError) return;
+    const msg = writeError.message || '';
+    setError(msg.includes('User rejected') || msg.includes('denied') ? 'Transaction rejected' : msg.slice(0, 200));
+    setPendingGameId(null);
+    setPendingForm(null);
+  }, [writeError]);
+
+  // ── on tx confirm → post to API ──
+  useEffect(() => {
+    if (!isConfirmed || !receipt || !pendingGameId || !pendingForm || createdGameId) return;
+
+    let gameHash: string | undefined;
+    for (const log of receipt.logs) {
+      try {
+        const decoded = decodeEventLog({
+          abi: CRAIC_HOME_GAME_ABI,
+          eventName: 'GameCreated',
+          data: log.data,
+          topics: log.topics,
+        });
+        gameHash = (decoded.args as Record<string, unknown>).gameHash as string;
+        break;
+      } catch { /* not our event */ }
+    }
+
+    postToApi(pendingGameId, pendingForm, gameHash);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isConfirmed, receipt, pendingGameId]);
+
+  // ── manual whitelist parse ──
+  useEffect(() => {
+    if (form.entryMode !== 'whitelist') return;
+    const addrs = wlManual
+      .split(/[\n,]+/)
+      .map((s) => s.trim())
+      .filter((s) => /^0x[0-9a-fA-F]{40}$/.test(s));
+    setForm((f) => ({ ...f, whitelist: addrs }));
+  }, [wlManual, form.entryMode]);
+
+  /* ── handlers ── */
+
+  async function postToApi(gameId: string, f: CreateGameFormState, gameHash?: string) {
+    setIsPosting(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/craic/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          creatorId,
-          creatorName: urlPlayerName || (address ? `Player_${address.slice(2, 6)}` : 'Player'),
-          prizePool: form.prizePool,
-          bondAmount: 0,
-          maxPlayers: 6,
-          startingStack: form.startingStack,
-          blindSpeed: form.blindSpeed,
+          gameId,
+          gameHash,
+          host: address,
+          gameName: f.gameName,
+          description: f.description,
+          buyInToken: f.buyInToken,
+          buyInAmount: f.buyInAmount,
+          protocolFeeBps: f.protocolFeeBps,
+          entryMode: f.entryMode,
+          ...(f.whitelist?.length ? { whitelist: f.whitelist } : {}),
+          ...(f.entryMode === 'token_gated' && tokenGateAddress
+            ? { tokenGateAddress, tokenGateMinBalance: tokenGateMinBalance || '1' }
+            : {}),
+          ...(f.entryMode === 'leaderboard'
+            ? { leaderboardAddress, leaderboardLimit }
+            : {}),
+          startingStack: f.startingStack,
+          blindSpeed: f.blindSpeed,
+          ...(f.scheduledStart ? { scheduledStart: f.scheduledStart } : {}),
         }),
       });
       const data = await res.json();
-      if (data.success) {
-        setSponsoredTournamentId(data.tournamentId);
-        setSponsoredTableId(data.tableId);
-        setFundingError(null); // Clear any previous error
-      } else {
-        // Ignore /pipeline errors - they're from wagmi, not relevant to off-chain flow
-        if (data.error && !data.error.includes('/pipeline')) {
-          setFundingError(data.error);
-        }
-      }
-    } catch (err) {
-      const errMsg = err instanceof Error ? err.message : 'Network error';
-      // Ignore /pipeline errors - they're from wagmi background RPC calls
-      if (!errMsg.includes('/pipeline')) {
-        setFundingError(errMsg);
-      }
-    }
-  };
-
-  useEffect(() => {
-    if (step === 'fund' && !sponsoredTournamentId && !fundingError) {
-      createSponsoredBackend();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, address, urlPlayerId, fundingError]);
-
-  // Redirect to standalone fund page once tournament is created (avoids wagmi interference)
-  useEffect(() => {
-    if (step === 'fund' && sponsoredTournamentId && sponsoredTableId && !CONTRACT_DEPLOYED) {
-      const playerId = address || urlPlayerId;
-      const playerName = urlPlayerName || (address ? `Player_${address.slice(2, 6)}` : 'Player');
-      router.push(
-        `/fund-game?tournamentId=${encodeURIComponent(sponsoredTournamentId)}&tableId=${encodeURIComponent(sponsoredTableId)}&amount=${form.prizePool}&playerId=${encodeURIComponent(playerId || '')}&playerName=${encodeURIComponent(playerName)}`
-      );
-    }
-  }, [step, sponsoredTournamentId, sponsoredTableId, address, urlPlayerId, urlPlayerName, form.prizePool, router]);
-
-  // Copy escrow address to clipboard
-  const copyEscrowAddress = async () => {
-    try {
-      await navigator.clipboard.writeText(ESCROW_ADDRESS);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
-    }
-  };
-
-  // Clear /pipeline errors automatically - they're from wagmi, not relevant to off-chain flow
-  useEffect(() => {
-    if (fundingError && fundingError.includes('/pipeline')) {
-      setFundingError(null);
-    }
-  }, [fundingError]);
-
-  // Poll for funding confirmation (off-chain flow)
-  useEffect(() => {
-    if (step !== 'fund' || !sponsoredTournamentId || fundingConfirmed || CONTRACT_DEPLOYED) {
-      return;
-    }
-
-    const checkFunding = async () => {
-      setCheckingFunding(true);
-      try {
-        const res = await fetch(
-          `/api/poker/check-funding?tournamentId=${encodeURIComponent(sponsoredTournamentId)}&amount=${form.prizePool}`
-        );
-        const data = await res.json();
-        if (data.funded) {
-          setFundingConfirmed(true);
-          setFundingTxHash(data.txHash || null);
-        }
-      } catch (err) {
-        console.error('Error checking funding:', err);
-      } finally {
-        setCheckingFunding(false);
-      }
-    };
-
-    // Check immediately
-    checkFunding();
-
-    // Then poll every 5 seconds
-    const interval = setInterval(checkFunding, 5000);
-    return () => clearInterval(interval);
-  }, [step, sponsoredTournamentId, fundingConfirmed, form.prizePool]);
-
-  const handleCreate = async () => {
-    const playerId = urlPlayerId || address;
-    const playerName = urlPlayerName || (address ? `Player_${address.slice(2, 6)}` : 'Player');
-    if (!playerId) return;
-    setCreating(true);
-    try {
-      if (gameType === 'sponsored' && sponsoredTableId) {
-        router.push(`/poker/${sponsoredTableId}?playerId=${encodeURIComponent(playerId)}&playerName=${encodeURIComponent(playerName)}`);
-      } else {
-        let scheduledStartTime: number | undefined;
-        if (scheduledStart && scheduledDate && scheduledTime) {
-          const scheduled = new Date(`${scheduledDate}T${scheduledTime}:00Z`);
-          scheduledStartTime = scheduled.getTime();
-        }
-        const res = await fetch('/api/poker/create', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            creatorId: playerId,
-            creatorName: playerName,
-            tableName: `${playerName}'s Table`,
-            startingChips: form.startingStack,
-            blindIntervalMinutes: form.blindSpeed === 'turbo' ? 5 : form.blindSpeed === 'deep' ? 15 : 10,
-            ...(scheduledStartTime ? { scheduledStartTime } : {}),
-            ...(Object.values(form.sybilOptions).some((v: any) => v.enabled) ? { sybilResistance: form.sybilOptions } : {}),
-          }),
-        });
-        const data = await res.json();
-        if (data.success) {
-          router.push(`/poker/${data.tableId}?playerId=${encodeURIComponent(playerId)}&playerName=${encodeURIComponent(playerName)}`);
-        } else {
-          alert(data.error || 'Failed to create game');
-        }
-      }
-    } catch (error) {
-      console.error('Failed to create game:', error);
-      alert('Failed to create game');
+      if (data.success) setCreatedGameId(data.gameId);
+      else setError(data.error || 'Failed to create game');
+    } catch {
+      setError('Failed to create game');
     } finally {
-      setCreating(false);
+      setIsPosting(false);
     }
+  }
+
+  function handleCreate() {
+    setError(null);
+    resetWrite();
+    const gameId = generateGameId();
+    setPendingGameId(gameId);
+    setPendingForm({ ...form });
+
+    if (isPaid) {
+      writeContract({
+        address: CRAIC_CONTRACT_ADDRESS,
+        abi: CRAIC_HOME_GAME_ABI,
+        functionName: 'createGame',
+        args: [
+          gameId,
+          form.buyInToken as Address,
+          BigInt(form.buyInAmount),
+          form.protocolFeeBps,
+        ],
+      });
+    } else {
+      postToApi(gameId, form);
+    }
+  }
+
+  function goNext() {
+    const next = stepIndex + 1;
+    if (next < STEPS.length) setStep(STEPS[next].id);
+  }
+  function goBack() {
+    const prev = stepIndex - 1;
+    if (prev >= 0) setStep(STEPS[prev].id);
+    else router.push('/craic-home');
+  }
+
+  function canContinue(): boolean {
+    switch (step) {
+      case 'basics':
+        return form.gameName.trim().length > 0;
+      case 'access':
+        if (form.entryMode === 'open' || form.entryMode === 'token_gated' || form.entryMode === 'leaderboard') return true;
+        return (form.whitelist?.length ?? 0) > 0;
+      default:
+        return true;
+    }
+  }
+
+  function copyLink() {
+    if (!createdGameId) return;
+    const url = `https://maxcraicpoker.com/craic-game/${createdGameId}`;
+    navigator.clipboard.writeText(url);
+    setLinkCopied(true);
+    setTimeout(() => setLinkCopied(false), 2000);
+  }
+
+  function copyBaseAppLink() {
+    if (!createdGameId) return;
+    const url = `https://www.base.org/miniapp?url=https://maxcraicpoker.com/craic-game/${createdGameId}`;
+    navigator.clipboard.writeText(url);
+    setBaseAppLinkCopied(true);
+    setTimeout(() => setBaseAppLinkCopied(false), 2000);
+  }
+
+  const estimatedTimes: Record<BlindSpeed, string> = {
+    turbo: '~20 min',
+    standard: '~45 min',
+    deep: '~90 min',
   };
 
-  const estimatedTime = estimateGameTime(form.startingStack, form.blindSpeed);
-  const formatUSDC = (cents: number) => `$${(cents / 100).toFixed(2)}`;
-  const canCreateFreeGame = urlPlayerId && urlPlayerName;
+  const activeTokenSymbol =
+    buyInType === 'eth' ? 'ETH' : buyInType === 'usdc' ? 'USDC' : tokenInfo?.symbol ?? '???';
+  const activeDecimals =
+    buyInType === 'eth' ? 18 : buyInType === 'usdc' ? 6 : tokenInfo?.decimals ?? 18;
+  const isStablecoin = ['USDC', 'USDT', 'DAI'].includes(activeTokenSymbol);
 
-  // Wallet connect screen - modal style
-  if (!isConnected && !canCreateFreeGame) {
+  /* ── gate: wallet ── */
+
+  const canCreateFree = urlPlayerId && urlPlayerName;
+  if (!isConnected && !canCreateFree) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-        <div className="bg-gray-900 rounded-2xl border border-gray-700/50 w-full max-w-sm shadow-2xl">
-          <div className="p-6 text-center">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/20 flex items-center justify-center">
-              <Wallet className="w-8 h-8 text-emerald-400" />
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
+        <div className="bg-gray-900 rounded-2xl border border-gray-800 w-full max-w-sm shadow-2xl">
+          <div className="p-8 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-500/15 flex items-center justify-center">
+              <Wallet className="w-8 h-8 text-amber-400" />
             </div>
-            <h2 className="text-xl font-bold mb-2">Connect Wallet</h2>
-            <p className="text-gray-400 text-sm mb-6">Connect a wallet or go back to lobby</p>
-            {isConnecting ? (
-              <div className="flex items-center justify-center gap-2 text-emerald-400">
+            <h2 className="text-xl font-bold text-white mb-2">Connect Wallet</h2>
+            <p className="text-gray-500 text-sm mb-6">Required to host a game</p>
+            {walletConnecting ? (
+              <div className="flex items-center justify-center gap-2 text-amber-400">
                 <Loader2 className="w-5 h-5 animate-spin" />
                 <span>Connecting...</span>
               </div>
+            ) : hasInjected ? (
+              <div className="space-y-3">
+                <button
+                  onClick={() => connectWith('injected')}
+                  className="w-full py-3 bg-amber-500 hover:bg-amber-400 rounded-xl text-gray-900 font-semibold transition-colors"
+                >
+                  Connect Wallet
+                </button>
+                <button
+                  onClick={() => router.push('/craic-home')}
+                  className="w-full py-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-xl text-gray-400 font-medium transition-colors"
+                >
+                  Back to Lobby
+                </button>
+              </div>
             ) : (
               <div className="space-y-3">
-                {connectors.map((connector) => (
+                {manualConnectors.map((c) => (
                   <button
-                    key={connector.id}
-                    onClick={() => connect({ connector })}
-                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 rounded-xl text-white font-medium transition-colors"
+                    key={c.id}
+                    onClick={() => connectWith(c.id)}
+                    className="w-full py-3 bg-amber-500 hover:bg-amber-400 rounded-xl text-gray-900 font-semibold transition-colors"
                   >
-                    Connect {connector.name}
+                    {c.name}
                   </button>
                 ))}
                 <button
-                  onClick={() => router.push('/poker')}
+                  onClick={() => router.push('/craic-home')}
                   className="w-full py-3 bg-gray-800/50 hover:bg-gray-700/50 rounded-xl text-gray-400 font-medium transition-colors"
                 >
                   Back to Lobby
@@ -486,1086 +400,554 @@ function CreateGameWizard() {
     );
   }
 
+  /* ── success screen ── */
+
+  if (createdGameId) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
+        <div className="bg-gray-900 rounded-2xl border border-amber-500/30 w-full max-w-sm shadow-2xl shadow-amber-500/10">
+          <div className="p-8 text-center">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-emerald-500/20 flex items-center justify-center">
+              <Check className="w-8 h-8 text-emerald-400" />
+            </div>
+            <h2 className="text-2xl font-black text-white mb-1">Game Created</h2>
+            <p className="text-amber-400 font-semibold mb-6">{form.gameName}</p>
+
+            <div className="space-y-2 mb-4">
+              <div className="bg-gray-800/50 rounded-xl p-3">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs text-blue-400 font-semibold uppercase tracking-wider">Share via Base App</p>
+                  <button
+                    onClick={copyBaseAppLink}
+                    className="flex items-center gap-1 px-2 py-1 bg-blue-500/20 hover:bg-blue-500/30 rounded-lg text-blue-400 text-xs font-medium transition-colors"
+                  >
+                    {baseAppLinkCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                    {baseAppLinkCopied ? 'Copied' : 'Copy'}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 font-mono break-all">
+                  {`base.org/miniapp?url=maxcraicpoker.com/craic-game/${createdGameId}`}
+                </p>
+              </div>
+
+              <div className="bg-gray-800/50 rounded-xl p-3">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-xs text-amber-400 font-semibold uppercase tracking-wider">Share via Browser</p>
+                  <button
+                    onClick={copyLink}
+                    className="flex items-center gap-1 px-2 py-1 bg-amber-500/20 hover:bg-amber-500/30 rounded-lg text-amber-400 text-xs font-medium transition-colors"
+                  >
+                    {linkCopied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+                    {linkCopied ? 'Copied' : 'Copy'}
+                  </button>
+                </div>
+                <p className="text-xs text-gray-500 font-mono break-all">
+                  {`maxcraicpoker.com/craic-game/${createdGameId}`}
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                const pid = urlPlayerId || address;
+                const pname = urlPlayerName || (address ? `Player_${address.slice(2, 6)}` : 'Player');
+                router.push(`/craic-game/${createdGameId}?playerId=${encodeURIComponent(pid || '')}&playerName=${encodeURIComponent(pname)}`);
+              }}
+              className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 rounded-xl text-gray-900 font-bold transition-all shadow-lg shadow-amber-500/20"
+            >
+              Go to Game
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── main wizard ── */
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-      <div className="bg-gray-900 rounded-2xl border border-gray-700/50 w-full max-w-sm shadow-2xl max-h-[90vh] flex flex-col">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-800 flex-shrink-0">
+    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-4">
+      <div className="bg-gray-900 rounded-2xl border border-gray-800 w-full max-w-sm shadow-2xl max-h-[92vh] flex flex-col">
+        {/* header */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-800/60 flex-shrink-0">
           <div className="flex items-center gap-3">
-            {stepIndex > 0 && (
-              <button
-                onClick={goBack}
-                className="p-1 text-gray-400 hover:text-white transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-            )}
+            <button onClick={goBack} className="p-1 text-gray-500 hover:text-white transition-colors">
+              <ArrowLeft className="w-5 h-5" />
+            </button>
             <div>
-              <h3 className="text-lg font-bold">Create Game</h3>
-              <p className="text-xs text-gray-500">Step {stepIndex + 1} of {STEPS.length}</p>
+              <h3 className="text-lg font-bold text-white">Create Game</h3>
+              <p className="text-xs text-gray-600">
+                Step {stepIndex + 1} of {STEPS.length}
+              </p>
             </div>
           </div>
-          <button
-            onClick={() => router.push('/poker')}
-            className="p-1 text-gray-400 hover:text-white transition-colors"
-          >
+          <button onClick={() => router.push('/craic-home')} className="p-1 text-gray-500 hover:text-white transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Progress bar */}
+        {/* progress */}
         <div className="flex gap-1 px-4 pt-3 flex-shrink-0">
           {STEPS.map((s, i) => (
             <div
               key={s.id}
-              className={`flex-1 h-1 rounded-full transition-colors ${
-                i <= stepIndex ? 'bg-emerald-500' : 'bg-gray-800'
-              }`}
+              className={`flex-1 h-1 rounded-full transition-colors ${i <= stepIndex ? 'bg-amber-500' : 'bg-gray-800'}`}
             />
           ))}
         </div>
 
-        {/* Scrollable Content */}
+        {/* content */}
         <div className="p-4 space-y-4 overflow-y-auto flex-1">
-        {/* Step: Game Type */}
-        {step === 'type' && (
-          <div className="space-y-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-                <Gamepad2 className="w-6 h-6 text-emerald-400" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold">What kind of game?</h2>
-                <p className="text-sm text-gray-400">Choose how your tournament works</p>
-              </div>
-            </div>
+          {/* ──────── STEP 1: BASICS ──────── */}
+          {step === 'basics' && (
+            <div className="space-y-5">
+              <StepHeader icon={<Coins className="w-6 h-6 text-amber-400" />} title="Game Basics" sub="Name your game" />
 
-            <button
-              onClick={() => selectGameType('fun')}
-              className={`w-full text-left p-5 rounded-2xl border-2 transition-all relative ${
-                gameType === 'fun'
-                  ? 'bg-emerald-500/20 border-emerald-500 ring-2 ring-emerald-500/30'
-                  : 'bg-gray-800/30 border-gray-700/30 hover:border-gray-600/50'
-              }`}
-            >
-              {gameType === 'fun' && (
-                <div className="absolute top-3 right-3 w-5 h-5 bg-emerald-500 rounded-full flex items-center justify-center">
-                  <Check className="w-3 h-3 text-white" />
-                </div>
-              )}
-              <div className="flex items-center gap-3 mb-2">
-                <Gamepad2 className={`w-5 h-5 ${gameType === 'fun' ? 'text-emerald-300' : 'text-emerald-400'}`} />
-                <h3 className={`text-lg font-semibold ${gameType === 'fun' ? 'text-emerald-100' : ''}`}>Play for Fun</h3>
-              </div>
-              <p className={`text-sm leading-relaxed ${gameType === 'fun' ? 'text-emerald-200/70' : 'text-gray-400'}`}>
-                No prize pool, no money on the line. Just a straight-up poker tournament
-                for your community. Great for practice or community nights.
-              </p>
-            </button>
-
-            <button
-              onClick={() => selectGameType('sponsored')}
-              className={`w-full text-left p-5 rounded-2xl border-2 transition-all relative ${
-                gameType === 'sponsored'
-                  ? 'bg-yellow-500/20 border-yellow-500 ring-2 ring-yellow-500/30'
-                  : 'bg-gray-800/30 border-gray-700/30 hover:border-gray-600/50'
-              }`}
-            >
-              {gameType === 'sponsored' && (
-                <div className="absolute top-3 right-3 w-5 h-5 bg-yellow-500 rounded-full flex items-center justify-center">
-                  <Check className="w-3 h-3 text-gray-900" />
-                </div>
-              )}
-              <div className="flex items-center gap-3 mb-2">
-                <Trophy className={`w-5 h-5 ${gameType === 'sponsored' ? 'text-yellow-300' : 'text-yellow-400'}`} />
-                <h3 className={`text-lg font-semibold ${gameType === 'sponsored' ? 'text-yellow-100' : ''}`}>Sponsored</h3>
-              </div>
-              <p className={`text-sm leading-relaxed ${gameType === 'sponsored' ? 'text-yellow-200/70' : 'text-gray-400'}`}>
-                Fund a USDC prize pool for the tournament. Smart contract handles
-                trustless payouts to winners. Zero rake, 100% goes to players.
-              </p>
-            </button>
-          </div>
-        )}
-
-        {/* Step: Prize Pool */}
-        {step === 'prize' && (
-          <div className="space-y-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-yellow-500/20 flex items-center justify-center">
-                <DollarSign className="w-6 h-6 text-yellow-400" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold">Prize Pool</h2>
-                <p className="text-sm text-gray-400">How much USDC for the winners?</p>
-              </div>
-            </div>
-
-            {/* Prize Amount */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">Amount (USDC)</label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl">$</span>
+              <Field label="Game Name *">
                 <input
-                  type="number"
-                  value={form.prizePool / 100 || ''}
-                  onChange={(e) => setForm({ ...form, prizePool: parseFloat(e.target.value) * 100 || 0 })}
-                  className="w-full pl-10 pr-4 py-4 bg-gray-800/50 border border-gray-700/50 rounded-xl text-white text-2xl font-bold font-mono focus:outline-none focus:border-yellow-500/50"
-                  placeholder="0"
-                  min={1}
-                  step={1}
+                  type="text"
+                  value={form.gameName}
+                  onChange={(e) => setForm({ ...form, gameName: e.target.value })}
+                  placeholder="Friday Night Poker"
+                  maxLength={60}
+                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700/50 rounded-xl text-white focus:outline-none focus:border-amber-500/60 placeholder:text-gray-600"
                 />
-              </div>
-              <div className="flex gap-2">
-                {[25, 50, 100, 250].map((amount) => (
-                  <button
-                    key={amount}
-                    onClick={() => setForm({ ...form, prizePool: amount * 100 })}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      form.prizePool === amount * 100
-                        ? 'bg-yellow-500 text-gray-900'
-                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                    }`}
-                  >
-                    ${amount}
-                  </button>
-                ))}
+              </Field>
+
+              <Field label="Description">
+                <textarea
+                  value={form.description}
+                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  placeholder="Optional. Tell players what this game is about."
+                  maxLength={200}
+                  rows={3}
+                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700/50 rounded-xl text-white resize-none focus:outline-none focus:border-amber-500/60 placeholder:text-gray-600"
+                />
+                <p className="text-xs text-gray-600 text-right">{form.description.length}/200</p>
+              </Field>
+
+              <Field label="Scheduled Start (optional)">
+                <input
+                  type="datetime-local"
+                  value={form.scheduledStart ?? ''}
+                  onChange={(e) => setForm({ ...form, scheduledStart: e.target.value })}
+                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700/50 rounded-xl text-white focus:outline-none focus:border-amber-500/60 [color-scheme:dark]"
+                />
+              </Field>
+
+            </div>
+          )}
+
+          {/* ──────── STEP 2: ACCESS CONTROL ──────── */}
+          {step === 'access' && (
+            <div className="space-y-4">
+              <StepHeader icon={<Shield className="w-6 h-6 text-amber-400" />} title="Who can enter?" sub="Control access to your game" />
+
+              <div className="space-y-5">
+                {([
+                  {
+                    id: 'token_gated' as const,
+                    icon: Coins,
+                    label: 'Token Gated',
+                    badge: 'recommended',
+                    desc: 'Must hold a minimum amount of a specified token',
+                  },
+                  {
+                    id: 'leaderboard' as const,
+                    icon: Trophy,
+                    label: 'Leaderboard',
+                    badge: null,
+                    desc: 'Top players from a community leaderboard',
+                  },
+                  {
+                    id: 'whitelist' as const,
+                    icon: List,
+                    label: 'Whitelist',
+                    badge: null,
+                    desc: 'Host controls exactly who can join',
+                  },
+                  {
+                    id: 'open' as const,
+                    icon: Globe,
+                    label: 'Open',
+                    badge: null,
+                    desc: 'Anyone with a wallet can join',
+                  },
+                ] as const).map(({ id, icon: Icon, label, badge, desc }) => {
+                  const active = form.entryMode === id;
+                  return (
+                    <div key={id}>
+                      <button
+                        onClick={() => setForm({ ...form, entryMode: id, ...(id !== 'whitelist' ? { whitelist: undefined } : {}) })}
+                        className={`w-full relative flex items-center gap-4 p-5 rounded-xl border-2 overflow-hidden transition-all text-left ${
+                          active
+                            ? 'border-amber-500 bg-gray-800/60'
+                            : 'border-gray-700/40 bg-gray-800/30 hover:border-gray-600'
+                        }`}
+                      >
+                        {active && <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-500" />}
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${active ? 'bg-amber-500/20' : 'bg-gray-800'}`}>
+                          <Icon className={`w-5 h-5 ${active ? 'text-amber-400' : 'text-gray-500'}`} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className={`font-bold text-sm ${active ? 'text-white' : 'text-gray-300'}`}>{label}</span>
+                            {badge && (
+                              <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-400 text-[10px] font-semibold rounded-full">{badge}</span>
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-500 mt-0.5">{desc}</div>
+                        </div>
+                        {active && <Check className="w-4 h-4 text-amber-400 flex-shrink-0" />}
+                      </button>
+
+                      {/* Inline expansion for selected option */}
+                      {active && id === 'open' && (
+                        <p className="text-[11px] text-amber-400/80 mt-1.5 px-1">
+                          ⚠ Anyone can join — use with caution
+                        </p>
+                      )}
+                      {active && id === 'token_gated' && (
+                        <div className="mt-2 mb-4 space-y-2">
+                          <input
+                            type="text"
+                            value={tokenGateAddress}
+                            onChange={(e) => setTokenGateAddress(e.target.value.trim())}
+                            placeholder="Token contract address (0x...)"
+                            className="w-full px-3 py-2.5 bg-gray-800/50 border border-gray-700/50 rounded-lg text-white font-mono text-xs focus:outline-none focus:border-amber-500/60 placeholder:text-gray-600"
+                          />
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={tokenGateMinBalance}
+                            onChange={(e) => setTokenGateMinBalance(e.target.value)}
+                            placeholder="Minimum balance required (e.g. 1)"
+                            className="w-full px-3 py-2.5 bg-gray-800/50 border border-gray-700/50 rounded-lg text-white font-mono text-xs focus:outline-none focus:border-amber-500/60 placeholder:text-gray-600"
+                          />
+                        </div>
+                      )}
+                      {active && id === 'leaderboard' && (
+                        <div className="mt-2 mb-4 space-y-2">
+                          <input
+                            type="text"
+                            value={leaderboardAddress}
+                            onChange={(e) => setLeaderboardAddress(e.target.value.trim())}
+                            placeholder="0x... or API endpoint"
+                            className="w-full px-3 py-2.5 bg-gray-800/50 border border-gray-700/50 rounded-lg text-white font-mono text-xs focus:outline-none focus:border-amber-500/60 placeholder:text-gray-600"
+                          />
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min={1}
+                            max={1000}
+                            value={leaderboardLimit}
+                            onChange={(e) => setLeaderboardLimit(Math.max(1, parseInt(e.target.value) || 50))}
+                            placeholder="50"
+                            className="w-full px-3 py-2.5 bg-gray-800/50 border border-gray-700/50 rounded-lg text-white font-mono text-xs focus:outline-none focus:border-amber-500/60 placeholder:text-gray-600"
+                          />
+                          <p className="text-[11px] text-gray-600 px-0.5">Top how many players from the leaderboard</p>
+                        </div>
+                      )}
+                      {active && id === 'whitelist' && (
+                        <div className="mt-2 mb-4 space-y-1.5">
+                          <textarea
+                            value={wlManual}
+                            onChange={(e) => setWlManual(e.target.value)}
+                            placeholder={"Paste wallet addresses, one per line\n0xAbc123...\n0xDef456..."}
+                            rows={4}
+                            className="w-full px-3 py-2.5 bg-gray-800/50 border border-gray-700/50 rounded-lg text-white text-xs font-mono resize-none focus:outline-none focus:border-amber-500/60 placeholder:text-gray-600"
+                          />
+                          {(form.whitelist?.length ?? 0) > 0 && (
+                            <p className="text-[11px] text-amber-400 px-0.5">
+                              {form.whitelist!.length} address{form.whitelist!.length !== 1 ? 'es' : ''} loaded
+                            </p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
+          )}
 
-            {/* Payout Structure Preview */}
-            {form.prizePool > 0 && (
-              <div className="p-4 bg-gray-800/30 rounded-xl border border-gray-700/30">
-                <div className="text-sm font-medium text-gray-300 mb-3">Payout Structure</div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-yellow-400 flex items-center gap-2">
-                      <Trophy className="w-4 h-4" /> 1st Place (65%)
-                    </span>
-                    <span className="font-bold">{formatUSDC(Math.floor(form.prizePool * 0.65))}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-300">2nd Place (35%)</span>
-                    <span className="font-bold">{formatUSDC(Math.floor(form.prizePool * 0.35))}</span>
-                  </div>
-                </div>
-              </div>
-            )}
+          {/* ──────── STEP 3: BUY-IN ──────── */}
+          {step === 'buyin' && (
+            <div className="space-y-4">
+              <StepHeader icon={<Coins className="w-6 h-6 text-amber-400" />} title="How much to enter?" sub="Set the buy-in for your game" />
 
-            {/* Scheduled Start */}
-            <div className={`p-4 rounded-xl border transition-all ${
-              scheduledStart ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-gray-800/30 border-gray-700/30'
-            }`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Calendar className={`w-5 h-5 ${scheduledStart ? 'text-yellow-400' : 'text-gray-400'}`} />
-                  <div>
-                    <div className="font-medium text-sm">Schedule Start</div>
-                    <div className="text-xs text-gray-500">Set a specific start time</div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setScheduledStart(!scheduledStart)}
-                  style={{
-                    width: 48,
-                    height: 28,
-                    borderRadius: 14,
-                    backgroundColor: scheduledStart ? '#eab308' : '#374151',
-                    position: 'relative',
-                    transition: 'background-color 200ms ease-in-out',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: 0,
-                  }}
-                >
-                  <span
-                    style={{
-                      display: 'block',
-                      width: 22,
-                      height: 22,
-                      borderRadius: '50%',
-                      backgroundColor: 'white',
-                      position: 'absolute',
-                      top: 3,
-                      left: scheduledStart ? 23 : 3,
-                      transition: 'left 200ms ease-in-out',
-                    }}
-                  />
-                </button>
-              </div>
-              {scheduledStart && (
-                <div className="grid grid-cols-2 gap-3 mt-4">
-                  <div>
-                    <label className="text-xs text-gray-500 mb-1 block">Date (UTC)</label>
-                    <input
-                      type="date"
-                      value={scheduledDate}
-                      onChange={(e) => setScheduledDate(e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-900/50 border border-gray-700/50 rounded-lg text-sm focus:outline-none focus:border-yellow-500/50"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-500 mb-1 block">Time (UTC)</label>
-                    <input
-                      type="time"
-                      value={scheduledTime}
-                      onChange={(e) => setScheduledTime(e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-900/50 border border-gray-700/50 rounded-lg text-sm focus:outline-none focus:border-yellow-500/50"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Info */}
-            <div className="p-4 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
-              <div className="flex items-start gap-3">
-                <Sparkles className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-emerald-400 font-medium text-sm">0% Platform Fee</p>
-                  <p className="text-gray-400 text-xs mt-1">
-                    100% of the prize pool goes to winners via smart contract.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Wallet not connected warning */}
-            {!isConnected && !urlPlayerId && (
-              <div className="p-4 bg-orange-500/10 rounded-xl border border-orange-500/20">
-                <div className="flex items-start gap-3">
-                  <Wallet className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-orange-400 font-medium text-sm">Wallet Required</p>
-                    <p className="text-gray-400 text-xs mt-1">
-                      Connect a wallet to create a sponsored game.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Error display */}
-            {fundingError && (
-              <div className="p-3 bg-red-500/10 rounded-xl border border-red-500/20">
-                <div className="flex items-center gap-2 text-red-400 text-sm">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  <span>{fundingError}</span>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Step: Fund Escrow */}
-        {step === 'fund' && (
-          <div className="space-y-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-yellow-500/20 flex items-center justify-center">
-                <Wallet className="w-6 h-6 text-yellow-400" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold">Fund Prize Pool</h2>
-                <p className="text-sm text-gray-400">Send {formatUSDC(form.prizePool)} USDC to escrow</p>
-              </div>
-            </div>
-
-            {/* Setting up tournament */}
-            {!sponsoredTournamentId && !fundingError && (
-              <div className="flex items-center justify-center gap-2 text-gray-400 text-sm py-4">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Setting up tournament...</span>
-              </div>
-            )}
-
-            {/* Error state */}
-            {fundingError && (
-              <div className="p-3 bg-red-500/10 rounded-xl border border-red-500/20">
-                <div className="flex items-center gap-2 text-red-400 text-sm">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0" />
-                  <span>{fundingError}</span>
-                </div>
-                <button
-                  onClick={() => {
-                    setFundingError(null);
-                    createSponsoredBackend();
-                  }}
-                  className="mt-2 w-full py-2 bg-red-500/20 hover:bg-red-500/30 rounded-lg text-red-400 text-sm font-medium transition-colors"
-                >
-                  Retry
-                </button>
-              </div>
-            )}
-
-            {/* Ready to fund - show address */}
-            {sponsoredTournamentId && !fundingConfirmed && (
-              <div className="space-y-4">
-                {/* Amount to send */}
-                <div className="p-4 bg-yellow-500/10 rounded-xl border border-yellow-500/30">
-                  <div className="text-center">
-                    <div className="text-sm text-gray-400 mb-1">Send exactly</div>
-                    <div className="text-3xl font-black text-yellow-400">{formatUSDC(form.prizePool)}</div>
-                    <div className="text-sm text-gray-500 mt-1">USDC on Base</div>
-                  </div>
-                </div>
-
-                {/* Escrow address */}
-                <div className="p-4 bg-gray-800/30 rounded-xl border border-gray-700/30">
-                  <div className="text-sm text-gray-400 mb-2">To this address:</div>
-                  <div className="flex items-center gap-2">
-                    <code className="flex-1 text-sm font-mono text-white bg-gray-900/50 px-3 py-2 rounded-lg truncate">
-                      {ESCROW_ADDRESS}
-                    </code>
+              <div className="grid grid-cols-2 gap-3">
+                {([
+                  { id: 'free' as BuyInType, icon: '🎁', label: 'Free', sub: 'No buy-in required' },
+                  { id: 'eth' as BuyInType, icon: '⟠', label: 'ETH', sub: 'Native Ether on Base' },
+                  { id: 'usdc' as BuyInType, icon: '💵', label: 'USDC', sub: 'Stablecoin on Base' },
+                  { id: 'custom' as BuyInType, icon: '🪙', label: 'Custom Token', sub: 'Any ERC-20 on Base' },
+                ] as const).map(({ id, icon, label, sub }) => {
+                  const active = buyInType === id;
+                  return (
                     <button
-                      onClick={copyEscrowAddress}
-                      className={`p-2 rounded-lg transition-colors ${
-                        copied ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-700 text-gray-400 hover:text-white'
+                      key={id}
+                      onClick={() => { setBuyInType(id); if (id === 'free') setAmountDisplay(''); }}
+                      className={`relative p-4 rounded-xl border-2 text-left overflow-hidden transition-all ${
+                        active
+                          ? 'border-amber-500 bg-gray-800/60'
+                          : 'border-gray-700/40 bg-gray-800/30 hover:border-gray-600'
                       }`}
                     >
-                      {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
+                      {active && <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-500" />}
+                      <div className="text-xl mb-1.5">{icon}</div>
+                      <div className={`font-bold text-sm ${active ? 'text-white' : 'text-gray-300'}`}>{label}</div>
+                      <div className="text-xs text-gray-500 mt-0.5">{sub}</div>
+                      {active && (
+                        <Check className="absolute top-3 right-3 w-4 h-4 text-amber-400" />
+                      )}
                     </button>
-                  </div>
-                  {copied && (
-                    <div className="text-xs text-emerald-400 mt-2">Address copied!</div>
-                  )}
-                </div>
-
-                {/* Instructions */}
-                <div className="p-4 bg-blue-500/10 rounded-xl border border-blue-500/20">
-                  <div className="flex items-start gap-3">
-                    <Sparkles className="w-5 h-5 text-blue-400 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-blue-400 font-medium text-sm">How to fund</p>
-                      <ol className="text-gray-400 text-xs mt-2 space-y-1 list-decimal list-inside">
-                        <li>Copy the address above</li>
-                        <li>Open your wallet (Coinbase, MetaMask, etc.)</li>
-                        <li>Send {formatUSDC(form.prizePool)} USDC on Base network</li>
-                        <li>Wait for confirmation below</li>
-                      </ol>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Waiting for confirmation */}
-                <div className="p-4 bg-gray-800/30 rounded-xl border border-gray-700/30">
-                  <div className="flex items-center gap-3">
-                    {checkingFunding ? (
-                      <Loader2 className="w-5 h-5 text-yellow-400 animate-spin" />
-                    ) : (
-                      <Clock className="w-5 h-5 text-gray-400" />
-                    )}
-                    <div className="flex-1">
-                      <div className="text-sm font-medium text-gray-300">Waiting for payment...</div>
-                      <div className="text-xs text-gray-500">Auto-detects when USDC arrives</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* View on Basescan link */}
-                <a
-                  href={`https://basescan.org/address/${ESCROW_ADDRESS}#tokentxns`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 text-sm text-gray-400 hover:text-white transition-colors"
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  View escrow on Basescan
-                </a>
-              </div>
-            )}
-
-            {/* Funding confirmed */}
-            {fundingConfirmed && (
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 p-4 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
-                  <CheckCircle2 className="w-6 h-6 text-emerald-400" />
-                  <div>
-                    <p className="text-emerald-400 font-medium">Prize pool funded!</p>
-                    <p className="text-gray-400 text-sm mt-0.5">{formatUSDC(form.prizePool)} USDC received</p>
-                  </div>
-                </div>
-
-                {fundingTxHash && (
-                  <a
-                    href={`https://basescan.org/tx/${fundingTxHash}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-center gap-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    View transaction on Basescan
-                  </a>
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Step: Settings */}
-        {step === 'settings' && (
-          <div className="space-y-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-                <Clock className="w-6 h-6 text-emerald-400" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold">Game Settings</h2>
-                <p className="text-sm text-gray-400">Configure your poker game</p>
-              </div>
-            </div>
-
-            {/* Starting Stack */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">Starting Stack</label>
-              <input
-                type="number"
-                value={form.startingStack}
-                onChange={(e) => setForm({ ...form, startingStack: parseInt(e.target.value) || 1500 })}
-                className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700/50 rounded-xl text-white text-lg font-mono focus:outline-none focus:border-emerald-500/50"
-                min={500}
-                max={10000}
-                step={100}
-              />
-              <div className="flex gap-2">
-                {[1000, 1500, 2000, 3000].map((stack) => (
-                  <button
-                    key={stack}
-                    onClick={() => setForm({ ...form, startingStack: stack })}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                      form.startingStack === stack
-                        ? 'bg-emerald-500 text-white'
-                        : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-                    }`}
-                  >
-                    {stack.toLocaleString()}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Blind Speed */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300">Blind Structure</label>
-              <div className="grid grid-cols-3 gap-2">
-                {/* Turbo */}
-                <button
-                  onClick={() => setForm({ ...form, blindSpeed: 'turbo' })}
-                  className={`p-3 rounded-xl border-2 transition-all relative ${
-                    form.blindSpeed === 'turbo'
-                      ? 'bg-orange-500/20 border-orange-500 ring-2 ring-orange-500/30'
-                      : 'bg-gray-800/50 border-gray-700/50 hover:border-gray-600'
-                  }`}
-                >
-                  {form.blindSpeed === 'turbo' && (
-                    <div className="absolute top-2 right-2 w-4 h-4 rounded-full flex items-center justify-center bg-orange-500">
-                      <Check className="w-2.5 h-2.5 text-white" />
-                    </div>
-                  )}
-                  <div className="flex items-center justify-center mb-1.5">
-                    <Zap className="w-5 h-5 text-orange-400" />
-                  </div>
-                  <div className={`text-sm font-semibold ${form.blindSpeed === 'turbo' ? 'text-white' : ''}`}>Turbo</div>
-                  <div className={`text-xs ${form.blindSpeed === 'turbo' ? 'text-gray-300' : 'text-gray-500'}`}>5 min levels</div>
-                </button>
-
-                {/* Standard */}
-                <button
-                  onClick={() => setForm({ ...form, blindSpeed: 'standard' })}
-                  className={`p-3 rounded-xl border-2 transition-all relative ${
-                    form.blindSpeed === 'standard'
-                      ? 'bg-emerald-500/20 border-emerald-500 ring-2 ring-emerald-500/30'
-                      : 'bg-gray-800/50 border-gray-700/50 hover:border-gray-600'
-                  }`}
-                >
-                  {form.blindSpeed === 'standard' && (
-                    <div className="absolute top-2 right-2 w-4 h-4 rounded-full flex items-center justify-center bg-emerald-500">
-                      <Check className="w-2.5 h-2.5 text-white" />
-                    </div>
-                  )}
-                  <div className="flex items-center justify-center mb-1.5">
-                    <Zap className="w-5 h-5 text-emerald-400" />
-                  </div>
-                  <div className={`text-sm font-semibold ${form.blindSpeed === 'standard' ? 'text-white' : ''}`}>Standard</div>
-                  <div className={`text-xs ${form.blindSpeed === 'standard' ? 'text-gray-300' : 'text-gray-500'}`}>10 min levels</div>
-                </button>
-
-                {/* Deep */}
-                <button
-                  onClick={() => setForm({ ...form, blindSpeed: 'deep' })}
-                  className={`p-3 rounded-xl border-2 transition-all relative ${
-                    form.blindSpeed === 'deep'
-                      ? 'bg-blue-500/20 border-blue-500 ring-2 ring-blue-500/30'
-                      : 'bg-gray-800/50 border-gray-700/50 hover:border-gray-600'
-                  }`}
-                >
-                  {form.blindSpeed === 'deep' && (
-                    <div className="absolute top-2 right-2 w-4 h-4 rounded-full flex items-center justify-center bg-blue-500">
-                      <Check className="w-2.5 h-2.5 text-white" />
-                    </div>
-                  )}
-                  <div className="flex items-center justify-center mb-1.5">
-                    <Zap className="w-5 h-5 text-blue-400" />
-                  </div>
-                  <div className={`text-sm font-semibold ${form.blindSpeed === 'deep' ? 'text-white' : ''}`}>Deep</div>
-                  <div className={`text-xs ${form.blindSpeed === 'deep' ? 'text-gray-300' : 'text-gray-500'}`}>15 min levels</div>
-                </button>
-              </div>
-            </div>
-
-            {/* Game Info */}
-            <div className="grid grid-cols-3 gap-2">
-              <div className="p-3 bg-gray-800/30 rounded-xl border border-gray-700/30 text-center">
-                <Users className="w-4 h-4 mx-auto mb-1 text-emerald-400" />
-                <div className="text-xs text-gray-500">Players</div>
-                <div className="text-sm font-semibold">6 Max</div>
-              </div>
-              <div className="p-3 bg-gray-800/30 rounded-xl border border-gray-700/30 text-center">
-                <Zap className="w-4 h-4 mx-auto mb-1 text-yellow-400" />
-                <div className="text-xs text-gray-500">Starting</div>
-                <div className="text-sm font-semibold">{form.startingStack.toLocaleString()}</div>
-              </div>
-              <div className="p-3 bg-gray-800/30 rounded-xl border border-gray-700/30 text-center">
-                <Clock className="w-4 h-4 mx-auto mb-1 text-purple-400" />
-                <div className="text-xs text-gray-500">Est. Time</div>
-                <div className="text-sm font-semibold">~{estimatedTime}m</div>
-              </div>
-            </div>
-
-            {/* Scheduled Start */}
-            <div className={`p-4 rounded-xl border transition-all ${
-              scheduledStart ? 'bg-yellow-500/10 border-yellow-500/30' : 'bg-gray-800/30 border-gray-700/30'
-            }`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Calendar className={`w-5 h-5 ${scheduledStart ? 'text-yellow-400' : 'text-gray-400'}`} />
-                  <div>
-                    <div className="font-medium text-sm">Schedule Start</div>
-                    <div className="text-xs text-gray-500">Set a specific start time</div>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setScheduledStart(!scheduledStart)}
-                  style={{
-                    width: 48,
-                    height: 28,
-                    borderRadius: 14,
-                    backgroundColor: scheduledStart ? '#eab308' : '#374151',
-                    position: 'relative',
-                    transition: 'background-color 200ms ease-in-out',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: 0,
-                  }}
-                >
-                  <span
-                    style={{
-                      display: 'block',
-                      width: 22,
-                      height: 22,
-                      borderRadius: '50%',
-                      backgroundColor: 'white',
-                      position: 'absolute',
-                      top: 3,
-                      left: scheduledStart ? 23 : 3,
-                      transition: 'left 200ms ease-in-out',
-                    }}
-                  />
-                </button>
-              </div>
-              {scheduledStart && (
-                <div className="grid grid-cols-2 gap-3 mt-4">
-                  <div>
-                    <label className="text-xs text-gray-500 mb-1 block">Date (UTC)</label>
-                    <input
-                      type="date"
-                      value={scheduledDate}
-                      onChange={(e) => setScheduledDate(e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-900/50 border border-gray-700/50 rounded-lg text-sm focus:outline-none focus:border-yellow-500/50"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-gray-500 mb-1 block">Time (UTC)</label>
-                    <input
-                      type="time"
-                      value={scheduledTime}
-                      onChange={(e) => setScheduledTime(e.target.value)}
-                      className="w-full px-3 py-2 bg-gray-900/50 border border-gray-700/50 rounded-lg text-sm focus:outline-none focus:border-yellow-500/50"
-                    />
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Step: Sybil Protection */}
-        {step === 'sybil' && (
-          <div className="space-y-4">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
-                <Shield className="w-6 h-6 text-purple-400" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold">Sybil Protection</h2>
-                <p className="text-sm text-gray-400">Prevent multi-accounting</p>
-              </div>
-            </div>
-
-            {/* 1. Token Gating */}
-            <div className={`p-4 rounded-xl border transition-all ${
-              form.sybilOptions.tokenGating.enabled
-                ? 'bg-green-500/10 border-green-500/30'
-                : 'bg-gray-800/30 border-gray-700/30'
-            }`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Coins className="w-5 h-5 text-green-400" />
-                  <div>
-                    <span className="font-semibold text-sm">Token Gating</span>
-                    <p className="text-xs text-gray-500">Require minimum token balance</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setForm({
-                    ...form,
-                    sybilOptions: {
-                      ...form.sybilOptions,
-                      tokenGating: { ...form.sybilOptions.tokenGating, enabled: !form.sybilOptions.tokenGating.enabled }
-                    }
-                  })}
-                  style={{
-                    width: 48,
-                    height: 28,
-                    borderRadius: 14,
-                    backgroundColor: form.sybilOptions.tokenGating.enabled ? '#22c55e' : '#374151',
-                    position: 'relative',
-                    transition: 'background-color 200ms ease-in-out',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: 0,
-                  }}
-                >
-                  <span
-                    style={{
-                      display: 'block',
-                      width: 22,
-                      height: 22,
-                      borderRadius: '50%',
-                      backgroundColor: 'white',
-                      position: 'absolute',
-                      top: 3,
-                      left: form.sybilOptions.tokenGating.enabled ? 23 : 3,
-                      transition: 'left 200ms ease-in-out',
-                    }}
-                  />
-                </button>
-              </div>
-              {form.sybilOptions.tokenGating.enabled && (
-                <div className="space-y-2 mt-3">
-                  <input
-                    type="text"
-                    placeholder="Minimum $ amount (e.g. 100)"
-                    value={form.sybilOptions.tokenGating.minAmount || ''}
-                    onChange={(e) => setForm({
-                      ...form,
-                      sybilOptions: {
-                        ...form.sybilOptions,
-                        tokenGating: { ...form.sybilOptions.tokenGating, minAmount: e.target.value }
-                      }
-                    })}
-                    className="w-full px-3 py-2 bg-gray-900/50 border border-gray-700/50 rounded-lg text-sm focus:outline-none focus:border-green-500/50"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Token Contract Address (0x...)"
-                    value={form.sybilOptions.tokenGating.contractAddress || ''}
-                    onChange={(e) => setForm({
-                      ...form,
-                      sybilOptions: {
-                        ...form.sybilOptions,
-                        tokenGating: { ...form.sybilOptions.tokenGating, contractAddress: e.target.value }
-                      }
-                    })}
-                    className="w-full px-3 py-2 bg-gray-900/50 border border-gray-700/50 rounded-lg text-sm font-mono focus:outline-none focus:border-green-500/50"
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* 2. NFT Gating */}
-            <div className={`p-4 rounded-xl border transition-all ${
-              form.sybilOptions.nftGating.enabled
-                ? 'bg-purple-500/10 border-purple-500/30'
-                : 'bg-gray-800/30 border-gray-700/30'
-            }`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Image className="w-5 h-5 text-purple-400" />
-                  <div>
-                    <span className="font-semibold text-sm">NFT Gating</span>
-                    <p className="text-xs text-gray-500">Require specific NFT ownership</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setForm({
-                    ...form,
-                    sybilOptions: {
-                      ...form.sybilOptions,
-                      nftGating: { ...form.sybilOptions.nftGating, enabled: !form.sybilOptions.nftGating.enabled }
-                    }
-                  })}
-                  style={{
-                    width: 48,
-                    height: 28,
-                    borderRadius: 14,
-                    backgroundColor: form.sybilOptions.nftGating.enabled ? '#a855f7' : '#374151',
-                    position: 'relative',
-                    transition: 'background-color 200ms ease-in-out',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: 0,
-                  }}
-                >
-                  <span
-                    style={{
-                      display: 'block',
-                      width: 22,
-                      height: 22,
-                      borderRadius: '50%',
-                      backgroundColor: 'white',
-                      position: 'absolute',
-                      top: 3,
-                      left: form.sybilOptions.nftGating.enabled ? 23 : 3,
-                      transition: 'left 200ms ease-in-out',
-                    }}
-                  />
-                </button>
-              </div>
-              {form.sybilOptions.nftGating.enabled && (
-                <div className="space-y-2 mt-3">
-                  <input
-                    type="text"
-                    placeholder="NFT Contract Address(es) (0x...)"
-                    value={form.sybilOptions.nftGating.contractAddress || ''}
-                    onChange={(e) => setForm({
-                      ...form,
-                      sybilOptions: {
-                        ...form.sybilOptions,
-                        nftGating: { ...form.sybilOptions.nftGating, contractAddress: e.target.value }
-                      }
-                    })}
-                    className="w-full px-3 py-2 bg-gray-900/50 border border-gray-700/50 rounded-lg text-sm font-mono focus:outline-none focus:border-purple-500/50"
-                  />
-                </div>
-              )}
-            </div>
-
-            {/* 3. Whitelist Address */}
-            <div className={`p-4 rounded-xl border transition-all ${
-              form.sybilOptions.whitelistAddress.enabled
-                ? 'bg-amber-500/10 border-amber-500/30'
-                : 'bg-gray-800/30 border-gray-700/30'
-            }`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <ListChecks className="w-5 h-5 text-amber-400" />
-                  <div>
-                    <span className="font-semibold text-sm">Whitelist Address</span>
-                    <p className="text-xs text-gray-500">Upload allowed wallet addresses</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setForm({
-                    ...form,
-                    sybilOptions: {
-                      ...form.sybilOptions,
-                      whitelistAddress: { ...form.sybilOptions.whitelistAddress, enabled: !form.sybilOptions.whitelistAddress.enabled }
-                    }
-                  })}
-                  style={{
-                    width: 48,
-                    height: 28,
-                    borderRadius: 14,
-                    backgroundColor: form.sybilOptions.whitelistAddress.enabled ? '#f59e0b' : '#374151',
-                    position: 'relative',
-                    transition: 'background-color 200ms ease-in-out',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: 0,
-                  }}
-                >
-                  <span
-                    style={{
-                      display: 'block',
-                      width: 22,
-                      height: 22,
-                      borderRadius: '50%',
-                      backgroundColor: 'white',
-                      position: 'absolute',
-                      top: 3,
-                      left: form.sybilOptions.whitelistAddress.enabled ? 23 : 3,
-                      transition: 'left 200ms ease-in-out',
-                    }}
-                  />
-                </button>
-              </div>
-              {form.sybilOptions.whitelistAddress.enabled && (
-                <div className="mt-3">
-                  <label className="flex items-center justify-center gap-2 w-full py-3 bg-gray-900/50 border border-dashed border-gray-600/50 rounded-lg text-sm text-gray-400 hover:border-amber-500/50 hover:text-amber-400 transition-colors cursor-pointer">
-                    <FileUp className="w-4 h-4" />
-                    <span>{form.sybilOptions.whitelistAddress.addresses?.length
-                      ? `${form.sybilOptions.whitelistAddress.addresses.length} addresses loaded`
-                      : 'Upload CSV or Excel file'
-                    }</span>
-                    <input
-                      type="file"
-                      accept=".csv,.xlsx,.xls,.txt"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        const reader = new FileReader();
-                        reader.onload = (ev) => {
-                          const text = ev.target?.result as string;
-                          const addresses = text
-                            .split(/[\n,;\r]+/)
-                            .map(a => a.trim())
-                            .filter(a => /^0x[a-fA-F0-9]{40}$/.test(a));
-                          setForm({
-                            ...form,
-                            sybilOptions: {
-                              ...form.sybilOptions,
-                              whitelistAddress: { ...form.sybilOptions.whitelistAddress, addresses }
-                            }
-                          });
-                        };
-                        reader.readAsText(file);
-                      }}
-                    />
-                  </label>
-                  {form.sybilOptions.whitelistAddress.addresses && form.sybilOptions.whitelistAddress.addresses.length > 0 && (
-                    <p className="text-xs text-amber-400 mt-2">{form.sybilOptions.whitelistAddress.addresses.length} valid Ethereum addresses found</p>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* 4. Bonding - Coming Soon */}
-            <div className="p-4 rounded-xl border bg-gray-800/20 border-gray-700/20 opacity-50">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Lock className="w-5 h-5 text-gray-500" />
-                  <div>
-                    <span className="font-semibold text-sm text-gray-400">Bonding</span>
-                    <p className="text-xs text-gray-600">Require refundable USDC deposit</p>
-                  </div>
-                </div>
-                <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-gray-700 text-gray-400 uppercase tracking-wider">Coming Soon</span>
-              </div>
-            </div>
-
-            {/* 5. Coinbase Verification */}
-            <div className={`p-4 rounded-xl border transition-all ${
-              form.sybilOptions.coinbaseVerification.enabled
-                ? 'bg-blue-500/10 border-blue-500/30'
-                : 'bg-gray-800/30 border-gray-700/30'
-            }`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <BadgeCheck className="w-5 h-5 text-blue-400" />
-                  <div>
-                    <span className="font-semibold text-sm">Coinbase Verification</span>
-                    <p className="text-xs text-gray-500">Require Coinbase Verified Account (EAS)</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setForm({
-                    ...form,
-                    sybilOptions: {
-                      ...form.sybilOptions,
-                      coinbaseVerification: { enabled: !form.sybilOptions.coinbaseVerification.enabled }
-                    }
-                  })}
-                  style={{
-                    width: 48,
-                    height: 28,
-                    borderRadius: 14,
-                    backgroundColor: form.sybilOptions.coinbaseVerification.enabled ? '#3b82f6' : '#374151',
-                    position: 'relative',
-                    transition: 'background-color 200ms ease-in-out',
-                    border: 'none',
-                    cursor: 'pointer',
-                    padding: 0,
-                  }}
-                >
-                  <span
-                    style={{
-                      display: 'block',
-                      width: 22,
-                      height: 22,
-                      borderRadius: '50%',
-                      backgroundColor: 'white',
-                      position: 'absolute',
-                      top: 3,
-                      left: form.sybilOptions.coinbaseVerification.enabled ? 23 : 3,
-                      transition: 'left 200ms ease-in-out',
-                    }}
-                  />
-                </button>
-              </div>
-            </div>
-
-            {/* No protection selected */}
-            {!form.sybilOptions.tokenGating.enabled && !form.sybilOptions.nftGating.enabled && !form.sybilOptions.whitelistAddress.enabled && !form.sybilOptions.coinbaseVerification.enabled && (
-              <div className="p-4 bg-gray-800/20 rounded-xl border border-dashed border-gray-700/50 text-center">
-                <p className="text-gray-500 text-sm">No sybil protection selected</p>
-                <p className="text-gray-600 text-xs mt-1">Anyone with a wallet can join</p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Step: Confirmation */}
-        {step === 'confirm' && (
-          <div className="space-y-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center">
-                <Check className="w-6 h-6 text-emerald-400" />
-              </div>
-              <div>
-                <h2 className="text-xl font-bold">Review & Create</h2>
-                <p className="text-sm text-gray-400">Confirm your game settings</p>
-              </div>
-            </div>
-
-            {/* Summary */}
-            <div className="bg-gray-800/30 rounded-2xl border border-gray-700/30 overflow-hidden">
-              {/* Game Type */}
-              <div className="p-4 border-b border-gray-700/30">
-                <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">Game Type</div>
-                <div className="flex items-center gap-2">
-                  {gameType === 'fun' ? (
-                    <span className="px-3 py-1 text-sm font-medium rounded-lg bg-emerald-500/20 text-emerald-400">Play for Fun</span>
-                  ) : (
-                    <span className="px-3 py-1 text-sm font-medium rounded-lg bg-yellow-500/20 text-yellow-400">Sponsored</span>
-                  )}
-                </div>
+                  );
+                })}
               </div>
 
-              {/* Game Settings */}
-              <div className="p-4 border-b border-gray-700/30">
-                <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">Game Settings</div>
+              {buyInType === 'custom' && (
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Starting Stack</span>
-                    <span className="font-semibold">{form.startingStack.toLocaleString()}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Blind Structure</span>
-                    <span className="font-semibold capitalize">{form.blindSpeed}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-gray-400">Est. Duration</span>
-                    <span className="font-semibold">~{estimatedTime} min</span>
-                  </div>
+                  {form.entryMode === 'token_gated' && tokenGateAddress && (
+                    <button
+                      onClick={() => {
+                        const next = !sameAsGate;
+                        setSameAsGate(next);
+                        setCustomToken(next ? tokenGateAddress : '');
+                      }}
+                      className="w-full flex items-center justify-between px-3 py-2.5 bg-gray-800/30 rounded-lg border border-gray-700/30"
+                    >
+                      <span className="text-sm text-gray-300">Same token as gate</span>
+                      <div className={`w-9 h-5 rounded-full transition-colors flex items-center px-0.5 flex-shrink-0 ${sameAsGate ? 'bg-amber-500' : 'bg-gray-700'}`}>
+                        <div className={`w-4 h-4 rounded-full bg-white transition-transform ${sameAsGate ? 'translate-x-4' : 'translate-x-0'}`} />
+                      </div>
+                    </button>
+                  )}
+                  {sameAsGate ? (
+                    <div className="px-3 py-2.5 bg-gray-800/20 border border-gray-700/20 rounded-lg">
+                      <p className="text-xs text-gray-500 font-mono truncate">{customToken}</p>
+                    </div>
+                  ) : (
+                    <input
+                      type="text"
+                      value={customToken}
+                      onChange={(e) => setCustomToken(e.target.value.trim())}
+                      placeholder="Token contract address (0x...)"
+                      className="w-full px-3 py-2.5 bg-gray-800/50 border border-gray-700/50 rounded-lg text-white font-mono text-sm focus:outline-none focus:border-amber-500/60 placeholder:text-gray-600"
+                    />
+                  )}
                 </div>
-              </div>
+              )}
 
-              {/* Sybil Protection */}
-              <div className="p-4 border-b border-gray-700/30">
-                <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">Sybil Protection</div>
-                <div className="flex flex-wrap gap-2">
-                  {form.sybilOptions.tokenGating.enabled && (
-                    <span className="px-3 py-1 text-sm font-medium rounded-lg bg-green-500/20 text-green-400">Token Gate</span>
-                  )}
-                  {form.sybilOptions.nftGating.enabled && (
-                    <span className="px-3 py-1 text-sm font-medium rounded-lg bg-purple-500/20 text-purple-400">NFT Gate</span>
-                  )}
-                  {form.sybilOptions.whitelistAddress.enabled && (
-                    <span className="px-3 py-1 text-sm font-medium rounded-lg bg-amber-500/20 text-amber-400">Whitelist</span>
-                  )}
-                  {form.sybilOptions.coinbaseVerification.enabled && (
-                    <span className="px-3 py-1 text-sm font-medium rounded-lg bg-blue-500/20 text-blue-400">Coinbase Verified</span>
-                  )}
-                  {!form.sybilOptions.tokenGating.enabled && !form.sybilOptions.nftGating.enabled && !form.sybilOptions.whitelistAddress.enabled && !form.sybilOptions.coinbaseVerification.enabled && (
-                    <span className="px-3 py-1 text-sm font-medium rounded-lg bg-gray-500/20 text-gray-400">None</span>
-                  )}
-                </div>
-              </div>
-
-              {/* Prize Pool */}
-              <div className="p-4">
-                <div className="text-xs text-gray-500 uppercase tracking-wider mb-2">Prize Pool</div>
-                <div className="text-3xl font-black text-yellow-400">
-                  {form.prizePool > 0 ? formatUSDC(form.prizePool) : 'No Prize'}
-                </div>
-                {form.prizePool > 0 && (
-                  <div className="mt-2 text-xs text-gray-500">
-                    1st: {formatUSDC(Math.floor(form.prizePool * 0.65))} | 2nd: {formatUSDC(Math.floor(form.prizePool * 0.35))}
+              {!isFree && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      value={amountDisplay}
+                      onChange={(e) => setAmountDisplay(e.target.value)}
+                      placeholder="0.00"
+                      className="flex-1 px-4 py-3 bg-gray-800/50 border border-gray-700/50 rounded-xl text-white font-mono text-lg focus:outline-none focus:border-amber-500/60 placeholder:text-gray-600"
+                    />
+                    <span className="text-base text-gray-400 font-mono pr-1 min-w-[40px]">{activeTokenSymbol}</span>
                   </div>
-                )}
+                  {isStablecoin && amountDisplay && parseFloat(amountDisplay) > 0 && (
+                    <p className="text-xs text-emerald-400">~${parseFloat(amountDisplay).toFixed(2)} USD</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ──────── STEP 4: BLINDS ──────── */}
+          {step === 'blinds' && (
+            <div className="space-y-5">
+              <StepHeader icon={<Clock className="w-6 h-6 text-amber-400" />} title="Blind Speed" sub="How fast blinds escalate" />
+
+              <div className="space-y-3">
+                {([
+                  { id: 'turbo' as BlindSpeed, label: 'Turbo', sub: '~20 min rounds per table. More tables, longer night.', icon: Zap, color: 'orange' },
+                  { id: 'standard' as BlindSpeed, label: 'Standard', sub: '~45 min rounds per table. More tables, longer night.', icon: Clock, color: 'amber' },
+                  { id: 'deep' as BlindSpeed, label: 'Deep Stack', sub: '~90 min rounds per table. Clear your calendar.', icon: Users, color: 'blue' },
+                ]).map((opt) => {
+                  const active = form.blindSpeed === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      onClick={() => setForm({ ...form, blindSpeed: opt.id })}
+                      className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${
+                        active
+                          ? 'bg-amber-500/10 border-amber-500 shadow-lg shadow-amber-500/10'
+                          : 'bg-gray-800/30 border-gray-700/30 hover:border-gray-600'
+                      }`}
+                    >
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${active ? 'bg-amber-500/20' : 'bg-gray-800'}`}>
+                        <opt.icon className={`w-5 h-5 ${active ? 'text-amber-400' : 'text-gray-500'}`} />
+                      </div>
+                      <div className="flex-1">
+                        <div className={`font-semibold ${active ? 'text-white' : 'text-gray-300'}`}>{opt.label}</div>
+                        <div className="text-xs text-gray-500 mt-0.5">{opt.sub}</div>
+                      </div>
+                      {active && (
+                        <div className="w-5 h-5 rounded-full bg-amber-500 flex items-center justify-center flex-shrink-0">
+                          <Check className="w-3 h-3 text-gray-900" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
+          )}
 
-            {/* Wallet info */}
-            {address && (
-              <div className="p-4 bg-gray-800/20 rounded-xl border border-gray-700/30">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400 text-sm">Connected Wallet</span>
-                  <span className="font-mono text-sm">{address.slice(0, 6)}...{address.slice(-4)}</span>
+          {/* ──────── STEP 5: FEE ──────── */}
+          {step === 'fee' && (
+            <div className="space-y-5">
+              <StepHeader icon={<Percent className="w-6 h-6 text-amber-400" />} title="Protocol Fee" sub="Applied to the prize pool" />
+
+              <div className="space-y-3">
+                <div className="text-center">
+                  <div className="text-4xl font-black text-amber-400">
+                    {(form.protocolFeeBps / 100).toFixed(form.protocolFeeBps % 100 === 0 ? 0 : 2)}%
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">{form.protocolFeeBps} basis points</p>
+                </div>
+
+                <input
+                  type="range"
+                  min={100}
+                  max={500}
+                  step={25}
+                  value={form.protocolFeeBps}
+                  onChange={(e) => setForm({ ...form, protocolFeeBps: parseInt(e.target.value) })}
+                  className="w-full accent-amber-500"
+                />
+
+                <div className="flex justify-between text-xs text-gray-600">
+                  <span>1%</span>
+                  <span>5%</span>
+                </div>
+
+                <div className="flex gap-2">
+                  {[100, 200, 500].map((bps) => (
+                    <button
+                      key={bps}
+                      onClick={() => setForm({ ...form, protocolFeeBps: bps })}
+                      className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${
+                        form.protocolFeeBps === bps
+                          ? 'bg-amber-500/20 text-amber-400 border border-amber-500/50'
+                          : 'bg-gray-800/50 text-gray-400 border border-gray-700/30 hover:border-gray-600'
+                      }`}
+                    >
+                      {`${(bps / 100).toFixed(bps % 100 === 0 ? 0 : 1)}%`}
+                    </button>
+                  ))}
                 </div>
               </div>
-            )}
-          </div>
-        )}
+
+              <p className="text-xs text-gray-500 leading-relaxed">
+                Goes to the Craic Protocol team to cover running costs.
+              </p>
+            </div>
+          )}
+
+          {/* ──────── STEP 6: REVIEW ──────── */}
+          {step === 'review' && (
+            <div className="space-y-5">
+              <StepHeader icon={<Check className="w-6 h-6 text-amber-400" />} title="Review & Launch" sub="Confirm and go live" />
+
+              <div className="bg-gray-800/30 rounded-2xl border border-gray-700/30 overflow-hidden divide-y divide-gray-700/30">
+                <ReviewRow label="Game Name" value={form.gameName} />
+                {form.description && <ReviewRow label="Description" value={form.description} />}
+                {form.scheduledStart && (
+                  <ReviewRow
+                    label="Starts"
+                    value={new Date(form.scheduledStart).toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })}
+                  />
+                )}
+                <ReviewRow label="Blind Speed" value={form.blindSpeed.charAt(0).toUpperCase() + form.blindSpeed.slice(1)} />
+                <ReviewRow label="Est. Duration" value={estimatedTimes[form.blindSpeed]} />
+                <ReviewRow
+                  label="Buy-In"
+                  value={
+                    isFree
+                      ? 'Free'
+                      : `${amountDisplay || '0'} ${activeTokenSymbol}`
+                  }
+                  accent
+                />
+                <ReviewRow
+                  label="Entry Mode"
+                  value={
+                    form.entryMode === 'open'
+                      ? 'Open'
+                      : form.entryMode === 'token_gated'
+                      ? `Token Gated${tokenGateAddress ? ` (${tokenGateAddress.slice(0, 6)}…)` : ''}`
+                      : form.entryMode === 'leaderboard'
+                      ? `Leaderboard (top ${leaderboardLimit})`
+                      : `Whitelist (${form.whitelist?.length ?? 0} addresses)`
+                  }
+                />
+                <ReviewRow label="Protocol Fee" value={`${(form.protocolFeeBps / 100).toFixed(form.protocolFeeBps % 100 === 0 ? 0 : 2)}%`} />
+              </div>
+
+              {isPaid && (
+                <div className="p-3 bg-amber-500/10 rounded-xl border border-amber-500/20">
+                  <p className="text-xs text-amber-400">
+                    This will submit a transaction to create the game on-chain. You will need to approve it in your wallet.
+                  </p>
+                </div>
+              )}
+
+              {address && (
+                <div className="flex items-center justify-between px-3 py-2 bg-gray-800/20 rounded-lg">
+                  <span className="text-xs text-gray-500">Wallet</span>
+                  <span className="text-xs text-gray-400 font-mono">{address.slice(0, 6)}...{address.slice(-4)}</span>
+                </div>
+              )}
+
+              {error && (
+                <div className="p-3 bg-red-500/10 rounded-xl border border-red-500/20 flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+                  <span className="text-sm text-red-400">{error}</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        {/* Footer Actions - inside modal */}
-        <div className="p-4 border-t border-gray-800 flex-shrink-0">
-          {step === 'type' ? (
-            <div className="text-center text-sm text-gray-500">
-              Select a game type to continue
-            </div>
-          ) : step === 'fund' ? (
+        {/* footer */}
+        <div className="p-4 border-t border-gray-800/60 flex-shrink-0">
+          {step !== 'review' ? (
             <button
               onClick={goNext}
-              disabled={CONTRACT_DEPLOYED ? fundingPhase !== 'deposited' : !fundingConfirmed}
-              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-400 rounded-xl text-white font-semibold transition-colors flex items-center justify-center gap-2"
+              disabled={!canContinue()}
+              className="w-full py-3.5 bg-amber-500 hover:bg-amber-400 disabled:bg-gray-800 disabled:text-gray-600 rounded-xl text-gray-900 font-semibold transition-colors flex items-center justify-center gap-2"
             >
-              {(CONTRACT_DEPLOYED ? fundingPhase !== 'deposited' : !fundingConfirmed) ? (
-                'Waiting for payment...'
-              ) : (
-                <>Continue <ArrowRight className="w-5 h-5" /></>
-              )}
-            </button>
-          ) : step !== 'confirm' ? (
-            <button
-              onClick={goNext}
-              disabled={creating || (step === 'prize' && (form.prizePool < 100 || (!isConnected && !urlPlayerId)))}
-              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 disabled:bg-gray-700 disabled:text-gray-400 rounded-xl text-white font-semibold transition-colors flex items-center justify-center gap-2"
-            >
-              {creating ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Setting up...
-                </>
-              ) : (
-                <>
-                  Continue
-                  <ArrowRight className="w-5 h-5" />
-                </>
-              )}
+              Continue
+              <ArrowRight className="w-5 h-5" />
             </button>
           ) : (
             <button
               onClick={handleCreate}
-              disabled={creating}
-              className="w-full py-3.5 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 disabled:from-gray-700 disabled:to-gray-600 rounded-xl text-gray-900 font-bold transition-all shadow-lg shadow-yellow-500/25 flex items-center justify-center gap-2"
+              disabled={creating || !canContinue()}
+              className="w-full py-3.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 disabled:from-gray-700 disabled:to-gray-600 disabled:text-gray-500 rounded-xl text-gray-900 font-bold transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2"
             >
-              {creating ? (
+              {isSigning ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Creating...
+                  Approve in Wallet...
+                </>
+              ) : isConfirming ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Confirming...
+                </>
+              ) : isPosting ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  Setting up game...
                 </>
               ) : (
                 'Create Game'
@@ -1574,6 +956,38 @@ function CreateGameWizard() {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/* ── small UI helpers ── */
+
+function StepHeader({ icon, title, sub }: { icon: React.ReactNode; title: string; sub: string }) {
+  return (
+    <div className="flex items-center gap-3">
+      <div className="w-12 h-12 rounded-xl bg-amber-500/15 flex items-center justify-center">{icon}</div>
+      <div>
+        <h2 className="text-xl font-bold text-white">{title}</h2>
+        <p className="text-sm text-gray-500">{sub}</p>
+      </div>
+    </div>
+  );
+}
+
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <label className="text-sm font-medium text-gray-400">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function ReviewRow({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
+  return (
+    <div className="flex items-center justify-between px-4 py-3">
+      <span className="text-sm text-gray-500">{label}</span>
+      <span className={`text-sm font-semibold ${accent ? 'text-amber-400' : 'text-white'}`}>{value}</span>
     </div>
   );
 }

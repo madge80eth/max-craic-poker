@@ -50,90 +50,73 @@ export const BLIND_PRESETS: Record<BlindSpeed, BlindLevelConfig[]> = {
   ],
 };
 
-// Sybil protection options
-export interface SybilOptions {
-  tokenGating: {
-    enabled: boolean;
-    contractAddress?: string;
-    minAmount?: string; // Minimum token amount (human-readable, e.g. "100")
-  };
-  nftGating: {
-    enabled: boolean;
-    contractAddress?: string;
-    tokenId?: string; // For ERC-1155, optional for ERC-721
-    isERC1155?: boolean;
-  };
-  whitelistAddress: {
-    enabled: boolean;
-    addresses?: string[]; // Array of allowed wallet addresses
-  };
-  bondMechanic: {
-    enabled: boolean;
-    amount?: number; // USDC amount (in cents, e.g., 1000 = $10)
-  };
-  coinbaseVerification: {
-    enabled: boolean;
-  };
-}
-
-// Game configuration
+// Game configuration — stored in Redis, matches CraicHomeGame.sol
 export interface CraicGameConfig {
   gameId: string;
-  host: string; // Creator wallet address
-  prizePool: number; // USDC in cents
-  bondAmount: number; // USDC in cents (0 if no bond)
-  maxPlayers: number;
-  startingStack: number;
+  gameName: string;
+  description?: string;
+  host: string;
+  buyInToken: string;         // ERC-20 address, address(0) for ETH, '' for free
+  buyInAmount: string;        // raw token units as string
+  protocolFeeBps: number;     // basis points, default 100 (1%)
+  entryMode: 'open' | 'token_gated' | 'leaderboard' | 'whitelist';
+  whitelist?: string[];       // wallet addresses, only if entryMode === 'whitelist'
   blindSpeed: BlindSpeed;
-  sybilOptions: SybilOptions;
-  // Contract reference
-  tournamentId?: string; // bytes32 from contract
-  // Timestamps
+  startingStack: number;
+  maxPlayersPerTable: number; // always 6
+  scheduledStart?: string;    // ISO datetime string, optional
   createdAt: number;
-  startedAt?: number;
+  status: CraicGameStatus;
+  gameHash?: string;          // bytes32 from contract
 }
 
 // Game status
-export type CraicGameStatus = 'waiting' | 'active' | 'completed' | 'cancelled' | 'finished';
+export type CraicGameStatus = 'waiting' | 'active' | 'finished' | 'cancelled';
 
 // Game info for lobby display
 export interface CraicGameInfo {
   gameId: string;
+  gameName?: string;
   host: string;
-  prizePool: number;
-  bondAmount: number;
+  buyInToken: string;
+  buyInAmount: string;
   playerCount: number;
-  maxPlayers: number;
+  maxPlayersPerTable: number;
   status: CraicGameStatus;
   blindSpeed: BlindSpeed;
   startingStack: number;
-  sybilOptions: SybilOptions;
+  entryMode: 'open' | 'token_gated' | 'leaderboard' | 'whitelist';
   createdAt: number;
 }
 
 // Wizard form state
 export interface CreateGameFormState {
-  // Step 1: Game Settings
+  gameName: string;
+  description: string;
   startingStack: number;
   blindSpeed: BlindSpeed;
-  // Step 2: Sybil Options
-  sybilOptions: SybilOptions;
-  // Step 3: Prize Pool
-  prizePool: number;
+  buyInToken: string;
+  buyInAmount: string;
+  protocolFeeBps: number;
+  entryMode: 'open' | 'token_gated' | 'leaderboard' | 'whitelist';
+  whitelist?: string[];
+  tokenGateAddress?: string;
+  tokenGateMinBalance?: string;
+  leaderboardAddress?: string;
+  leaderboardLimit?: number;
+  scheduledStart?: string;    // ISO datetime string, empty = immediate
 }
 
 // Default form state
 export const DEFAULT_CREATE_FORM: CreateGameFormState = {
-  startingStack: 1500,
+  gameName: '',
+  description: '',
+  startingStack: 3000,
   blindSpeed: 'standard',
-  sybilOptions: {
-    tokenGating: { enabled: false },
-    nftGating: { enabled: false },
-    whitelistAddress: { enabled: false },
-    bondMechanic: { enabled: false },
-    coinbaseVerification: { enabled: false },
-  },
-  prizePool: 0,
+  buyInToken: '',
+  buyInAmount: '0',
+  protocolFeeBps: 100,
+  entryMode: 'token_gated',
 };
 
 // Calculate estimated game time based on settings
@@ -158,13 +141,40 @@ export function estimateGameTime(startingStack: number, blindSpeed: BlindSpeed, 
 // USDC contract address on Base
 export const USDC_ADDRESS = '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913';
 
-// Coinbase Verified Account schema ID (EAS on Base)
-export const COINBASE_VERIFIED_SCHEMA_ID = '0xf8b05c79f090979bf4a80270aba232dff11a10d9ca55c4f88de95317970f0de9';
+// Bracket tournament state — stored at craic:bracket:{parentGameId}
+export interface BracketState {
+  parentGameId: string;
+  rounds: BracketRound[];
+  currentRound: number;
+  totalPlayers: number;
+  status: 'waiting' | 'active' | 'complete';
+}
 
-// Payout structure: 65/35 to top 2 (matches SponsoredTournament.sol contract)
-export function getPayoutStructure(_playerCount: number): number[] {
-  // All formats use 65/35 split to top 2
-  // This matches the on-chain contract's firstPlacePercent/secondPlacePercent
-  if (_playerCount <= 1) return [100];
-  return [65, 35];
+export interface BracketRound {
+  roundNumber: number;
+  tables: string[];       // gameIds of table instances
+  winners: string[];      // wallet addresses advancing
+  byes: string[];         // wallet addresses with byes
+  status: 'active' | 'complete';
+}
+
+// Payout structure derived from table count, not raw player count.
+//   1 table  (1-6 players)  → top 2: 65/35
+//   2 tables (7-12 players) → top 3: 50/30/20
+//   4 tables (13-24 players)→ top 4: 40/25/20/15
+//   8 tables (25-48 players)→ top 5: 35/22/18/14/11
+// Table count = ceil(playerCount / 6) rounded up to nearest bracket (1,2,4,8).
+export function getPayoutStructure(playerCount: number): number[] {
+  if (playerCount <= 1) return [100];
+  const rawTables = Math.ceil(playerCount / 6);
+  let bracket: number;
+  if (rawTables <= 1) bracket = 1;
+  else if (rawTables <= 2) bracket = 2;
+  else if (rawTables <= 4) bracket = 4;
+  else bracket = 8;
+
+  if (bracket === 1) return [65, 35];
+  if (bracket === 2) return [50, 30, 20];
+  if (bracket === 4) return [40, 25, 20, 15];
+  return [35, 22, 18, 14, 11];
 }
