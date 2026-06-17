@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 import { processAction, toClientState, startHand } from '@/lib/poker/engine';
 import { GameState, GameAction } from '@/lib/poker/types';
+import { runBotTurns } from '@/lib/poker/bot'; // DEV ONLY — remove before production
 import { SponsoredTournament } from '@/lib/poker/sponsored-types';
 import { updateLobbyStatus } from '@/lib/poker/lobby';
 
@@ -45,12 +46,8 @@ export async function POST(request: Request) {
 
     gameState = await processAction(gameState, gameAction);
 
-    // If showdown completed, check if we should start next hand automatically
-    // (In a real app, you'd have a delay here for animations)
-    if (gameState.phase === 'showdown') {
-      // For now, we'll let the client trigger next hand
-      // In future, could auto-advance after delay
-    }
+    // DEV ONLY — auto-process any consecutive bot turns after human action
+    gameState = await runBotTurns(gameState);
 
     // Save updated state
     await redis.set(`poker:table:${tableId}:state`, JSON.stringify(gameState));

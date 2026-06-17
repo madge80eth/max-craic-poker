@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 import { startHand, toClientState } from '@/lib/poker/engine';
 import { GameState, TableInfo } from '@/lib/poker/types';
+import { runBotTurns } from '@/lib/poker/bot'; // DEV ONLY — remove before production
 import { updateLobbyStatus } from '@/lib/poker/lobby';
 import { runPostHand } from '@/lib/poker/tournament';
 
@@ -51,6 +52,9 @@ export async function POST(request: Request) {
 
     // Start next hand
     gameState = startHand(gameState);
+
+    // DEV ONLY — auto-process bot turn if bot is first to act
+    gameState = await runBotTurns(gameState);
 
     // Save updated state
     await redis.set(`poker:table:${tableId}:state`, JSON.stringify(gameState));

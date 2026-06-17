@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 import { startGame, toClientState } from '@/lib/poker/engine';
 import { GameState, TableInfo } from '@/lib/poker/types';
+import { runBotTurns } from '@/lib/poker/bot'; // DEV ONLY — remove before production
 
 const redis = Redis.fromEnv();
 
@@ -30,6 +31,9 @@ export async function POST(request: Request) {
 
     // Start the game
     gameState = startGame(gameState);
+
+    // DEV ONLY — if the first active player is the bot, run its turn immediately
+    gameState = await runBotTurns(gameState);
 
     // Save updated state
     await redis.set(`poker:table:${tableId}:state`, JSON.stringify(gameState));

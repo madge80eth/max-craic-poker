@@ -4,7 +4,9 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAccount, useConnect } from 'wagmi';
 import { ClientGameState, PlayerAction } from '@/lib/poker/types';
-import Table from '../components/Table';
+import dynamic from 'next/dynamic';
+
+const Table = dynamic(() => import('../components/Table'), { ssr: false });
 import Link from 'next/link';
 import { usePokerSounds } from '../hooks/usePokerSounds';
 import { ArrowLeft, Volume2, VolumeX, ShieldAlert } from 'lucide-react';
@@ -239,6 +241,33 @@ export default function PokerTable({ params }: PageProps) {
     }
   };
 
+  // DEV ONLY — remove before production
+  const handlePlayVsBot = async () => {
+    if (!playerId || !tableId) return;
+    try {
+      const joinRes = await fetch('/api/poker/bot/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tableId, requesterId: playerId }),
+      });
+      const joinData = await joinRes.json();
+      if (!joinData.success) { alert(joinData.error || 'Failed to add bot'); return; }
+      setGameState(joinData.gameState);
+
+      // Start game immediately after bot joins
+      const startRes = await fetch('/api/poker/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tableId, playerId }),
+      });
+      const startData = await startRes.json();
+      if (startData.success) setGameState(startData.gameState);
+      else alert(startData.error || 'Failed to start game');
+    } catch {
+      alert('Failed to start bot game');
+    }
+  };
+
   const handleNextHand = async () => {
     if (!playerId || !tableId) return;
 
@@ -360,6 +389,7 @@ export default function PokerTable({ params }: PageProps) {
             onSeatClick={handleSeatClick}
             onStartGame={isSeated ? handleStartGame : undefined}
             onNextHand={isSeated ? handleNextHand : undefined}
+            onPlayVsBot={isSeated && process.env.NODE_ENV === 'development' ? handlePlayVsBot : undefined}
           />
         </div>
       </div>

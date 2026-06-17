@@ -30,6 +30,7 @@ export interface Player {
   isBigBlind: boolean;
   consecutiveTimeouts: number;
   sitOut: boolean;
+  isBot?: boolean;
 }
 
 export interface SidePot {
@@ -142,6 +143,7 @@ export interface ClientPlayer {
   showCards: boolean;
   consecutiveTimeouts: number;
   sitOut: boolean;
+  isBot?: boolean;
 }
 
 export interface ValidAction {

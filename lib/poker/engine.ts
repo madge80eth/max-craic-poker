@@ -633,6 +633,7 @@ export function toClientState(state: GameState, viewerIdentity: string | null): 
     showCards: isShowdown && !p.folded,
     consecutiveTimeouts: p.consecutiveTimeouts || 0,
     sitOut: p.sitOut || false,
+    isBot: p.isBot || false,
   }));
 
   const validActions = viewerIndex !== -1 && viewerIndex === state.activePlayerIndex

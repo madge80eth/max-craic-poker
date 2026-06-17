@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 import { startGame, toClientState } from '@/lib/poker/engine';
 import { GameState } from '@/lib/poker/types';
+import { runBotTurns } from '@/lib/poker/bot'; // DEV ONLY — remove before production
 import { CraicGameConfig, CraicGameInfo } from '@/lib/craic/types';
 
 const redis = Redis.fromEnv();
@@ -48,6 +49,9 @@ export async function POST(request: Request) {
 
     // Start the game
     gameState = startGame(gameState);
+
+    // DEV ONLY — if the first active player is the bot, run its turn immediately
+    gameState = await runBotTurns(gameState);
 
     // Save updated state
     await redis.set(`craic:game:${gameId}:state`, JSON.stringify(gameState));

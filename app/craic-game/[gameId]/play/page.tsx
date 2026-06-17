@@ -203,6 +203,32 @@ export default function GamePlayPage() {
     } catch {}
   };
 
+  // DEV ONLY — remove before production
+  const handlePlayVsBot = async () => {
+    if (!gameId || !playerId) return;
+    try {
+      const joinRes = await fetch('/api/craic/bot/join', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gameId, requesterId: playerId }),
+      });
+      const joinData = await joinRes.json();
+      if (!joinData.success) { alert(joinData.error || 'Failed to add bot'); return; }
+      setGameState(joinData.gameState);
+
+      const startRes = await fetch('/api/craic/start', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gameId, playerId }),
+      });
+      const startData = await startRes.json();
+      if (startData.success) setGameState(startData.gameState);
+      else alert(startData.error || 'Failed to start game');
+    } catch {
+      alert('Failed to start bot game');
+    }
+  };
+
   const handleNextHand = async () => {
     if (!gameId || !playerId) return;
     try {
@@ -329,6 +355,7 @@ export default function GamePlayPage() {
               onSeatClick={handleSeatClick}
               onStartGame={handleStartGame}
               onNextHand={handleNextHand}
+              onPlayVsBot={process.env.NODE_ENV === 'development' ? handlePlayVsBot : undefined}
             />
           </div>
         )}

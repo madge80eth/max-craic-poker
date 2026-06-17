@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { Redis } from '@upstash/redis';
 import { processAction, toClientState } from '@/lib/poker/engine';
 import { GameState, GameAction } from '@/lib/poker/types';
+import { runBotTurns } from '@/lib/poker/bot'; // DEV ONLY — remove before production
 import { CraicGameConfig, getPayoutStructure } from '@/lib/craic/types';
 
 const redis = Redis.fromEnv();
@@ -43,6 +44,9 @@ export async function POST(request: Request) {
     };
 
     gameState = await processAction(gameState, gameAction);
+
+    // DEV ONLY — auto-process any consecutive bot turns after human action
+    gameState = await runBotTurns(gameState);
 
     // Save updated state
     await redis.set(`craic:game:${gameId}:state`, JSON.stringify(gameState));
