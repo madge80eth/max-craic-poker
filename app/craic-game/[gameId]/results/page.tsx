@@ -58,6 +58,7 @@ interface FinishData {
   tokens: TokenEntry[];
   protocolFeeBps: number;
   txHash: string | null;
+  pending: boolean;
   calldata: string | null;
   finishedAt: number;
 }
@@ -118,24 +119,36 @@ export default function ResultsPage() {
   const onChainReady = !!finishData?.txHash;
   const claimBusy = claimSigning || claimWaiting;
 
-  // ── fetch finish data ──
+  // ── fetch finish data, polling while the on-chain payout tx is pending ──
   useEffect(() => {
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+
     async function load() {
       try {
         const res = await fetch(`/api/craic/results?gameId=${gameId}`);
         const data = await res.json();
+        if (cancelled) return;
         if (data.success) {
           setFinishData(data.finishData);
+          if (data.finishData.pending && !data.finishData.txHash) {
+            timer = setTimeout(load, 3000);
+          }
         } else {
           setError(data.error || 'Results not found');
         }
       } catch {
-        setError('Failed to load results');
+        if (!cancelled) setError('Failed to load results');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
     load();
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
   }, [gameId]);
 
   // ── fetch token metadata ──
@@ -319,15 +332,27 @@ export default function ResultsPage() {
         {isWinner && gameHash && (
           <div className="bg-gray-800/30 rounded-2xl border border-amber-500/20 p-4 space-y-3">
             {!onChainReady ? (
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-semibold text-orange-400">Payouts pending</p>
-                  <p className="text-xs text-gray-400 mt-0.5">
-                    The on-chain payout transaction hasn&apos;t confirmed yet. The host may need to retry.
-                  </p>
+              finishData.pending ? (
+                <div className="flex items-center gap-3">
+                  <Loader2 className="w-5 h-5 text-amber-400 flex-shrink-0 animate-spin" />
+                  <div>
+                    <p className="text-sm font-semibold text-amber-400">Transaction confirming...</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Payouts are being sent on-chain. This page updates automatically.
+                    </p>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-orange-400 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-sm font-semibold text-orange-400">Payouts pending</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      The on-chain payout transaction hasn&apos;t confirmed yet. The host may need to retry.
+                    </p>
+                  </div>
+                </div>
+              )
             ) : alreadyClaimed ? (
               <div className="flex items-center gap-3 py-2">
                 <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
