@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
+import { initSeatingState } from '@/lib/mtt/balancing';
 import { currentBlindLevel } from '@/lib/mtt/blinds';
 import { defaultGateDeps } from '@/lib/mtt/gateDeps';
 import { initAllTables } from '@/lib/mtt/multiTable';
+import { initRanking } from '@/lib/mtt/ranking';
 import { redisStore } from '@/lib/mtt/redisStore';
 import { revalidateAtStart } from '@/lib/mtt/registration';
 import { redisTablesStore } from '@/lib/mtt/tablesStore';
@@ -38,10 +40,20 @@ export async function POST(_request: Request, { params }: { params: Promise<{ ga
     return NextResponse.json({ success: false, error: result.error, revalidation }, { status: 400 });
   }
 
-  await redisTournamentStore.set(gameId, result.state);
+  // Populate the live-wiring fields (P3/P4 integration, HANDOFF.md §4a): seating
+  // bookkeeping (TableMeta) and ranking state, derived fresh here rather than
+  // inside tournament.ts to avoid a runtime import cycle with balancing.ts/ranking.ts.
+  const seating = initSeatingState(result.state);
+  const startedTournament = {
+    ...result.state,
+    tables: seating.tables,
+    finalTableReached: false,
+    ranking: initRanking(Object.keys(result.state.entrants).length),
+  };
+  await redisTournamentStore.set(gameId, startedTournament);
 
-  const tables = initAllTables(result.state, currentBlindLevel(result.state));
+  const tables = initAllTables(startedTournament, currentBlindLevel(startedTournament));
   await redisTablesStore.setAllTables(gameId, tables);
 
-  return NextResponse.json({ success: true, tournament: result.state, tableCount: Object.keys(tables).length, revalidation });
+  return NextResponse.json({ success: true, tournament: startedTournament, tableCount: Object.keys(tables).length, revalidation });
 }

@@ -59,4 +59,9 @@ export const redisStore: Store = {
   async appendEvent(gameId, event) {
     await redis.rpush(eventsKey(gameId), JSON.stringify(event));
   },
+
+  async listEvents(gameId) {
+    const raw = await redis.lrange(eventsKey(gameId), 0, -1);
+    return raw.map((r) => (typeof r === 'string' ? JSON.parse(r) : r));
+  },
 };

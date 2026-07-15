@@ -4,6 +4,8 @@
 // wires around lib/mtt/registration.ts.
 
 import { hashSeed, mulberry32 } from './rng';
+import type { TableMeta } from './balancing';
+import type { RankingState } from './ranking';
 
 export type TournamentLifecycle =
   | 'created'
@@ -74,6 +76,13 @@ export interface TournamentState {
   payoutTable: number[];
   seedLog: SeedLogEntry[];
   entrants: Record<string, EntrantRecord>;
+  // Live-wiring additions (Phase P3/P4 integration) — populated by start/route.ts
+  // right after startTournament() succeeds, via balancing.ts's initSeatingState()
+  // and ranking.ts's initRanking(). Kept out of this pure module to avoid a
+  // runtime import cycle (balancing.ts/ranking.ts import types from here).
+  tables: Record<number, TableMeta>;
+  finalTableReached: boolean;
+  ranking: RankingState;
 }
 
 export interface TableAssignment {
@@ -94,6 +103,9 @@ export function createTournament(tournamentId: string, config: TournamentConfig)
     payoutTable: PAYOUT_TEMPLATES[config.payoutTemplate],
     seedLog: [],
     entrants: {},
+    tables: {},
+    finalTableReached: false,
+    ranking: { totalEntrants: 0, nextFinishPos: 0, finishOrder: [] },
   };
 }
 

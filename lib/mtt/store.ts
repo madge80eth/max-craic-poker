@@ -15,6 +15,7 @@ export interface Store {
   removeEntrant(gameId: string, wallet: Address): Promise<void>;
   listEntrants(gameId: string): Promise<Address[]>;
   appendEvent(gameId: string, event: GameEvent): Promise<void>;
+  listEvents(gameId: string): Promise<GameEvent[]>;
 }
 
 export class MemoryStore implements Store {
@@ -61,5 +62,9 @@ export class MemoryStore implements Store {
   async appendEvent(gameId: string, event: GameEvent) {
     if (!this.events.has(gameId)) this.events.set(gameId, []);
     this.events.get(gameId)!.push(event);
+  }
+
+  async listEvents(gameId: string) {
+    return this.events.get(gameId) ?? [];
   }
 }

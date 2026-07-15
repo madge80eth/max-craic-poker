@@ -8,6 +8,10 @@ export interface TablesStore {
   getTable(tournamentId: string, tableNo: number): Promise<GameState | null>;
   setTable(tournamentId: string, tableNo: number, state: GameState): Promise<void>;
   setAllTables(tournamentId: string, tables: Record<number, GameState>): Promise<void>;
+  /** Fetches multiple tables at once — used for the hand-for-hand bubble barrier,
+   *  which needs every live table's phase before allowing any one of them to deal. */
+  getAllTables(tournamentId: string, tableNos: number[]): Promise<Record<number, GameState>>;
+  deleteTable(tournamentId: string, tableNo: number): Promise<void>;
 }
 
 export class MemoryTablesStore implements TablesStore {
@@ -29,6 +33,19 @@ export class MemoryTablesStore implements TablesStore {
     for (const [tableNo, state] of Object.entries(tables)) {
       await this.setTable(tournamentId, Number(tableNo), state);
     }
+  }
+
+  async getAllTables(tournamentId: string, tableNos: number[]) {
+    const out: Record<number, GameState> = {};
+    for (const tableNo of tableNos) {
+      const state = await this.getTable(tournamentId, tableNo);
+      if (state) out[tableNo] = state;
+    }
+    return out;
+  }
+
+  async deleteTable(tournamentId: string, tableNo: number) {
+    this.tables.delete(this.key(tournamentId, tableNo));
   }
 }
 
@@ -53,5 +70,18 @@ export const redisTablesStore: TablesStore = {
     await Promise.all(
       Object.entries(tables).map(([tableNo, state]) => redis.set(tableKey(tournamentId, Number(tableNo)), JSON.stringify(state)))
     );
+  },
+
+  async getAllTables(tournamentId, tableNos) {
+    const results = await Promise.all(tableNos.map((tableNo) => redisTablesStore.getTable(tournamentId, tableNo)));
+    const out: Record<number, GameState> = {};
+    results.forEach((state, i) => {
+      if (state) out[tableNos[i]] = state;
+    });
+    return out;
+  },
+
+  async deleteTable(tournamentId, tableNo) {
+    await redis.del(tableKey(tournamentId, tableNo));
   },
 };

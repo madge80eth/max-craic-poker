@@ -58,3 +58,45 @@ export function advanceTableHand(state: GameState, blindLevel: BlindLevel): Game
   }
   return startHand(withGlobalBlinds(state, blindLevel));
 }
+
+/**
+ * Rebuilds a table's GameState from scratch for a new seat composition (a
+ * balancing move-in, a table break redistribution, or the final-table
+ * redraw) — required because engine.ts's addPlayer only works from
+ * phase==='waiting', so a live table can't have players added/removed in
+ * place. Reuses createGame/addPlayer/startGame completely unmodified; the
+ * only adapter-side step is patching each seated player's chips to their
+ * REAL current stack afterward (addPlayer always seats new joiners at
+ * config.startingChips, which is wrong for anyone who already played
+ * hands). startGame() deals the first hand immediately, same as a draw.
+ */
+export function rebuildTableWithStacks(
+  tableId: string,
+  assignment: TableAssignment,
+  stacks: Record<string, number>,
+  blindLevel: BlindLevel
+): GameState | null {
+  const occupied = assignment.seats.filter((w): w is string => w !== null);
+  if (occupied.length < 2) return null; // not enough players to deal a hand — caller's problem to resolve (tournament finish)
+
+  const config: GameConfig = {
+    maxPlayers: 6,
+    startingChips: 0, // irrelevant — every seat's chips are patched below
+    blindLevels: [toEngineBlindLevel(blindLevel)],
+    actionTimeout: 30,
+    payoutStructure: [65, 35], // unused at table level — MTT payouts are tournament-wide (P4)
+  };
+
+  let state = createGame(tableId, config);
+  assignment.seats.forEach((wallet, seatIndex) => {
+    if (!wallet) return;
+    state = addPlayer(state, wallet, wallet, seatIndex);
+  });
+
+  state = {
+    ...state,
+    players: state.players.map((p) => ({ ...p, chips: stacks[p.odentity] ?? p.chips })),
+  };
+
+  return startGame(state);
+}

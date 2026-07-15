@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import { defaultGateDeps } from '@/lib/mtt/gateDeps';
+import { donatedBy } from '@/lib/mtt/mockEscrow';
 import { redisStore } from '@/lib/mtt/redisStore';
 import { registerEntrant as registerGateCheck } from '@/lib/mtt/registration';
+import { redisSponsorPoolStore } from '@/lib/mtt/sponsorPoolStore';
 import { registerEntrant as registerTournamentSeat } from '@/lib/mtt/tournament';
 import { redisTournamentStore } from '@/lib/mtt/tournamentStore';
 import { Address } from '@/lib/mtt/types';
@@ -20,6 +22,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ gam
   const game = await redisStore.getGame(gameId);
   if (!game) {
     return NextResponse.json({ error: 'Game not found' }, { status: 404 });
+  }
+
+  // R1 wall (GAME-CREATION-SPEC): a wallet that has sponsored this game may not also register to play.
+  const alreadyDonated = await donatedBy(gameId, wallet, redisSponsorPoolStore);
+  if (alreadyDonated > 0) {
+    return NextResponse.json({ error: 'Sponsors cannot register to play this game' }, { status: 403 });
   }
 
   const gateResult = await registerGateCheck(gameId, wallet, game.config.gates, defaultGateDeps, redisStore);
